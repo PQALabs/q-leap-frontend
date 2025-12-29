@@ -1,0 +1,24 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "tryAgain": "Thử lại",
+    "home": "Trang chủ",
+    "about": "Giới thiệu",
+    "services": "Dịch vụ"
+  },
+  "home": {
+    "title": "Để bắt đầu, hãy chỉnh sửa tệp page.tsx.",
+    "description": "Bạn đang tìm điểm bắt đầu hoặc hướng dẫn thêm? Hãy truy cập vào",
+    "templates": "Mẫu",
+    "or": "hoặc",
+    "learningCenter": "Trung tâm học tập",
+    "deployNow": "Triển khai ngay",
+    "documentation": "Tài liệu"
+  },
+  "language": {
+    "switch": "Chuyển ngôn ngữ",
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}
