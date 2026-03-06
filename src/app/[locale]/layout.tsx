@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NextJS 16 - Boilerplate',
-  description: 'NextJS 16 - Boilerplate',
+  title: 'Home',
+  description: 'Q-LEAP',
 };
 
 export function generateStaticParams() {

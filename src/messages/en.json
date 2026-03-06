@@ -20,5 +20,33 @@
     "switch": "Switch language",
     "en": "English",
     "vi": "Tiếng Việt"
+  },
+  "header": {
+    "connectWallet": "Connect Wallet",
+    "myAccount": "My Account",
+    "disconnect": "Disconnect",
+    "unknown": "UNKNOWN",
+    "addChain": "Add {chainName}",
+    "addingChain": "Adding...",
+    "toggleMobileMenu": "Toggle mobile menu"
+  },
+  "connectWallet": {
+    "title": "Connect Wallet",
+    "subtitle": "Choose a wallet to continue",
+    "wrongNetwork": "Wrong Network",
+    "wrongNetworkDescription": "The current chain of your wallet does not match the required network.",
+    "switchTo": "Please switch to",
+    "currentChainId": "Current Chain ID:",
+    "requiredChainId": "Required Chain ID:",
+    "switchChain": "Switch to {chainName}",
+    "switching": "Switching...",
+    "cancelDisconnect": "Cancel & Disconnect",
+    "walletConnectDescription": "Scan with WalletConnect to connect",
+    "coinbaseDescription": "Connect with Coinbase Wallet",
+    "metaMaskDescription": "Connect with MetaMask",
+    "failedConnect": "Failed to connect wallet. Please try again.",
+    "switchRejected": "Chain switch was rejected. Please switch to continue.",
+    "switchFailed": "Failed to switch chain. Please try again.",
+    "switchSuccess": "Successfully switched to {chainName}"
   }
 }

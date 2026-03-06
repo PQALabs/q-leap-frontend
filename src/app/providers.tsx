@@ -3,6 +3,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { type ReactNode, useEffect, useState } from 'react';
+import { WagmiProvider } from 'wagmi';
+import { config } from '@/lib/wagmi-config';
 import { ThemeProvider } from '../providers/theme-provider';
 
 const queryClient = new QueryClient({
@@ -28,12 +30,14 @@ function Providers({ children }: ProvidersProps) {
   }, []);
 
   return (
-    <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        <>{isMounted ? children : <></>}</>
-        <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
-      </QueryClientProvider>
-    </ThemeProvider>
+    <WagmiProvider config={config}>
+      <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
+        <QueryClientProvider client={queryClient}>
+          <>{isMounted ? children : <></>}</>
+          <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
+        </QueryClientProvider>
+      </ThemeProvider>
+    </WagmiProvider>
   );
 }
 

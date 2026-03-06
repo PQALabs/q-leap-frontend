@@ -1,6 +1,8 @@
 import { ArrowLeft, ArrowRight, Check, Loader2, Minus, Plus, Search, X } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes, SVGProps } from 'react';
-import github from './svg/github.svg';
+import coinbaseWallet from '@/assets/svg/coinbase-wallet.svg';
+import metamask from '@/assets/svg/metamask.svg';
+import walletConnect from '@/assets/svg/wallet-connect.svg';
 
 const IconList = {
   arrowLeft: ArrowLeft,
@@ -11,7 +13,9 @@ const IconList = {
   spinner: Loader2,
   check: Check,
   search: Search,
-  github,
+  walletConnect,
+  coinbaseWallet,
+  metamask,
 };
 
 type SVGAttributes = Partial<SVGProps<SVGSVGElement>>;
