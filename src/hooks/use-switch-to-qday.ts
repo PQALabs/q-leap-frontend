@@ -11,7 +11,7 @@ export function useSwitchToQday() {
   const { mutateAsync, isPending, error, isSuccess } = useSwitchChain();
 
   // Get the target chain based on environment
-  const targetChain = env.USE_TESTNET ? qdayTestnet : qdayMainnet;
+  const targetChain = env.ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
   const targetChainId = targetChain.id;
 
   const switchToQday = useCallback(() => {

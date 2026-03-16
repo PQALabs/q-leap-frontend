@@ -1,6 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, Loader2, Minus, Plus, Search, X } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes, SVGProps } from 'react';
-import coinbaseWallet from '@/assets/svg/coinbase-wallet.svg';
 import metamask from '@/assets/svg/metamask.svg';
 import walletConnect from '@/assets/svg/wallet-connect.svg';
 
@@ -14,7 +13,6 @@ const IconList = {
   check: Check,
   search: Search,
   walletConnect,
-  coinbaseWallet,
   metamask,
 };
 

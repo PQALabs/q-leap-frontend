@@ -9,10 +9,10 @@
 :root {
   /* bg-background */ /* text-foreground */
 
-  --card: oklch(0.961 0.004 258); /* bg-card / Dialog Bg — #f3f4f6 */
+  --card: oklch(1 0 0); /* bg-card / Dialog Bg — #f3f4f6 */
   --card-foreground: oklch(0.131 0.007 264); /* text-card-foreground — #141619 */
 
-  --popover: oklch(0.961 0.004 258); /* bg-popover / Dialog Bg — #f3f4f6 */
+  --popover: oklch(1 0 0); /* bg-popover / Dialog Bg — #f3f4f6 */
   --popover-foreground: oklch(0.131 0.007 264); /* text-popover-foreground — #141619 */
 
   --primary: oklch(0.363 0.183 264); /* bg-primary — Core brand — #0f3598 */
@@ -72,7 +72,7 @@
 
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
-  --header-background: oklch(0.961 0.004 258);
+  --header-background: oklch(1 0 0);
 }
 
 /* ── Dark mode tokens ──────────────────────────────────── */
