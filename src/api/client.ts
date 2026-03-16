@@ -1,10 +1,9 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
-
-import { appConfig } from '@/config';
+import { env } from '@/config/env';
 import { errorInterceptor, requestInterceptor, successInterceptor } from './interceptors';
 
 const axiosRequestConfig: AxiosRequestConfig = {
-  baseURL: appConfig.apiUrl,
+  baseURL: env.API_URL,
   responseType: 'json',
 };
 

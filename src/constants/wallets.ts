@@ -4,7 +4,6 @@ import { EVM_CHAINS_IDS } from './wagmi';
 export const WALLET_IDS = {
   walletConnect: 'walletConnect',
   metaMask: 'metaMaskSDK',
-  coinbaseWallet: 'coinbaseWalletSDK',
 };
 
 export const EVM_CONNECTORS_INFO: Record<
@@ -20,12 +19,6 @@ export const EVM_CONNECTORS_INFO: Record<
     icon: Icons.metamask,
     isMultipleChain: false,
     name: 'MetaMask',
-    allowedChains: EVM_CHAINS_IDS,
-  },
-  [WALLET_IDS.coinbaseWallet]: {
-    icon: Icons.coinbaseWallet,
-    isMultipleChain: false,
-    name: 'Coinbase Wallet',
     allowedChains: EVM_CHAINS_IDS,
   },
   [WALLET_IDS.walletConnect]: {

@@ -37,7 +37,7 @@ export function Header() {
   const { mutate: disconnect } = useDisconnect();
   const { switchToQday, isPending: isAddingChain } = useSwitchToQday();
 
-  const targetChain = env.USE_TESTNET ? qdayTestnet : qdayMainnet;
+  const targetChain = env.ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
   const isQdayChain = isConnected && chainId === targetChain.id;
 
   const handleOpenConnectWallet = () => {

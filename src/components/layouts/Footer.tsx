@@ -1,13 +1,18 @@
+'use client';
+
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { siteConfig } from '@/config/site';
 
-const footerLinks = [
-  { label: 'Privacy', href: '/privacy' },
-  { label: 'Terms', href: '/terms' },
-  { label: 'Documentation', href: '/docs' },
-];
+const footerLinks = ['privacy', 'terms', 'documentation'] as const;
+const footerHrefs: Record<(typeof footerLinks)[number], string> = {
+  privacy: '/privacy',
+  terms: '/terms',
+  documentation: '/docs',
+};
 
 export function Footer() {
+  const t = useTranslations('footer');
   const currentYear = new Date().getFullYear();
 
   return (
@@ -15,18 +20,18 @@ export function Footer() {
       <div className='mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6 lg:px-8'>
         {/* Copyright */}
         <p className='text-muted-foreground text-xs'>
-          © {currentYear} {siteConfig.name.toUpperCase()} PROTOCOL
+          © {currentYear} {siteConfig.name.toUpperCase()} {t('protocol')}
         </p>
 
         {/* Links */}
         <nav className='flex items-center gap-5'>
-          {footerLinks.map((link) => (
+          {footerLinks.map((key) => (
             <Link
-              key={link.href}
-              href={link.href}
+              key={key}
+              href={footerHrefs[key]}
               className='text-muted-foreground text-xs transition-colors hover:text-foreground'
             >
-              {link.label}
+              {t(key)}
             </Link>
           ))}
         </nav>

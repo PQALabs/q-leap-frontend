@@ -39,17 +39,19 @@ export const ConnectorItem = ({
     <Item
       onClick={!isDisabled ? onClick : undefined}
       className={cn(
-        'cursor-pointer rounded-xl border border-gray-800 bg-[#090E1680] hover:bg-[#090E16]',
+        'cursor-pointer rounded-xs border border-border bg-card transition-colors hover:border-border/80 hover:bg-accent/60',
         isDisabled && 'pointer-events-none cursor-not-allowed opacity-50'
       )}
     >
       <ItemMedia className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full'>{icon}</ItemMedia>
-      <ItemContent className='gap-0'>
-        <ItemTitle className='font-medium text-base text-white'>{name}</ItemTitle>
-        {description && <ItemDescription className='text-left text-foreground text-sm'>{description}</ItemDescription>}
+      <ItemContent className='gap-0.5'>
+        <ItemTitle className='font-semibold text-base text-foreground'>{name}</ItemTitle>
+        {description && (
+          <ItemDescription className='text-left text-muted-foreground text-sm'>{description}</ItemDescription>
+        )}
       </ItemContent>
       <ItemActions>
-        <ChevronRight className='h-5 w-5 text-foreground group-hover/item:text-white' />
+        <ChevronRight className='h-4 w-4 text-muted-foreground transition-transform group-hover/item:translate-x-0.5 group-hover/item:text-foreground' />
       </ItemActions>
     </Item>
   );

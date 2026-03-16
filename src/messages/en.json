@@ -3,6 +3,8 @@
     "loading": "Loading...",
     "error": "Something went wrong",
     "tryAgain": "Try again",
+    "poolDataError": "Failed to load pool data",
+    "poolDataErrorHint": "Please check your connection and try again.",
     "home": "Home",
     "about": "About",
     "services": "Services"
@@ -42,11 +44,53 @@
     "switching": "Switching...",
     "cancelDisconnect": "Cancel & Disconnect",
     "walletConnectDescription": "Scan with WalletConnect to connect",
-    "coinbaseDescription": "Connect with Coinbase Wallet",
     "metaMaskDescription": "Connect with MetaMask",
     "failedConnect": "Failed to connect wallet. Please try again.",
     "switchRejected": "Chain switch was rejected. Please switch to continue.",
     "switchFailed": "Failed to switch chain. Please try again.",
     "switchSuccess": "Successfully switched to {chainName}"
+  },
+  "modules": {
+    "market": {
+      "Market": {
+        "marketDescription": "Main market with the largest selection of assets and yield options"
+      },
+      "CoreAssets": {
+        "title": "Core Assets",
+        "searchPlaceholder": "Search asset name or symbol...",
+        "stablecoinsOnly": "Stablecoins only",
+        "asset": "Asset",
+        "supplyApy": "Supply APY",
+        "totalSupplied": "Total Supplied",
+        "borrowApy": "Borrow APY",
+        "totalBorrowed": "Total Borrowed",
+        "details": "Details",
+        "noAssetsFound": "No assets found.",
+        "copyAddress": "Copy address"
+      },
+      "MarketBasicInfo": {
+        "viewTransactions": "View Transactions",
+        "netWorth": "Net worth",
+        "netApy": "Net APY",
+        "netWorthTooltip": "The total value of your supplied assets minus borrowed assets in this market.",
+        "netApyTooltip": "The weighted average of your supply and borrow APYs, reflecting your overall earning or cost rate across all positions."
+      },
+      "MarketSummary": {
+        "totalMarketSize": "Total Market Size",
+        "totalAvailable": "Total Available",
+        "currentApy": "Current APY",
+        "utilizationRate": "Utilization Rate",
+        "tooltipTotalMarketSize": "The total value of all assets currently deposited into this market. It represents the sum of all supplied collateral and liquidity across every reserve.",
+        "tooltipTotalAvailable": "The total liquidity available to be borrowed right now. This is the difference between total supplied assets and currently borrowed assets.",
+        "tooltipCurrentApy": "The weighted average annualised percentage yield earned by suppliers across all reserves in this market, based on current utilisation.",
+        "tooltipUtilizationRate": "The percentage of the total supplied liquidity that is currently being borrowed. Higher utilisation drives borrow rates up and supply rates up via the interest rate model."
+      }
+    }
+  },
+  "footer": {
+    "protocol": "PROTOCOL",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "documentation": "Documentation"
   }
 }

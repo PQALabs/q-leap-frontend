@@ -54,8 +54,6 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
       let description = '';
       if (key === WALLET_IDS.walletConnect) {
         description = t('walletConnectDescription');
-      } else if (key === WALLET_IDS.coinbaseWallet) {
-        description = t('coinbaseDescription');
       } else if (key === WALLET_IDS.metaMask) {
         description = t('metaMaskDescription');
       }
@@ -70,7 +68,7 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
       });
     }
 
-    const preferredOrder = [WALLET_IDS.walletConnect, WALLET_IDS.coinbaseWallet, WALLET_IDS.metaMask];
+    const preferredOrder = [WALLET_IDS.walletConnect, WALLET_IDS.metaMask];
     connectorsInfo.sort((a, b) => preferredOrder.indexOf(a.id) - preferredOrder.indexOf(b.id));
 
     return connectorsInfo;
@@ -95,6 +93,8 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
         connector,
       });
       const accountsAddress = accounts[0];
+
+      handleSwitchChain();
       if (!accountsAddress) return;
 
       // if (!isWrongChain) {
@@ -143,16 +143,13 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
           onOpenChangeAction();
         }}
       >
-        <DialogContent
-          aria-describedby=''
-          className='fixed top-[50%] left-[50%] my-0 translate-x-[-50%] translate-y-[-50%] transform rounded-none border border-border bg-background p-6 sm:max-w-[440px]'
-        >
+        <DialogContent aria-describedby='' className='rounded-xs border-border bg-background p-6 sm:max-w-[440px]'>
           {isWrongChain ? (
             // Wrong Chain UI
             <>
               <DialogHeader className='mb-4 space-y-3 text-center'>
-                <div className='mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-yellow-500/10'>
-                  <svg className='h-6 w-6 text-yellow-500' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                <div className='mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-warning/10'>
+                  <svg className='h-6 w-6 text-warning' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
                     <path
                       strokeLinecap='round'
                       strokeLinejoin='round'
@@ -161,23 +158,23 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
                     />
                   </svg>
                 </div>
-                <DialogTitle className='text-center font-bold text-2xl'>{t('wrongNetwork')}</DialogTitle>
-                <DialogDescription className='text-center text-gray-700 text-sm'>
+                <DialogTitle className='text-center font-bold text-xl'>{t('wrongNetwork')}</DialogTitle>
+                <DialogDescription className='text-center text-muted-foreground text-sm'>
                   {t('wrongNetworkDescription')}
                   <br />
-                  <span className='mt-2 block font-medium'>
+                  <span className='mt-2 block font-medium text-foreground'>
                     {t('switchTo')} <span className='text-primary'>{targetChain.name}</span>
                   </span>
                 </DialogDescription>
               </DialogHeader>
 
-              <div className='mb-6 rounded-lg border border-border bg-muted/20 p-4'>
+              <div className='mb-6 rounded-xs border border-border bg-muted/30 p-4'>
                 <div className='flex items-center justify-between text-sm'>
-                  <span className='text-gray-700'>{t('currentChainId')}</span>
-                  <span className='font-semibold'>{chainId || '—'}</span>
+                  <span className='text-muted-foreground'>{t('currentChainId')}</span>
+                  <span className='font-semibold text-foreground'>{chainId || '—'}</span>
                 </div>
                 <div className='mt-2 flex items-center justify-between text-sm'>
-                  <span className='text-gray-700'>{t('requiredChainId')}</span>
+                  <span className='text-muted-foreground'>{t('requiredChainId')}</span>
                   <span className='font-semibold text-primary'>{targetChainId}</span>
                 </div>
               </div>
@@ -204,9 +201,9 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
           ) : (
             // Normal Wallet Connection UI
             <>
-              <DialogHeader className='mb-6 space-y-2 text-center'>
-                <DialogTitle className='text-center font-bold text-2xl'>{t('title')}</DialogTitle>
-                <p className='text-center text-foreground text-sm'>{t('subtitle')}</p>
+              <DialogHeader className='mb-6 space-y-1.5 text-center'>
+                <DialogTitle className='text-center font-bold text-xl'>{t('title')}</DialogTitle>
+                <p className='text-center text-muted-foreground text-sm'>{t('subtitle')}</p>
               </DialogHeader>
 
               <div className='flex flex-col gap-3'>

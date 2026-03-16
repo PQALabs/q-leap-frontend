@@ -5,6 +5,7 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "types": ["vitest/globals"],
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -35,6 +36,14 @@
       "@/messages/*": ["./src/messages/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts",
+    "wagmi.config.ts"
+  ],
   "exclude": ["node_modules"]
 }

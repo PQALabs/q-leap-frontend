@@ -4,7 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { type ReactNode, useEffect, useState } from 'react';
 import { WagmiProvider } from 'wagmi';
+import { PoolDataError } from '@/components/pool-data-status';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { config } from '@/lib/wagmi-config';
+import { DynamicPoolDataProvider } from '@/providers/dynamic-pool-data-provider';
+import { ProtocolDataProvider } from '@/providers/protocol-data-provider';
+import { StaticPoolDataProvider } from '@/providers/static-pool-data-provider';
 import { ThemeProvider } from '../providers/theme-provider';
 
 const queryClient = new QueryClient({
@@ -33,7 +38,13 @@ function Providers({ children }: ProvidersProps) {
     <WagmiProvider config={config}>
       <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
-          <>{isMounted ? children : <></>}</>
+          <ProtocolDataProvider>
+            <StaticPoolDataProvider errorPage={<PoolDataError />}>
+              <DynamicPoolDataProvider>
+                <TooltipProvider>{isMounted ? children : <></>}</TooltipProvider>
+              </DynamicPoolDataProvider>
+            </StaticPoolDataProvider>
+          </ProtocolDataProvider>
           <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
         </QueryClientProvider>
       </ThemeProvider>
