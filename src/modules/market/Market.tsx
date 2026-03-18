@@ -1,8 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { UsdValue } from '@/components/usd-value';
+import { getDisplayName, getDisplaySymbol } from '@/config/token-display';
+import { getTokenLogoUrl } from '@/config/token-logos';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
 import { formatApy } from '@/utils/format';
@@ -44,6 +47,7 @@ const STABLECOINS = new Set(['DAI', 'USDC', 'USDT']);
 
 export function Market() {
   const t = useTranslations('modules.market.Market');
+  const router = useRouter();
   const isLoading = usePoolDataStore.use.isLoading();
   const marketRefPriceInUsd = usePoolDataStore.use.marketRefPriceInUsd();
   const reserves = usePoolDataStore.use.reserves();
@@ -109,24 +113,30 @@ export function Market() {
     : 0;
 
   // Map sorted reserve data → CoreAsset[] for the table
-  const coreAssets: CoreAsset[] = sortedData.map((item) => ({
-    id: item.id,
-    name: item.currencySymbol,
-    symbol: item.currencySymbol,
-    subtitle: item.underlyingAsset.slice(0, 6) + '…' + item.underlyingAsset.slice(-4),
-    underlyingAsset: item.underlyingAsset,
-    iconBg: getIconBg(item.currencySymbol),
-    iconColor: 'text-white',
-    iconLabel: item.currencySymbol.charAt(0),
-    supplyApy: item.depositAPY >= 0 ? item.depositAPY * 100 : 0,
-    totalSupplied: <UsdValue value={item.totalLiquidityInUSD} />,
-    totalSuppliedNative: formatTokenAmount(item.totalLiquidity, item.currencySymbol),
-    borrowApy: item.variableBorrowRate >= 0 ? item.variableBorrowRate * 100 : 0,
-    totalBorrowed: item.totalBorrowsInUSD >= 0 ? <UsdValue value={item.totalBorrowsInUSD} /> : '—',
-    totalBorrowedNative: item.totalBorrows >= 0 ? formatTokenAmount(item.totalBorrows, item.currencySymbol) : '—',
-    walletBalance: null,
-    isStablecoin: STABLECOINS.has(item.currencySymbol.toUpperCase()),
-  }));
+  const coreAssets: CoreAsset[] = sortedData.map((item) => {
+    const displaySymbol = getDisplaySymbol(item.currencySymbol);
+    const displayName = getDisplayName(item.currencySymbol);
+
+    return {
+      id: item.id,
+      name: displaySymbol,
+      symbol: displaySymbol,
+      subtitle: displayName + ' • ' + item.underlyingAsset.slice(0, 6) + '…' + item.underlyingAsset.slice(-4),
+      underlyingAsset: item.underlyingAsset,
+      logoUrl: getTokenLogoUrl(item.currencySymbol),
+      iconBg: getIconBg(item.currencySymbol),
+      iconColor: 'text-white',
+      iconLabel: item.currencySymbol.charAt(0),
+      supplyApy: item.depositAPY >= 0 ? item.depositAPY * 100 : 0,
+      totalSupplied: <UsdValue value={item.totalLiquidityInUSD} />,
+      totalSuppliedNative: formatTokenAmount(item.totalLiquidity, item.currencySymbol),
+      borrowApy: item.variableBorrowRate >= 0 ? item.variableBorrowRate * 100 : 0,
+      totalBorrowed: item.totalBorrowsInUSD >= 0 ? <UsdValue value={item.totalBorrowsInUSD} /> : '—',
+      totalBorrowedNative: item.totalBorrows >= 0 ? formatTokenAmount(item.totalBorrows, item.currencySymbol) : '—',
+      walletBalance: null,
+      isStablecoin: STABLECOINS.has(item.currencySymbol.toUpperCase()),
+    };
+  });
 
   // ---------------------------------------------------------------------------
   // User net worth & net APY
@@ -174,7 +184,7 @@ export function Market() {
   }, [user, reserves]);
 
   return (
-    <main className='mx-auto flex w-full max-w-7xl flex-col gap-6 py-8'>
+    <main className='mx-auto flex w-full max-w-7xl flex-col gap-6 pt-0 pb-8 md:pt-8'>
       {/* ① Basic info */}
       {isLoading ? (
         <MarketBasicInfoSkeleton />
@@ -205,7 +215,10 @@ export function Market() {
       {isLoading ? (
         <CoreAssetsSkeleton />
       ) : (
-        <CoreAssets assets={coreAssets} onDetailsClick={(asset) => console.log('Details:', asset.id)} />
+        <CoreAssets
+          assets={coreAssets}
+          onDetailsClick={(asset) => router.push(`/reserve-overview?underlyingAsset=${asset.underlyingAsset}`)}
+        />
       )}
     </main>
   );
