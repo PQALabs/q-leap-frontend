@@ -2,7 +2,9 @@
 
 import {
   ArrowDownToLine,
+  ArrowUpToLine,
   ChevronDown,
+  ChevronRight,
   CircleMinus,
   CirclePlus,
   Info,
@@ -19,6 +21,7 @@ import { useBalance, useConnection } from 'wagmi';
 import { useReadErc20BalanceOf, useReadErc20Decimals } from '@/abi/generated';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +63,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isMaxWithdraw, setIsMaxWithdraw] = useState(false);
   const [isMaxWithdrawSelected, setIsMaxWithdrawSelected] = useState(false);
+  const [openSection, setOpenSection] = useState<'supply' | 'withdraw'>('supply');
   const [successInfo, setSuccessInfo] = useState<{
     amount: string;
     symbol: string;
@@ -77,6 +81,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
   // ── Context ──
   const { address } = useConnection();
   const t = useTranslations('modules.market.ReserveActions');
+  const tt = useTranslations('modules.market.Toasts');
   const refresh = usePoolDataStore.use.refresh();
   const networkConfig = usePoolDataStore.use.networkConfig();
   const explorerUrl = networkConfig?.explorerLink;
@@ -118,12 +123,36 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
     userAddress: address,
     amount: supplyAmount,
     onSuccess: onTxSuccess,
+    toastLabels: {
+      approvalConfirmed: tt('approvalConfirmed'),
+      approvalConfirmedDesc: tt('approvalConfirmedDesc'),
+      approvalFailed: tt('approvalFailed'),
+      approvalReverted: tt('approvalReverted'),
+      waitingApprovalSignature: tt('waitingApprovalSignature'),
+      confirmingApproval: tt('confirmingApproval'),
+      supplyConfirmed: tt('supplyConfirmed'),
+      supplyConfirmedDesc: tt('supplyConfirmedDesc', { amount: supplyAmount, symbol: activeSupplySymbol }),
+      supplyFailed: tt('supplyFailed'),
+      supplyReverted: tt('supplyReverted'),
+      waitingSupplySignature: tt('waitingSupplySignature'),
+      confirmingSupply: tt('confirmingSupply'),
+      txFailed: tt('txFailed'),
+    },
   });
 
   const nativeSupply = useSupplyNative({
     userAddress: address,
     amount: supplyAmount,
     onSuccess: onTxSuccess,
+    toastLabels: {
+      supplyConfirmed: tt('supplyConfirmed'),
+      supplyConfirmedDesc: tt('supplyConfirmedDesc', { amount: supplyAmount, symbol: activeSupplySymbol }),
+      supplyFailed: tt('supplyFailed'),
+      supplyReverted: tt('supplyReverted'),
+      waitingSupplySignature: tt('waitingSupplySignature'),
+      confirmingSupply: tt('confirmingSupply'),
+      txFailed: tt('txFailed'),
+    },
   });
 
   // Pick the active supply hook based on mode
@@ -140,6 +169,15 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
     amount: withdrawAmount,
     isMax: isMaxWithdraw,
     onSuccess: onTxSuccess,
+    toastLabels: {
+      withdrawConfirmed: tt('withdrawConfirmed'),
+      withdrawConfirmedDesc: tt('withdrawConfirmedDesc', { amount: withdrawAmount, symbol: activeWithdrawSymbol }),
+      withdrawFailed: tt('withdrawFailed'),
+      withdrawReverted: tt('withdrawReverted'),
+      waitingWithdrawSignature: tt('waitingWithdrawSignature'),
+      confirmingWithdraw: tt('confirmingWithdraw'),
+      txFailed: tt('txFailed'),
+    },
   });
 
   const nativeWithdraw = useWithdrawNative({
@@ -148,6 +186,20 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
     amount: withdrawAmount,
     isMax: isMaxWithdraw,
     onSuccess: onTxSuccess,
+    toastLabels: {
+      approvalConfirmed: tt('approvalConfirmed'),
+      approvalConfirmedDesc: tt('approvalConfirmedDesc'),
+      approvalFailed: tt('approvalFailed'),
+      waitingApprovalSignature: tt('waitingApprovalSignature'),
+      confirmingApproval: tt('confirmingApproval'),
+      withdrawConfirmed: tt('withdrawConfirmed'),
+      withdrawConfirmedDesc: tt('withdrawConfirmedDesc', { amount: withdrawAmount, symbol: activeWithdrawSymbol }),
+      withdrawFailed: tt('withdrawFailed'),
+      withdrawReverted: tt('withdrawReverted'),
+      waitingWithdrawSignature: tt('waitingWithdrawSignature'),
+      confirmingWithdraw: tt('confirmingWithdraw'),
+      txFailed: tt('txFailed'),
+    },
   });
 
   // Pick the active withdraw hook based on mode
@@ -281,389 +333,425 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
   return (
     <div className='flex flex-col gap-5'>
       {/* ── Supply section ── */}
-      <div className='flex flex-col gap-3'>
-        <div className='flex items-center justify-between'>
-          {hasNativeOption ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type='button'
-                  className='flex cursor-pointer items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary'
-                >
-                  <CirclePlus size={18} className='text-primary' />
-                  {t('supplySymbol', { symbol: activeSupplySymbol })}
-                  <ChevronDown size={14} className='text-muted-foreground' />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='start'>
-                <DropdownMenuItem onClick={() => setSupplyMode('wrapped')}>
-                  <TokenIcon symbol={reserve.symbol} size={16} />
-                  {t('supplySymbol', { symbol: reserve.symbol })}
-                  <span className='ml-auto text-muted-foreground text-xs'>ERC-20</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSupplyMode('native')}>
-                  <TokenIcon symbol={reserve.symbol} size={16} />
-                  {t('supplySymbol', { symbol: nativeSymbol })}
-                  <span className='ml-auto text-muted-foreground text-xs'>Native</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <h3 className='flex items-center gap-2 font-semibold text-foreground'>
-              <CirclePlus size={18} className='text-primary' />
-              {t('supplySymbol', { symbol: reserve.symbol })}
-            </h3>
-          )}
-        </div>
+      <Collapsible
+        open={openSection === 'supply'}
+        onOpenChange={(open) => setOpenSection(open ? 'supply' : 'withdraw')}
+        className='flex flex-col gap-3'
+      >
+        <CollapsibleTrigger asChild>
+          <div className='flex cursor-pointer items-center justify-between'>
+            {hasNativeOption && openSection === 'supply' ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type='button'
+                      className='flex cursor-pointer items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary'
+                    >
+                      {t('supplySymbol', { symbol: activeSupplySymbol })}
+                      <ChevronDown size={14} className='text-muted-foreground' />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start'>
+                    <DropdownMenuItem onClick={() => setSupplyMode('wrapped')}>
+                      <TokenIcon symbol={reserve.symbol} size={16} />
+                      {t('supplySymbol', { symbol: reserve.symbol })}
+                      <span className='ml-auto text-muted-foreground text-xs'>ERC-20</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSupplyMode('native')}>
+                      <TokenIcon symbol={reserve.symbol} size={16} />
+                      {t('supplySymbol', { symbol: nativeSymbol })}
+                      <span className='ml-auto text-muted-foreground text-xs'>Native</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <h3 className='flex items-center gap-2 font-semibold text-foreground'>
+                {t('supplySymbol', { symbol: hasNativeOption ? activeSupplySymbol : reserve.symbol })}
+              </h3>
+            )}
+            <ChevronRight
+              size={16}
+              className='ml-auto text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-90'
+            />
+          </div>
+        </CollapsibleTrigger>
 
-        <AmountInput
-          value={supplyAmount}
-          onChange={setSupplyAmount}
-          symbol={activeSupplySymbol}
-          onMax={() => {
-            // Deduct gas buffer for native token
-            if (isSupplyNative) {
-              const maxNative = Math.max(Number(walletBalance) - 0.001, 0);
-              setSupplyAmount(maxNative.toString());
-            } else {
-              setSupplyAmount(walletBalance);
+        <CollapsibleContent className='flex flex-col gap-3'>
+          <AmountInput
+            value={supplyAmount}
+            onChange={setSupplyAmount}
+            symbol={activeSupplySymbol}
+            onMax={() => {
+              // Deduct gas buffer for native token
+              if (isSupplyNative) {
+                const maxNative = Math.max(Number(walletBalance) - 0.001, 0);
+                setSupplyAmount(maxNative.toString());
+              } else {
+                setSupplyAmount(walletBalance);
+              }
+            }}
+            maxAmount={walletBalance}
+            errorMessage={t('insufficientBalance')}
+            label={t('amount')}
+            usdValue={
+              supplyAmount && Number(supplyAmount) > 0
+                ? Number(supplyAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
+                : undefined
             }
-          }}
-          maxAmount={walletBalance}
-          errorMessage={t('insufficientBalance')}
-          label={t('amount')}
-        />
-        <div className='ml-auto flex flex-col items-end'>
-          <span className='flex items-center gap-1 text-muted-foreground text-xs'>
-            <Wallet size={14} className='inline' /> {t('balance')}: {walletBalanceDisplay}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info size={12} className='cursor-help text-muted-foreground' />
-              </TooltipTrigger>
-              <TooltipContent side='top' className='max-w-[240px]'>
-                {t('supplyBalanceTooltip')}
-              </TooltipContent>
-            </Tooltip>
-          </span>
-          {address && (
-            <span className='text-[11px] text-muted-foreground/60'>
-              ${' '}
-              {(
-                Number(walletBalance) *
-                Number(reserve.priceInMarketReferenceCurrency) *
-                Number(marketRefPriceInUsd)
-              ).toFixed(2)}
+          />
+          <div className='ml-auto flex flex-col items-end'>
+            <span className='flex items-center gap-1 text-muted-foreground text-xs'>
+              <Wallet size={14} className='inline' /> {t('balance')}: {walletBalanceDisplay}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info size={12} className='cursor-help text-muted-foreground' />
+                </TooltipTrigger>
+                <TooltipContent side='top' className='max-w-[240px]'>
+                  {t('supplyBalanceTooltip')}
+                </TooltipContent>
+              </Tooltip>
             </span>
+            {address && (
+              <span className='text-[11px] text-muted-foreground/60'>
+                ${' '}
+                {(
+                  Number(walletBalance) *
+                  Number(reserve.priceInMarketReferenceCurrency) *
+                  Number(marketRefPriceInUsd)
+                ).toFixed(2)}
+              </span>
+            )}
+          </div>
+
+          {(!reserve.isActive || reserve.isFrozen) && (
+            <Alert variant='destructive'>
+              <TriangleAlert className='size-4' />
+              <AlertDescription className='text-xs'>
+                {!reserve.isActive ? t('reserveInactive') : t('reserveFrozen')}
+              </AlertDescription>
+            </Alert>
           )}
-        </div>
 
-        {(!reserve.isActive || reserve.isFrozen) && (
-          <Alert variant='destructive'>
-            <TriangleAlert className='size-4' />
-            <AlertDescription className='text-xs'>
-              {!reserve.isActive ? t('reserveInactive') : t('reserveFrozen')}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className='flex gap-3'>
-          {!isSupplyNative && (
+          <div className='flex gap-3'>
+            {!isSupplyNative && (
+              <Button
+                variant='outline'
+                className='flex-1'
+                icon={
+                  erc20Supply.status === 'approving' || erc20Supply.status === 'confirming-approve' ? (
+                    <Loader2 size={14} className='animate-spin' />
+                  ) : (
+                    <Lock size={14} />
+                  )
+                }
+                onClick={handleApprove}
+                disabled={!canSupply || isSupplyBusy || !erc20Supply.needsApproval}
+              >
+                {erc20Supply.status === 'approving'
+                  ? t('signing')
+                  : erc20Supply.status === 'confirming-approve'
+                    ? t('confirming')
+                    : erc20Supply.needsApproval
+                      ? t('approve')
+                      : t('approved')}
+              </Button>
+            )}
             <Button
-              variant='outline'
               className='flex-1'
               icon={
-                erc20Supply.status === 'approving' || erc20Supply.status === 'confirming-approve' ? (
+                supplyStatus === 'supplying' ||
+                supplyStatus === 'confirming-supply' ||
+                supplyStatus === 'confirming' ? (
                   <Loader2 size={14} className='animate-spin' />
                 ) : (
-                  <Lock size={14} />
+                  <ArrowUpToLine size={14} />
                 )
               }
-              onClick={handleApprove}
-              disabled={!canSupply || isSupplyBusy || !erc20Supply.needsApproval}
+              onClick={handleSupply}
+              disabled={!canSupply || isSupplyBusy || (!isSupplyNative && erc20Supply.needsApproval)}
             >
-              {erc20Supply.status === 'approving'
+              {supplyStatus === 'supplying'
                 ? t('signing')
-                : erc20Supply.status === 'confirming-approve'
+                : supplyStatus === 'confirming-supply' || supplyStatus === 'confirming'
                   ? t('confirming')
-                  : erc20Supply.needsApproval
-                    ? t('approve')
-                    : t('approved')}
+                  : t('supply')}
             </Button>
+          </div>
+
+          {supplyStatus === 'success' && !successInfo && (
+            <p className='font-medium text-emerald-600 text-xs'>{t('supplyConfirmed')}</p>
           )}
-          <Button
-            className='flex-1'
-            icon={
-              supplyStatus === 'supplying' || supplyStatus === 'confirming-supply' || supplyStatus === 'confirming' ? (
-                <Loader2 size={14} className='animate-spin' />
-              ) : (
-                <ArrowDownToLine size={14} />
-              )
-            }
-            onClick={handleSupply}
-            disabled={!canSupply || isSupplyBusy || (!isSupplyNative && erc20Supply.needsApproval)}
-          >
-            {supplyStatus === 'supplying'
-              ? t('signing')
-              : supplyStatus === 'confirming-supply' || supplyStatus === 'confirming'
-                ? t('confirming')
-                : t('supply')}
-          </Button>
-        </div>
 
-        {supplyStatus === 'success' && !successInfo && (
-          <p className='font-medium text-emerald-600 text-xs'>{t('supplyConfirmed')}</p>
-        )}
-
-        {/* ── Success Dialog ── */}
-        <SupplySuccessDialog
-          open={!!successInfo && successInfo.type === 'supply'}
-          onClose={() => {
-            setSuccessInfo(null);
-            erc20Supply.reset();
-            nativeSupply.reset();
-          }}
-          amount={successInfo?.amount ?? '0'}
-          symbol={successInfo?.symbol ?? reserve.symbol}
-          reserveSymbol={reserve.symbol}
-          txHash={successInfo?.txHash}
-          explorerUrl={explorerUrl}
-          aTokenAddress={reserve.aTokenAddress as `0x${string}`}
-          decimals={decimals}
-        />
-
-        <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
-          {!isSupplyNative && (
-            <InfoRow
-              label={t('currentAllowance')}
-              value={
-                Number(erc20Supply.allowance) > 1e15
-                  ? `∞ ${reserve.symbol}`
-                  : `${formatTokenAmount(erc20Supply.allowance)} ${reserve.symbol}`
-              }
-            />
-          )}
-          <InfoRow label={t('supplyApy')} value={`${supplyApy}%`} valueColor='text-emerald-600' />
-          <InfoRow
-            label={t('collateralization')}
-            value={reserve.usageAsCollateralEnabled ? t('enabled') : t('disabled')}
-            valueColor={reserve.usageAsCollateralEnabled ? 'text-emerald-600' : 'text-muted-foreground'}
+          {/* ── Success Dialog ── */}
+          <SupplySuccessDialog
+            open={!!successInfo && successInfo.type === 'supply'}
+            onClose={() => {
+              setSuccessInfo(null);
+              erc20Supply.reset();
+              nativeSupply.reset();
+            }}
+            amount={successInfo?.amount ?? '0'}
+            symbol={successInfo?.symbol ?? reserve.symbol}
+            reserveSymbol={reserve.symbol}
+            txHash={successInfo?.txHash}
+            explorerUrl={explorerUrl}
+            aTokenAddress={reserve.aTokenAddress as `0x${string}`}
+            decimals={decimals}
           />
-          {user && Number(user.totalBorrowsMarketReferenceCurrency) > 0 && reserve.usageAsCollateralEnabled && (
+
+          <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
+            {!isSupplyNative && (
+              <InfoRow
+                label={t('currentAllowance')}
+                value={
+                  Number(erc20Supply.allowance) > 1e15
+                    ? `∞ ${reserve.symbol}`
+                    : `${formatTokenAmount(erc20Supply.allowance)} ${reserve.symbol}`
+                }
+              />
+            )}
+            <InfoRow label={t('supplyApy')} value={`${supplyApy}%`} valueColor='text-emerald-600' />
             <InfoRow
-              label={t('newHealthFactor')}
-              value={
-                <HealthFactorDisplay
-                  currentHf={Number(user.healthFactor).toFixed(2)}
-                  newHf={
-                    supplyAmount && Number(supplyAmount) > 0
-                      ? computeNewHealthFactor('supply', supplyAmount, reserve, user, marketRefPriceInUsd)
-                      : EM_DASH
-                  }
-                />
-              }
+              label={t('collateralization')}
+              value={reserve.usageAsCollateralEnabled ? t('enabled') : t('disabled')}
+              valueColor={reserve.usageAsCollateralEnabled ? 'text-emerald-600' : 'text-muted-foreground'}
             />
-          )}
-        </div>
-      </div>
+            {user && Number(user.totalBorrowsMarketReferenceCurrency) > 0 && reserve.usageAsCollateralEnabled && (
+              <InfoRow
+                label={t('newHealthFactor')}
+                value={
+                  <HealthFactorDisplay
+                    currentHf={Number(user.healthFactor).toFixed(2)}
+                    newHf={
+                      supplyAmount && Number(supplyAmount) > 0
+                        ? computeNewHealthFactor('supply', supplyAmount, reserve, user, marketRefPriceInUsd)
+                        : EM_DASH
+                    }
+                  />
+                }
+              />
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <Separator />
 
       {/* ── Withdraw section ── */}
-      <div className='flex flex-col gap-3'>
-        <div className='flex items-center justify-between'>
-          {hasNativeOption ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type='button'
-                  className='flex cursor-pointer items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary'
-                >
-                  <CircleMinus size={18} className='text-red-500' />
-                  {t('withdrawSymbol', { symbol: activeWithdrawSymbol })}
-                  <ChevronDown size={14} className='text-muted-foreground' />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='start'>
-                <DropdownMenuItem onClick={() => setWithdrawMode('wrapped')}>
-                  <TokenIcon symbol={reserve.symbol} size={16} />
-                  {t('withdrawSymbol', { symbol: reserve.symbol })}
-                  <span className='ml-auto text-muted-foreground text-xs'>{t('erc20')}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setWithdrawMode('native')}>
-                  <TokenIcon symbol={reserve.symbol} size={16} />
-                  {t('withdrawSymbol', { symbol: nativeSymbol })}
-                  <span className='ml-auto text-muted-foreground text-xs'>{t('native')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <h3 className='flex items-center gap-2 font-semibold text-foreground'>
-              <CircleMinus size={18} className='text-red-500' />
-              {t('withdrawSymbol', { symbol: reserve.symbol })}
-            </h3>
-          )}
-        </div>
+      <Collapsible
+        open={openSection === 'withdraw'}
+        onOpenChange={(open) => setOpenSection(open ? 'withdraw' : 'supply')}
+        className='flex flex-col gap-3'
+      >
+        <CollapsibleTrigger asChild>
+          <div className='flex cursor-pointer items-center justify-between'>
+            {hasNativeOption && openSection === 'withdraw' ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type='button'
+                      className='flex cursor-pointer items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary'
+                    >
+                      {t('withdrawSymbol', { symbol: activeWithdrawSymbol })}
+                      <ChevronDown size={14} className='text-muted-foreground' />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start'>
+                    <DropdownMenuItem onClick={() => setWithdrawMode('wrapped')}>
+                      <TokenIcon symbol={reserve.symbol} size={16} />
+                      {t('withdrawSymbol', { symbol: reserve.symbol })}
+                      <span className='ml-auto text-muted-foreground text-xs'>{t('erc20')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setWithdrawMode('native')}>
+                      <TokenIcon symbol={reserve.symbol} size={16} />
+                      {t('withdrawSymbol', { symbol: nativeSymbol })}
+                      <span className='ml-auto text-muted-foreground text-xs'>{t('native')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <h3 className='flex items-center gap-2 font-semibold text-foreground'>
+                {t('withdrawSymbol', { symbol: hasNativeOption ? activeWithdrawSymbol : reserve.symbol })}
+              </h3>
+            )}
+            <ChevronRight
+              size={16}
+              className='ml-auto text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-90'
+            />
+          </div>
+        </CollapsibleTrigger>
 
-        <AmountInput
-          value={withdrawAmount}
-          onChange={(v) => {
-            setWithdrawAmount(v);
-            setIsMaxWithdraw(false);
-            setIsMaxWithdrawSelected(false);
-          }}
-          symbol={activeWithdrawSymbol}
-          onMax={() => {
-            setWithdrawAmount(maxWithdrawAmount.toString());
-            setIsMaxWithdrawSelected(true);
-            // Only use MAX_UINT256 if user has no borrows (safe to withdraw all including interest)
-            const hasBorrows = user && Number(user.totalBorrowsMarketReferenceCurrency) > 0;
-            setIsMaxWithdraw(!hasBorrows && maxWithdrawAmount >= suppliedBalance);
-          }}
-          maxAmount={maxWithdrawAmount.toString()}
-          errorMessage={t('exceedsMaxWithdraw')}
-          label={t('withdrawalAmount')}
-          isMaxSelected={isMaxWithdrawSelected}
-        />
-        <span className='ml-auto text-muted-foreground text-xs'>
-          <Landmark size={14} className='inline' /> {t('suppliedAmount')}: {formatTokenAmount(suppliedBalance)}{' '}
-          {reserve.symbol}
-        </span>
+        <CollapsibleContent className='flex flex-col gap-3'>
+          <AmountInput
+            value={withdrawAmount}
+            onChange={(v) => {
+              setWithdrawAmount(v);
+              setIsMaxWithdraw(false);
+              setIsMaxWithdrawSelected(false);
+            }}
+            symbol={activeWithdrawSymbol}
+            onMax={() => {
+              setWithdrawAmount(maxWithdrawAmount.toString());
+              setIsMaxWithdrawSelected(true);
+              // Only use MAX_UINT256 if user has no borrows (safe to withdraw all including interest)
+              const hasBorrows = user && Number(user.totalBorrowsMarketReferenceCurrency) > 0;
+              setIsMaxWithdraw(!hasBorrows && maxWithdrawAmount >= suppliedBalance);
+            }}
+            maxAmount={maxWithdrawAmount.toString()}
+            errorMessage={t('exceedsMaxWithdraw')}
+            label={t('withdrawalAmount')}
+            isMaxSelected={isMaxWithdrawSelected}
+            usdValue={
+              withdrawAmount && Number(withdrawAmount) > 0
+                ? Number(withdrawAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
+                : undefined
+            }
+          />
+          <span className='ml-auto text-muted-foreground text-xs'>
+            <Landmark size={14} className='inline' /> {t('suppliedAmount')}: {formatTokenAmount(suppliedBalance)}{' '}
+            {reserve.symbol}
+          </span>
 
-        {withdrawBlockingError && (
-          <Alert variant='destructive'>
-            <TriangleAlert className='size-4' />
-            <AlertDescription className='text-xs'>{withdrawBlockingError}</AlertDescription>
-          </Alert>
-        )}
-
-        {isWithdrawHFDangerous && !withdrawBlockingError && (
-          <Alert variant='warning'>
-            <TriangleAlert className='size-4' />
-            <AlertDescription className='text-xs'>
-              {t('withdrawHfDanger', { hf: projectedWithdrawHF ?? '' })}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {user &&
-          Number(user.totalBorrowsMarketReferenceCurrency) > 0 &&
-          reserve.usageAsCollateralEnabled &&
-          !withdrawBlockingError &&
-          !isWithdrawHFDangerous && (
-            <Alert variant='warning'>
+          {withdrawBlockingError && (
+            <Alert variant='destructive'>
               <TriangleAlert className='size-4' />
-              <AlertDescription className='text-xs'>{t('withdrawHfWarning')}</AlertDescription>
+              <AlertDescription className='text-xs'>{withdrawBlockingError}</AlertDescription>
             </Alert>
           )}
 
-        <div className='flex gap-3'>
-          {isWithdrawNative && (
+          {isWithdrawHFDangerous && !withdrawBlockingError && (
+            <Alert variant='warning'>
+              <TriangleAlert className='size-4' />
+              <AlertDescription className='text-xs'>
+                {t('withdrawHfDanger', { hf: projectedWithdrawHF ?? '' })}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {user &&
+            Number(user.totalBorrowsMarketReferenceCurrency) > 0 &&
+            reserve.usageAsCollateralEnabled &&
+            !withdrawBlockingError &&
+            !isWithdrawHFDangerous && (
+              <Alert variant='warning'>
+                <TriangleAlert className='size-4' />
+                <AlertDescription className='text-xs'>{t('withdrawHfWarning')}</AlertDescription>
+              </Alert>
+            )}
+
+          <div className='flex gap-3'>
+            {isWithdrawNative && (
+              <Button
+                variant='outline'
+                className='flex-1'
+                icon={
+                  nativeWithdraw.status === 'approving' || nativeWithdraw.status === 'confirming-approve' ? (
+                    <Loader2 size={14} className='animate-spin' />
+                  ) : (
+                    <Lock size={14} />
+                  )
+                }
+                onClick={handleWithdrawApprove}
+                disabled={!canWithdraw || isWithdrawBusy || !nativeWithdraw.needsApproval}
+              >
+                {nativeWithdraw.status === 'approving'
+                  ? t('signing')
+                  : nativeWithdraw.status === 'confirming-approve'
+                    ? t('confirming')
+                    : nativeWithdraw.needsApproval
+                      ? t('approveAToken')
+                      : t('approved')}
+              </Button>
+            )}
             <Button
               variant='outline'
               className='flex-1'
               icon={
-                nativeWithdraw.status === 'approving' || nativeWithdraw.status === 'confirming-approve' ? (
+                withdrawStatus === 'withdrawing' || withdrawStatus === 'confirming' ? (
                   <Loader2 size={14} className='animate-spin' />
                 ) : (
-                  <Lock size={14} />
+                  <ArrowDownToLine size={14} />
                 )
               }
-              onClick={handleWithdrawApprove}
-              disabled={!canWithdraw || isWithdrawBusy || !nativeWithdraw.needsApproval}
+              onClick={handleWithdraw}
+              disabled={!canWithdraw || isWithdrawBusy || (isWithdrawNative && nativeWithdraw.needsApproval)}
             >
-              {nativeWithdraw.status === 'approving'
+              {withdrawStatus === 'withdrawing'
                 ? t('signing')
-                : nativeWithdraw.status === 'confirming-approve'
+                : withdrawStatus === 'confirming'
                   ? t('confirming')
-                  : nativeWithdraw.needsApproval
-                    ? t('approveAToken')
-                    : t('approved')}
+                  : t('withdraw')}
             </Button>
+          </div>
+
+          {withdrawStatus === 'success' && !successInfo && (
+            <p className='font-medium text-emerald-600 text-xs'>{t('withdrawConfirmed')}</p>
           )}
-          <Button
-            variant='outline'
-            className='flex-1'
-            icon={
-              withdrawStatus === 'withdrawing' || withdrawStatus === 'confirming' ? (
-                <Loader2 size={14} className='animate-spin' />
-              ) : (
-                <ArrowDownToLine size={14} />
-              )
-            }
-            onClick={handleWithdraw}
-            disabled={!canWithdraw || isWithdrawBusy || (isWithdrawNative && nativeWithdraw.needsApproval)}
-          >
-            {withdrawStatus === 'withdrawing'
-              ? t('signing')
-              : withdrawStatus === 'confirming'
-                ? t('confirming')
-                : t('withdraw')}
-          </Button>
-        </div>
 
-        {withdrawStatus === 'success' && !successInfo && (
-          <p className='font-medium text-emerald-600 text-xs'>{t('withdrawConfirmed')}</p>
-        )}
-
-        {/* ── Withdraw Success Dialog ── */}
-        <WithdrawSuccessDialog
-          open={!!successInfo && successInfo.type === 'withdraw'}
-          onClose={() => {
-            setSuccessInfo(null);
-            erc20Withdraw.reset();
-            nativeWithdraw.reset();
-          }}
-          amount={successInfo?.amount ?? '0'}
-          symbol={successInfo?.symbol ?? reserve.symbol}
-          txHash={successInfo?.txHash}
-          explorerUrl={explorerUrl}
-        />
-
-        <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
-          {isWithdrawNative && (
-            <InfoRow
-              label={t('currentAllowance')}
-              value={
-                Number(nativeWithdraw.allowance) > 1e15
-                  ? `∞ a${reserve.symbol}`
-                  : `${formatTokenAmount(nativeWithdraw.allowance)} a${reserve.symbol}`
-              }
-            />
-          )}
-          <InfoRow
-            label={t('remainingSupply')}
-            value={
-              withdrawAmount && Number(withdrawAmount) > 0 ? (
-                <span className='flex items-center gap-1'>
-                  <span>{formatTokenAmount(suppliedBalance, 2)}</span>
-                  <span className='text-muted-foreground'>→</span>
-                  <span className='font-semibold'>
-                    {formatTokenAmount(Math.max(suppliedBalance - Number(withdrawAmount), 0), 2)}
-                  </span>
-                  <span className='text-muted-foreground'>{reserve.symbol}</span>
-                </span>
-              ) : (
-                `${formatTokenAmount(suppliedBalance, 2)} ${reserve.symbol}`
-              )
-            }
+          {/* ── Withdraw Success Dialog ── */}
+          <WithdrawSuccessDialog
+            open={!!successInfo && successInfo.type === 'withdraw'}
+            onClose={() => {
+              setSuccessInfo(null);
+              erc20Withdraw.reset();
+              nativeWithdraw.reset();
+            }}
+            amount={successInfo?.amount ?? '0'}
+            symbol={successInfo?.symbol ?? reserve.symbol}
+            txHash={successInfo?.txHash}
+            explorerUrl={explorerUrl}
           />
-          {user && Number(user.totalBorrowsMarketReferenceCurrency) > 0 && reserve.usageAsCollateralEnabled && (
+
+          <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
+            {isWithdrawNative && (
+              <InfoRow
+                label={t('currentAllowance')}
+                value={
+                  Number(nativeWithdraw.allowance) > 1e15
+                    ? `∞ a${reserve.symbol}`
+                    : `${formatTokenAmount(nativeWithdraw.allowance)} a${reserve.symbol}`
+                }
+              />
+            )}
             <InfoRow
-              label={t('newHealthFactor')}
+              label={t('remainingSupply')}
               value={
-                <HealthFactorDisplay
-                  currentHf={Number(user.healthFactor).toFixed(2)}
-                  newHf={
-                    withdrawAmount && Number(withdrawAmount) > 0
-                      ? computeNewHealthFactor('withdraw', withdrawAmount, reserve, user, marketRefPriceInUsd)
-                      : EM_DASH
-                  }
-                />
+                withdrawAmount && Number(withdrawAmount) > 0 ? (
+                  <span className='flex items-center gap-1'>
+                    <span>{formatTokenAmount(suppliedBalance, 2)}</span>
+                    <span className='text-muted-foreground'>→</span>
+                    <span className='font-semibold'>
+                      {formatTokenAmount(Math.max(suppliedBalance - Number(withdrawAmount), 0), 2)}
+                    </span>
+                    <span className='text-muted-foreground'>{reserve.symbol}</span>
+                  </span>
+                ) : (
+                  `${formatTokenAmount(suppliedBalance, 2)} ${reserve.symbol}`
+                )
               }
             />
-          )}
-        </div>
-      </div>
+            {user && Number(user.totalBorrowsMarketReferenceCurrency) > 0 && reserve.usageAsCollateralEnabled && (
+              <InfoRow
+                label={t('newHealthFactor')}
+                value={
+                  <HealthFactorDisplay
+                    currentHf={Number(user.healthFactor).toFixed(2)}
+                    newHf={
+                      withdrawAmount && Number(withdrawAmount) > 0
+                        ? computeNewHealthFactor('withdraw', withdrawAmount, reserve, user, marketRefPriceInUsd)
+                        : EM_DASH
+                    }
+                  />
+                }
+              />
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

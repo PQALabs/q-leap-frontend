@@ -10,6 +10,16 @@ import { useProtocolDataContext } from '@/providers/protocol-data-provider';
 
 export type WithdrawTxStatus = 'idle' | 'withdrawing' | 'confirming' | 'success' | 'error';
 
+export interface WithdrawToastLabels {
+  withdrawConfirmed?: string;
+  withdrawConfirmedDesc?: string;
+  withdrawFailed?: string;
+  withdrawReverted?: string;
+  waitingWithdrawSignature?: string;
+  confirmingWithdraw?: string;
+  txFailed?: string;
+}
+
 interface UseWithdrawOptions {
   /** The underlying ERC20 token address (reserve.underlyingAsset) */
   tokenAddress: `0x${string}`;
@@ -23,6 +33,8 @@ interface UseWithdrawOptions {
   isMax?: boolean;
   /** Callback after successful withdrawal */
   onSuccess?: () => void;
+  /** Internationalized toast labels */
+  toastLabels?: WithdrawToastLabels;
 }
 
 /**
@@ -31,7 +43,15 @@ interface UseWithdrawOptions {
  * No approval needed — LendingPool burns aTokens from msg.sender directly.
  * Pass isMax=true to withdraw entire balance (principal + interest).
  */
-export function useWithdraw({ tokenAddress, decimals, userAddress, amount, isMax, onSuccess }: UseWithdrawOptions) {
+export function useWithdraw({
+  tokenAddress,
+  decimals,
+  userAddress,
+  amount,
+  isMax,
+  onSuccess,
+  toastLabels: l,
+}: UseWithdrawOptions) {
   const [status, setStatus] = useState<WithdrawTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -62,8 +82,8 @@ export function useWithdraw({ tokenAddress, decimals, userAddress, amount, isMax
       handledTx.current = txHash;
       setStatus('success');
       toast.dismiss('withdraw');
-      toast.success('Withdrawal confirmed', {
-        description: `Successfully withdrew ${isMax ? 'all' : amount} tokens.`,
+      toast.success(l?.withdrawConfirmed ?? 'Withdrawal confirmed', {
+        description: l?.withdrawConfirmedDesc ?? `Successfully withdrew ${isMax ? 'all' : amount} tokens.`,
       });
       onSuccess?.();
     }
@@ -72,7 +92,7 @@ export function useWithdraw({ tokenAddress, decimals, userAddress, amount, isMax
   // Update loading toast when confirming
   useEffect(() => {
     if (isConfirming) {
-      toast.loading('Confirming withdrawal on-chain...', { id: 'withdraw' });
+      toast.loading(l?.confirmingWithdraw ?? 'Confirming withdrawal on-chain...', { id: 'withdraw' });
     }
   }, [isConfirming]);
 
@@ -81,8 +101,8 @@ export function useWithdraw({ tokenAddress, decimals, userAddress, amount, isMax
     if (isReceiptError && txHash) {
       setStatus('error');
       toast.dismiss('withdraw');
-      toast.error('Withdrawal transaction reverted', {
-        description: receiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.withdrawReverted ?? 'Withdrawal transaction reverted', {
+        description: receiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isReceiptError, txHash, receiptError]);
@@ -92,7 +112,7 @@ export function useWithdraw({ tokenAddress, decimals, userAddress, amount, isMax
     if (!userAddress || !amount || Number(amount) <= 0) return;
     setStatus('withdrawing');
     resetWrite();
-    toast.loading('Waiting for withdrawal signature...', { id: 'withdraw' });
+    toast.loading(l?.waitingWithdrawSignature ?? 'Waiting for withdrawal signature...', { id: 'withdraw' });
 
     // Use MAX_UINT256 for max withdraw (principal + interest)
     const withdrawAmount = isMax ? maxUint256 : parseUnits(amount, decimals);
@@ -106,7 +126,7 @@ export function useWithdraw({ tokenAddress, decimals, userAddress, amount, isMax
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('withdraw');
-          toast.error('Withdrawal failed', { description: getEvmMessage(error) });
+          toast.error(l?.withdrawFailed ?? 'Withdrawal failed', { description: getEvmMessage(error) });
         },
       }
     );

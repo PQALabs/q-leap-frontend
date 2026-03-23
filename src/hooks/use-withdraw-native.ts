@@ -17,6 +17,21 @@ export type WithdrawNativeTxStatus =
   | 'success'
   | 'error';
 
+export interface WithdrawNativeToastLabels {
+  approvalConfirmed?: string;
+  approvalConfirmedDesc?: string;
+  approvalFailed?: string;
+  waitingApprovalSignature?: string;
+  confirmingApproval?: string;
+  withdrawConfirmed?: string;
+  withdrawConfirmedDesc?: string;
+  withdrawFailed?: string;
+  withdrawReverted?: string;
+  waitingWithdrawSignature?: string;
+  confirmingWithdraw?: string;
+  txFailed?: string;
+}
+
 interface UseWithdrawNativeOptions {
   /** aToken address for the wrapped native asset (aWQDAY) */
   aTokenAddress: `0x${string}`;
@@ -28,6 +43,8 @@ interface UseWithdrawNativeOptions {
   isMax?: boolean;
   /** Callback after successful withdrawal */
   onSuccess?: () => void;
+  /** Internationalized toast labels */
+  toastLabels?: WithdrawNativeToastLabels;
 }
 
 /**
@@ -36,7 +53,14 @@ interface UseWithdrawNativeOptions {
  * Flow: approve aToken (aWQDAY) to WETHGateway → gateway.withdrawETH(pool, amount, to)
  * Approval IS required because the gateway needs to transferFrom the aTokens.
  */
-export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, onSuccess }: UseWithdrawNativeOptions) {
+export function useWithdrawNative({
+  aTokenAddress,
+  userAddress,
+  amount,
+  isMax,
+  onSuccess,
+  toastLabels: l,
+}: UseWithdrawNativeOptions) {
   const [status, setStatus] = useState<WithdrawNativeTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -95,8 +119,8 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
       refetchAllowance();
       setStatus('idle');
       toast.dismiss('withdraw-native-approve');
-      toast.success('Approval confirmed', {
-        description: 'aToken spending approved for WETHGateway. You can now withdraw.',
+      toast.success(l?.approvalConfirmed ?? 'Approval confirmed', {
+        description: l?.approvalConfirmedDesc ?? 'aToken spending approved for WETHGateway. You can now withdraw.',
       });
     }
   }, [isApproveConfirmed, approveTxHash, refetchAllowance]);
@@ -106,8 +130,8 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
       handledWithdrawTx.current = withdrawTxHash;
       setStatus('success');
       toast.dismiss('withdraw-native');
-      toast.success('Withdrawal confirmed', {
-        description: `Successfully withdrew ${isMax ? 'all' : amount} QDAY.`,
+      toast.success(l?.withdrawConfirmed ?? 'Withdrawal confirmed', {
+        description: l?.withdrawConfirmedDesc ?? `Successfully withdrew ${isMax ? 'all' : amount} QDAY.`,
       });
       refetchAllowance();
       onSuccess?.();
@@ -117,13 +141,13 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
   // Loading toasts
   useEffect(() => {
     if (isApproveConfirming) {
-      toast.loading('Confirming approval on-chain...', { id: 'withdraw-native-approve' });
+      toast.loading(l?.confirmingApproval ?? 'Confirming approval on-chain...', { id: 'withdraw-native-approve' });
     }
   }, [isApproveConfirming]);
 
   useEffect(() => {
     if (isWithdrawConfirming) {
-      toast.loading('Confirming withdrawal on-chain...', { id: 'withdraw-native' });
+      toast.loading(l?.confirmingWithdraw ?? 'Confirming withdrawal on-chain...', { id: 'withdraw-native' });
     }
   }, [isWithdrawConfirming]);
 
@@ -132,8 +156,8 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
     if (isWithdrawReceiptError && withdrawTxHash) {
       setStatus('error');
       toast.dismiss('withdraw-native');
-      toast.error('Withdrawal transaction reverted on-chain', {
-        description: withdrawReceiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.withdrawReverted ?? 'Withdrawal transaction reverted on-chain', {
+        description: withdrawReceiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isWithdrawReceiptError, withdrawTxHash, withdrawReceiptError]);
@@ -143,7 +167,9 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
     if (!userAddress || !wethGatewayAddress) return;
     setStatus('approving');
     resetApprove();
-    toast.loading('Waiting for approval signature...', { id: 'withdraw-native-approve' });
+    toast.loading(l?.waitingApprovalSignature ?? 'Waiting for approval signature...', {
+      id: 'withdraw-native-approve',
+    });
 
     // Approve exact amount (not unlimited)
     const approveAmount = isMax ? maxUint256 : parseEther(amount);
@@ -156,7 +182,7 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('withdraw-native-approve');
-          toast.error('Approval failed', { description: getEvmMessage(error) });
+          toast.error(l?.approvalFailed ?? 'Approval failed', { description: getEvmMessage(error) });
         },
       }
     );
@@ -166,7 +192,7 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
     if (!userAddress || !amount || Number(amount) <= 0 || !wethGatewayAddress) return;
     setStatus('withdrawing');
     resetWithdraw();
-    toast.loading('Waiting for withdrawal signature...', { id: 'withdraw-native' });
+    toast.loading(l?.waitingWithdrawSignature ?? 'Waiting for withdrawal signature...', { id: 'withdraw-native' });
 
     const withdrawAmount = isMax ? maxUint256 : parseEther(amount);
 
@@ -179,7 +205,7 @@ export function useWithdrawNative({ aTokenAddress, userAddress, amount, isMax, o
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('withdraw-native');
-          toast.error('Withdrawal failed', { description: getEvmMessage(error) });
+          toast.error(l?.withdrawFailed ?? 'Withdrawal failed', { description: getEvmMessage(error) });
         },
       }
     );
