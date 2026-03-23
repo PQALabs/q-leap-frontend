@@ -1,13 +1,23 @@
 'use client';
 
-import { ArrowLeft, Check, Copy, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { useWalletClient } from 'wagmi';
 import { CompactNumber } from '@/components/compact-number';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { getDisplayName } from '@/config/token-display';
 import { getTokenLogoUrl } from '@/config/token-logos';
+import { getEvmMessage } from '@/lib/get-evm-message';
 import { cn } from '@/lib/utils';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
@@ -17,24 +27,108 @@ import { ReserveStatusConfig } from './components/ReserveStatusConfig';
 import { UserPositionSummary } from './components/UserPositionSummary';
 
 // ---------------------------------------------------------------------------
-// Copy button
+// Token logo helper (reused in dropdown items)
 // ---------------------------------------------------------------------------
-function CopyButton({ text, title }: { text: string; title: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+function TokenIcon({ symbol, size = 24 }: { symbol: string; size?: number }) {
+  const url = getTokenLogoUrl(symbol);
+  if (url) {
+    return <img src={url} alt={symbol} width={size} height={size} className='shrink-0 rounded-full object-cover' />;
+  }
   return (
-    <button
-      type='button'
-      onClick={handleCopy}
-      className='inline-flex cursor-pointer items-center text-muted-foreground/60 transition-colors hover:text-foreground'
-      title={title}
+    <div
+      className={cn('flex shrink-0 items-center justify-center rounded-full font-bold text-white', getIconBg(symbol))}
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
     >
-      {copied ? <Check size={14} className='text-emerald-500' /> : <Copy size={14} />}
-    </button>
+      {symbol.charAt(0)}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add to Wallet dropdown button
+// ---------------------------------------------------------------------------
+function AddToWalletButton({
+  underlyingAsset,
+  underlyingSymbol,
+  underlyingDecimals,
+  aTokenAddress,
+  aTokenSymbol,
+}: {
+  underlyingAsset: string;
+  underlyingSymbol: string;
+  underlyingDecimals: number;
+  aTokenAddress: string;
+  aTokenSymbol: string;
+}) {
+  const t = useTranslations('modules.market.ReserveOverview');
+  const [isAdding, setIsAdding] = useState(false);
+  const { data: walletClient } = useWalletClient();
+
+  const addToken = async (address: string, symbol: string, decimals: number) => {
+    const provider = walletClient?.transport as any;
+    if (!provider?.request) {
+      toast.error(t('noConnectedWallet'));
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const wasAdded = await provider.request({
+        method: 'wallet_watchAsset',
+        params: {
+          type: 'ERC20',
+          options: {
+            address,
+            symbol: symbol.slice(0, 11),
+            decimals,
+          },
+        },
+      });
+      if (wasAdded) {
+        toast.success(t('tokenAddedToWallet', { symbol }));
+      }
+    } catch (error) {
+      console.error('Failed to add token to wallet:', error);
+      toast.error(t('failedAddToken'), { description: getEvmMessage(error) });
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type='button'
+          disabled={isAdding}
+          title={t('addTokenToWallet')}
+          className='inline-flex size-6 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/30 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:opacity-50'
+        >
+          {isAdding ? <Loader2 size={12} className='animate-spin' /> : <Wallet size={12} />}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='start' className='w-52'>
+        <DropdownMenuLabel className='text-muted-foreground text-xs'>{t('underlyingToken')}</DropdownMenuLabel>
+        <button
+          type='button'
+          className='flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent'
+          onClick={() => addToken(underlyingAsset, underlyingSymbol, underlyingDecimals)}
+        >
+          <TokenIcon symbol={underlyingSymbol} size={24} />
+          <span className='font-medium'>{underlyingSymbol}</span>
+        </button>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className='text-muted-foreground text-xs'>{t('aaveAToken')}</DropdownMenuLabel>
+        <button
+          type='button'
+          className='flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent'
+          onClick={() => addToken(aTokenAddress, aTokenSymbol, underlyingDecimals)}
+        >
+          <TokenIcon symbol={underlyingSymbol} size={24} />
+          <span className='font-medium'>{aTokenSymbol}</span>
+        </button>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -114,7 +208,6 @@ export function ReserveOverview() {
   }
 
   const logoUrl = getTokenLogoUrl(reserve.symbol);
-  const tokenExplorerUrl = explorerLink ? `${explorerLink}/address/${reserve.underlyingAsset}` : undefined;
 
   return (
     <main className='mx-auto flex w-full max-w-7xl flex-col gap-6 pt-0 pb-8 md:pt-8'>
@@ -153,17 +246,61 @@ export function ReserveOverview() {
             <span className='text-muted-foreground text-sm'>{reserve.symbol}</span>
             <div className='flex items-center gap-2'>
               <h1 className='font-bold text-foreground text-xl'>{getDisplayName(reserve.symbol)}</h1>
-              {tokenExplorerUrl && (
-                <a
-                  href={tokenExplorerUrl}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-muted-foreground transition-colors hover:text-foreground'
-                >
-                  <ExternalLink size={14} />
-                </a>
+              {explorerLink && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type='button'
+                      title={t('viewOnExplorer')}
+                      className='inline-flex size-6 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/30 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground'
+                    >
+                      <ExternalLink size={12} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start' className='w-56'>
+                    <DropdownMenuLabel className='text-muted-foreground text-xs'>{t('contracts')}</DropdownMenuLabel>
+                    <a
+                      href={`${explorerLink}/address/${reserve.underlyingAsset}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent'
+                    >
+                      <TokenIcon symbol={reserve.symbol} size={24} />
+                      <span className='font-medium'>{reserve.symbol}</span>
+                      <span className='ml-auto text-muted-foreground text-xs'>{t('token')}</span>
+                    </a>
+                    <DropdownMenuSeparator />
+                    <a
+                      href={`${explorerLink}/address/${reserve.aTokenAddress}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent'
+                    >
+                      <TokenIcon symbol={reserve.symbol} size={24} />
+                      <span className='font-medium'>a{reserve.symbol}</span>
+                      <span className='ml-auto text-muted-foreground text-xs'>{t('aTokenLabel')}</span>
+                    </a>
+                    <DropdownMenuSeparator />
+                    <a
+                      href={`${explorerLink}/address/${reserve.variableDebtTokenAddress}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent'
+                    >
+                      <TokenIcon symbol={reserve.symbol} size={24} />
+                      <span className='font-medium'>vDebt{reserve.symbol}</span>
+                      <span className='ml-auto text-muted-foreground text-xs'>{t('debtToken')}</span>
+                    </a>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
-              <CopyButton text={reserve.underlyingAsset} title='Copy address' />
+              <AddToWalletButton
+                underlyingAsset={reserve.underlyingAsset}
+                underlyingSymbol={reserve.symbol}
+                underlyingDecimals={reserve.decimals}
+                aTokenAddress={reserve.aTokenAddress}
+                aTokenSymbol={`a${reserve.symbol}`}
+              />
             </div>
           </div>
         </div>

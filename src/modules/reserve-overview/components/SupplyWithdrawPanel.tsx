@@ -5,6 +5,7 @@ import {
   ChevronDown,
   CircleMinus,
   CirclePlus,
+  Info,
   Landmark,
   Loader2,
   Lock,
@@ -25,6 +26,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { EM_DASH } from '@/constants/common';
 import { useSupply } from '@/hooks/use-supply';
 import { useSupplyNative } from '@/hooks/use-supply-native';
 import { useWithdraw } from '@/hooks/use-withdraw';
@@ -32,6 +35,7 @@ import { useWithdrawNative } from '@/hooks/use-withdraw-native';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
+import { formatTokenAmount } from '@/utils/format';
 import { AmountInput } from './AmountInput';
 import { HealthFactorDisplay, InfoRow, TokenIcon } from './ReserveActionHelpers';
 import { SupplySuccessDialog } from './SupplySuccessDialog';
@@ -55,6 +59,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
   const [supplyAmount, setSupplyAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isMaxWithdraw, setIsMaxWithdraw] = useState(false);
+  const [isMaxWithdrawSelected, setIsMaxWithdrawSelected] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{
     amount: string;
     symbol: string;
@@ -175,6 +180,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
       });
       setWithdrawAmount('');
       setIsMaxWithdraw(false);
+      setIsMaxWithdrawSelected(false);
     }
   }, [withdrawStatus, withdrawAmount, activeWithdrawSymbol, withdrawTxHash]);
 
@@ -186,9 +192,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
 
   // Pick the right balance based on supply mode
   const walletBalance = isSupplyNative ? nativeBalance : erc20Balance;
-  const walletBalanceDisplay = address
-    ? `${Number(walletBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${activeSupplySymbol}`
-    : '—';
+  const walletBalanceDisplay = address ? `${formatTokenAmount(walletBalance)} ${activeSupplySymbol}` : '—';
 
   const supplyApy = (Number(reserve.supplyAPY) * 100).toFixed(2);
 
@@ -258,11 +262,11 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
     return null;
   }, [withdrawAmount, suppliedBalance, reserve.availableLiquidity, user, projectedWithdrawHF]);
 
-  // ── HF danger warning (HF ≤ 1.05, per business logic doc §6) ──
+  // ── HF danger warning (HF < 1.5, per business logic doc §6) ──
   const isWithdrawHFDangerous = useMemo(() => {
     if (!user || Number(user.totalBorrowsMarketReferenceCurrency) === 0) return false;
     if (!projectedWithdrawHF || projectedWithdrawHF === '∞') return false;
-    return Number(projectedWithdrawHF) <= 1.05;
+    return Number(projectedWithdrawHF) < 1.5;
   }, [user, projectedWithdrawHF]);
 
   const canSupply =
@@ -329,9 +333,29 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
           errorMessage={t('insufficientBalance')}
           label={t('amount')}
         />
-        <span className='ml-auto text-muted-foreground text-xs'>
-          <Wallet size={14} className='inline' /> {t('balance')}: {walletBalanceDisplay}
-        </span>
+        <div className='ml-auto flex flex-col items-end'>
+          <span className='flex items-center gap-1 text-muted-foreground text-xs'>
+            <Wallet size={14} className='inline' /> {t('balance')}: {walletBalanceDisplay}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info size={12} className='cursor-help text-muted-foreground' />
+              </TooltipTrigger>
+              <TooltipContent side='top' className='max-w-[240px]'>
+                {t('supplyBalanceTooltip')}
+              </TooltipContent>
+            </Tooltip>
+          </span>
+          {address && (
+            <span className='text-[11px] text-muted-foreground/60'>
+              ${' '}
+              {(
+                Number(walletBalance) *
+                Number(reserve.priceInMarketReferenceCurrency) *
+                Number(marketRefPriceInUsd)
+              ).toFixed(2)}
+            </span>
+          )}
+        </div>
 
         {(!reserve.isActive || reserve.isFrozen) && (
           <Alert variant='destructive'>
@@ -400,6 +424,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
           }}
           amount={successInfo?.amount ?? '0'}
           symbol={successInfo?.symbol ?? reserve.symbol}
+          reserveSymbol={reserve.symbol}
           txHash={successInfo?.txHash}
           explorerUrl={explorerUrl}
           aTokenAddress={reserve.aTokenAddress as `0x${string}`}
@@ -413,7 +438,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
               value={
                 Number(erc20Supply.allowance) > 1e15
                   ? `∞ ${reserve.symbol}`
-                  : `${Number(erc20Supply.allowance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${reserve.symbol}`
+                  : `${formatTokenAmount(erc20Supply.allowance)} ${reserve.symbol}`
               }
             />
           )}
@@ -429,7 +454,11 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
               value={
                 <HealthFactorDisplay
                   currentHf={Number(user.healthFactor).toFixed(2)}
-                  newHf={computeNewHealthFactor('supply', supplyAmount, reserve, user, marketRefPriceInUsd)}
+                  newHf={
+                    supplyAmount && Number(supplyAmount) > 0
+                      ? computeNewHealthFactor('supply', supplyAmount, reserve, user, marketRefPriceInUsd)
+                      : EM_DASH
+                  }
                 />
               }
             />
@@ -480,10 +509,12 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
           onChange={(v) => {
             setWithdrawAmount(v);
             setIsMaxWithdraw(false);
+            setIsMaxWithdrawSelected(false);
           }}
           symbol={activeWithdrawSymbol}
           onMax={() => {
             setWithdrawAmount(maxWithdrawAmount.toString());
+            setIsMaxWithdrawSelected(true);
             // Only use MAX_UINT256 if user has no borrows (safe to withdraw all including interest)
             const hasBorrows = user && Number(user.totalBorrowsMarketReferenceCurrency) > 0;
             setIsMaxWithdraw(!hasBorrows && maxWithdrawAmount >= suppliedBalance);
@@ -491,10 +522,11 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
           maxAmount={maxWithdrawAmount.toString()}
           errorMessage={t('exceedsMaxWithdraw')}
           label={t('withdrawalAmount')}
+          isMaxSelected={isMaxWithdrawSelected}
         />
         <span className='ml-auto text-muted-foreground text-xs'>
-          <Landmark size={14} className='inline' /> {t('suppliedAmount')}:{' '}
-          {suppliedBalance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {reserve.symbol}
+          <Landmark size={14} className='inline' /> {t('suppliedAmount')}: {formatTokenAmount(suppliedBalance)}{' '}
+          {reserve.symbol}
         </span>
 
         {withdrawBlockingError && (
@@ -594,26 +626,24 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
               value={
                 Number(nativeWithdraw.allowance) > 1e15
                   ? `∞ a${reserve.symbol}`
-                  : `${Number(nativeWithdraw.allowance).toLocaleString(undefined, { maximumFractionDigits: 6 })} a${reserve.symbol}`
+                  : `${formatTokenAmount(nativeWithdraw.allowance)} a${reserve.symbol}`
               }
             />
           )}
           <InfoRow
-            label={t('remainingBalance')}
+            label={t('remainingSupply')}
             value={
               withdrawAmount && Number(withdrawAmount) > 0 ? (
                 <span className='flex items-center gap-1'>
-                  <span>{suppliedBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                  <span>{formatTokenAmount(suppliedBalance, 2)}</span>
                   <span className='text-muted-foreground'>→</span>
                   <span className='font-semibold'>
-                    {Math.max(suppliedBalance - Number(withdrawAmount), 0).toLocaleString(undefined, {
-                      maximumFractionDigits: 2,
-                    })}
+                    {formatTokenAmount(Math.max(suppliedBalance - Number(withdrawAmount), 0), 2)}
                   </span>
                   <span className='text-muted-foreground'>{reserve.symbol}</span>
                 </span>
               ) : (
-                `${suppliedBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${reserve.symbol}`
+                `${formatTokenAmount(suppliedBalance, 2)} ${reserve.symbol}`
               )
             }
           />
@@ -623,7 +653,11 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
               value={
                 <HealthFactorDisplay
                   currentHf={Number(user.healthFactor).toFixed(2)}
-                  newHf={computeNewHealthFactor('withdraw', withdrawAmount, reserve, user, marketRefPriceInUsd)}
+                  newHf={
+                    withdrawAmount && Number(withdrawAmount) > 0
+                      ? computeNewHealthFactor('withdraw', withdrawAmount, reserve, user, marketRefPriceInUsd)
+                      : EM_DASH
+                  }
                 />
               }
             />

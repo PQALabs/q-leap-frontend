@@ -4,7 +4,8 @@
  */
 export function formatHfValue(hf: string | number): string {
   const n = typeof hf === 'string' ? Number(hf) : hf;
-  if (Number.isNaN(n) || n < 0) return '∞';
+  if (Number.isNaN(n)) return hf.toString();
+  if (n < 0) return '∞';
   if (n > 10) return '∞';
   return typeof hf === 'number' ? hf.toFixed(2) : hf;
 }
@@ -15,6 +16,7 @@ export function getHfColor(hf: string): string {
   const n = Number(hf);
   if (n >= 1.5) return 'text-emerald-600';
   if (n >= 1.1) return 'text-amber-500';
+  if (Number.isNaN(n)) return 'text-gray-500';
   return 'text-red-500';
 }
 

@@ -37,16 +37,16 @@ function Providers({ children }: ProvidersProps) {
   return (
     <WagmiProvider config={config}>
       <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
-        <QueryClientProvider client={queryClient}>
-          <ProtocolDataProvider>
-            <StaticPoolDataProvider errorPage={<PoolDataError />}>
-              <DynamicPoolDataProvider>
-                <TooltipProvider>{isMounted ? children : <></>}</TooltipProvider>
-              </DynamicPoolDataProvider>
-            </StaticPoolDataProvider>
-          </ProtocolDataProvider>
-          <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
-        </QueryClientProvider>
+        <TooltipProvider>
+          <QueryClientProvider client={queryClient}>
+            <ProtocolDataProvider>
+              <StaticPoolDataProvider errorPage={<PoolDataError />}>
+                <DynamicPoolDataProvider>{isMounted ? children : <></>}</DynamicPoolDataProvider>
+              </StaticPoolDataProvider>
+            </ProtocolDataProvider>
+            <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
+          </QueryClientProvider>
+        </TooltipProvider>
       </ThemeProvider>
     </WagmiProvider>
   );

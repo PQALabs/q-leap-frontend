@@ -4,6 +4,7 @@ import { CheckCircle2, ExternalLink, Loader2, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useWalletClient } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { getTokenLogoUrl } from '@/config/token-logos';
@@ -14,8 +15,10 @@ interface SupplySuccessDialogProps {
   onClose: () => void;
   /** Human-readable amount supplied */
   amount: string;
-  /** Token symbol, e.g. "USDC" */
+  /** Token symbol, e.g. "USDC" or "QDAY" (for display) */
   symbol: string;
+  /** The ERC20 reserve symbol (e.g. "WQDAY"), used for aToken name in wallet. Falls back to symbol. */
+  reserveSymbol?: string;
   /** Transaction hash */
   txHash?: `0x${string}`;
   /** Block explorer base URL, e.g. "https://explorer.qday.info" */
@@ -31,6 +34,7 @@ export function SupplySuccessDialog({
   onClose,
   amount,
   symbol,
+  reserveSymbol,
   txHash,
   explorerUrl,
   aTokenAddress,
@@ -39,6 +43,7 @@ export function SupplySuccessDialog({
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const t = useTranslations('modules.market.SuccessDialog');
+  const { data: walletClient } = useWalletClient();
 
   const logoUrl = getTokenLogoUrl(symbol);
   const formattedAmount = Number(amount).toLocaleString(undefined, {
@@ -47,19 +52,28 @@ export function SupplySuccessDialog({
   });
 
   const txUrl = explorerUrl && txHash ? `${explorerUrl}/tx/${txHash}` : undefined;
-  const aTokenSymbol = `a${symbol}`;
+  const aTokenSymbol = `a${reserveSymbol ?? symbol}`;
 
   const handleAddToWallet = async () => {
-    if (!aTokenAddress || typeof window === 'undefined' || !(window as any).ethereum) return;
+    if (!aTokenAddress) return;
+
+    // Use the connected wallet's provider (from wagmi) instead of window.ethereum,
+    // which may point to a different wallet extension.
+    const provider = walletClient?.transport as any;
+    if (!provider?.request) {
+      toast.error(t('noConnectedWallet'));
+      return;
+    }
+
     setIsAdding(true);
     try {
-      const wasAdded = await (window as any).ethereum.request({
+      const wasAdded = await provider.request({
         method: 'wallet_watchAsset',
         params: {
           type: 'ERC20',
           options: {
             address: aTokenAddress,
-            symbol: aTokenSymbol.slice(0, 11), // MetaMask limits symbol to 11 chars
+            symbol: aTokenSymbol.slice(0, 11),
             decimals,
           },
         },

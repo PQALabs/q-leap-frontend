@@ -23,6 +23,8 @@ interface AmountInputProps {
   label: string;
   maxAmount?: string;
   errorMessage?: string;
+  /** When true, suppress the "exceeds max" validation (user explicitly selected MAX) */
+  isMaxSelected?: boolean;
 }
 
 export function AmountInput({
@@ -33,10 +35,11 @@ export function AmountInput({
   label,
   maxAmount,
   errorMessage = 'Amount exceeds limit',
+  isMaxSelected = false,
 }: AmountInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const cursorRef = useRef<number | null>(null);
-  const exceedsMax = maxAmount !== undefined && value !== '' && Number(value) > Number(maxAmount);
+  const exceedsMax = !isMaxSelected && maxAmount !== undefined && value !== '' && Number(value) > Number(maxAmount);
 
   const displayValue = formatWithCommas(value);
 

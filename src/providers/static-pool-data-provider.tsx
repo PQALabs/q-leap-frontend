@@ -8,7 +8,13 @@ import { type UserReserveDataExtended, usePoolDataStore } from '@/stores/use-poo
 import { assetsOrder } from '@/ui-config/assets';
 
 const API_ETH_MOCK_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-
+/**
+ * Number of decimals used by the QDAY/USD Chainlink aggregator.
+ * The on-chain aggregator at 0xfD26034797B16A26AE5bf78dA013b6ad81F5f324 uses 6 decimals,
+ * meaning a raw value of 4299000000 = $4,299.00.
+ * This is used to normalize `marketReferenceCurrencyPriceInUsd` from the UiPoolDataProviderV2.
+ */
+const QDAY_AGGREGATOR_DECIMALS = 6;
 /**
  * removes the marketPrefix from a symbol
  * @param symbol
@@ -122,7 +128,7 @@ export function StaticPoolDataProvider({ children, errorPage }: StaticPoolDataPr
       rawUserReserves: userReservesWithFixedUnderlying,
       rawReservesWithBase: reserves ? reserves : [],
       rawUserReservesWithBase: userReserves,
-      marketRefPriceInUsd: normalize(marketRefPriceInUsd, 8),
+      marketRefPriceInUsd: normalize(marketRefPriceInUsd, QDAY_AGGREGATOR_DECIMALS),
       marketRefCurrencyDecimals,
       isUserHasDeposits,
     });

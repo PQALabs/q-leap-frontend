@@ -104,7 +104,7 @@ interface MarketSummaryProps {
   totalMarketSizeChange?: string;
   totalAvailable: number;
   totalAvailableChange?: string;
-  currentApy: string;
+  totalBorrowed: number;
   utilizationRate: number; // percent 0-100
   utilizationRateLabel: string;
 }
@@ -114,14 +114,14 @@ export function MarketSummary({
   totalMarketSizeChange,
   totalAvailable,
   totalAvailableChange,
-  currentApy,
+  totalBorrowed,
   utilizationRate,
   utilizationRateLabel,
 }: MarketSummaryProps) {
   const t = useTranslations('modules.market.MarketSummary');
 
   return (
-    <div className='flex flex-col gap-3 sm:flex-row'>
+    <div className='flex flex-col gap-5 sm:flex-row'>
       <SummaryCard
         label={t('totalMarketSize')}
         value={<UsdValue value={totalMarketSize} />}
@@ -136,7 +136,11 @@ export function MarketSummary({
         changeType='negative'
         tooltip={t('tooltipTotalAvailable')}
       />
-      <ApyCard label={t('currentApy')} value={currentApy} tooltip={t('tooltipCurrentApy')} />
+      <SummaryCard
+        label={t('totalBorrowed')}
+        value={<UsdValue value={totalBorrowed} />}
+        tooltip={t('tooltipTotalBorrowed')}
+      />
       <SummaryCard
         label={t('utilizationRate')}
         value={utilizationRateLabel}
