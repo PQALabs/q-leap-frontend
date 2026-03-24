@@ -31,6 +31,33 @@ export const erc20Abi = [
     outputs: [{ name: '', internalType: 'string', type: 'string' }],
     stateMutability: 'view',
   },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'owner', internalType: 'address', type: 'address' },
+      { name: 'spender', internalType: 'address', type: 'address' },
+    ],
+    name: 'allowance',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spender', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'approve',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
 ] as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1075,6 +1102,59 @@ export const uiPoolDataProviderV2Abi = [
 ] as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// weth-gateway
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const wethGatewayAbi = [
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lendingPool', internalType: 'address', type: 'address' },
+      { name: 'onBehalfOf', internalType: 'address', type: 'address' },
+      { name: 'referralCode', internalType: 'uint16', type: 'uint16' },
+    ],
+    name: 'depositETH',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lendingPool', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'to', internalType: 'address', type: 'address' },
+    ],
+    name: 'withdrawETH',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lendingPool', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'interestRateMode', internalType: 'uint256', type: 'uint256' },
+      { name: 'referralCode', internalType: 'uint16', type: 'uint16' },
+    ],
+    name: 'borrowETH',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lendingPool', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'rateMode', internalType: 'uint256', type: 'uint256' },
+      { name: 'onBehalfOf', internalType: 'address', type: 'address' },
+    ],
+    name: 'repayETH',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+] as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // React
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1107,6 +1187,52 @@ export const useReadErc20Decimals = /*#__PURE__*/ createUseReadContract({
 export const useReadErc20Symbol = /*#__PURE__*/ createUseReadContract({
   abi: erc20Abi,
   functionName: 'symbol',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"balanceOf"`
+ */
+export const useReadErc20BalanceOf = /*#__PURE__*/ createUseReadContract({
+  abi: erc20Abi,
+  functionName: 'balanceOf',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"allowance"`
+ */
+export const useReadErc20Allowance = /*#__PURE__*/ createUseReadContract({
+  abi: erc20Abi,
+  functionName: 'allowance',
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link erc20Abi}__
+ */
+export const useWriteErc20 = /*#__PURE__*/ createUseWriteContract({
+  abi: erc20Abi,
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"approve"`
+ */
+export const useWriteErc20Approve = /*#__PURE__*/ createUseWriteContract({
+  abi: erc20Abi,
+  functionName: 'approve',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link erc20Abi}__
+ */
+export const useSimulateErc20 = /*#__PURE__*/ createUseSimulateContract({
+  abi: erc20Abi,
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"approve"`
+ */
+export const useSimulateErc20Approve = /*#__PURE__*/ createUseSimulateContract({
+  abi: erc20Abi,
+  functionName: 'approve',
 });
 
 /**
@@ -1696,3 +1822,81 @@ export const useReadUiPoolDataProviderV2NetworkBaseTokenPriceInUsdProxyAggregato
     functionName: 'networkBaseTokenPriceInUsdProxyAggregator',
   }
 );
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link wethGatewayAbi}__
+ */
+export const useWriteWethGateway = /*#__PURE__*/ createUseWriteContract({
+  abi: wethGatewayAbi,
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"depositETH"`
+ */
+export const useWriteWethGatewayDepositEth = /*#__PURE__*/ createUseWriteContract({
+  abi: wethGatewayAbi,
+  functionName: 'depositETH',
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"withdrawETH"`
+ */
+export const useWriteWethGatewayWithdrawEth = /*#__PURE__*/ createUseWriteContract({
+  abi: wethGatewayAbi,
+  functionName: 'withdrawETH',
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"borrowETH"`
+ */
+export const useWriteWethGatewayBorrowEth = /*#__PURE__*/ createUseWriteContract({
+  abi: wethGatewayAbi,
+  functionName: 'borrowETH',
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"repayETH"`
+ */
+export const useWriteWethGatewayRepayEth = /*#__PURE__*/ createUseWriteContract({
+  abi: wethGatewayAbi,
+  functionName: 'repayETH',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link wethGatewayAbi}__
+ */
+export const useSimulateWethGateway = /*#__PURE__*/ createUseSimulateContract({
+  abi: wethGatewayAbi,
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"depositETH"`
+ */
+export const useSimulateWethGatewayDepositEth = /*#__PURE__*/ createUseSimulateContract({
+  abi: wethGatewayAbi,
+  functionName: 'depositETH',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"withdrawETH"`
+ */
+export const useSimulateWethGatewayWithdrawEth = /*#__PURE__*/ createUseSimulateContract({
+  abi: wethGatewayAbi,
+  functionName: 'withdrawETH',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"borrowETH"`
+ */
+export const useSimulateWethGatewayBorrowEth = /*#__PURE__*/ createUseSimulateContract({
+  abi: wethGatewayAbi,
+  functionName: 'borrowETH',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link wethGatewayAbi}__ and `functionName` set to `"repayETH"`
+ */
+export const useSimulateWethGatewayRepayEth = /*#__PURE__*/ createUseSimulateContract({
+  abi: wethGatewayAbi,
+  functionName: 'repayETH',
+});

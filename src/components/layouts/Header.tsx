@@ -118,8 +118,9 @@ export function Header() {
             </>
           ) : (
             <Button
-              className='hidden h-8 rounded-full px-4 font-semibold text-xs sm:flex'
+              className='hidden h-8 px-4 font-semibold text-xs sm:flex'
               onClick={handleOpenConnectWallet}
+              icon={<Wallet size={14} />}
             >
               {t('connectWallet')}
             </Button>
@@ -199,6 +200,7 @@ export function Header() {
                   setMobileOpen(false);
                   setTargetInView('connectWallet');
                 }}
+                icon={<Wallet size={14} />}
               >
                 {t('connectWallet')}
               </Button>

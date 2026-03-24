@@ -9,15 +9,20 @@ export const config = createConfig({
   chains: EVM_CHAINS,
   connectors: [
     injected(),
-    metaMask({
-      dappMetadata: {
-        name: env.APP_NAME,
-        url: env.APP_URL,
-        iconUrl: 'https://wagmi.io/favicon.ico',
-      },
-      // On mobile, allow MetaMask mobile app; on desktop, prefer browser extension
-      extensionOnly: !isMobileDevice(),
-    }),
+    // MetaMask SDK calls initProvider on import which requires `window`.
+    // Only include the connector on the client to avoid SSR crashes.
+    ...(typeof window !== 'undefined'
+      ? [
+          metaMask({
+            dappMetadata: {
+              name: env.APP_NAME,
+              url: env.APP_URL,
+              iconUrl: 'https://wagmi.io/favicon.ico',
+            },
+            extensionOnly: !isMobileDevice(),
+          }),
+        ]
+      : []),
     // walletConnect({
     //   projectId: env.WC_PROJECT_ID,
     //   qrModalOptions: {

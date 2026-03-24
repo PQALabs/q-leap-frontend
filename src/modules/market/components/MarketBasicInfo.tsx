@@ -22,14 +22,14 @@ export function MarketBasicInfo({ name, description, netWorth, netApy, onViewTra
   return (
     <div className='relative flex flex-col gap-4 rounded-2xl'>
       {/* View Transactions button — top right */}
-      <Button
+      {/* <Button
         variant='outline'
         size='sm'
         className='absolute top-5 right-0 hidden font-semibold text-xs uppercase tracking-widest sm:flex'
         onClick={onViewTransactions}
       >
         {t('viewTransactions')}
-      </Button>
+      </Button> */}
 
       {/* Logo + Title */}
       <div className='flex items-center gap-3'>
@@ -99,14 +99,14 @@ export function MarketBasicInfo({ name, description, netWorth, netApy, onViewTra
       </div>
 
       {/* Mobile: View Transactions */}
-      <Button
+      {/* <Button
         variant='outline'
         size='sm'
         className='w-full font-semibold text-xs uppercase tracking-widest sm:hidden'
         onClick={onViewTransactions}
       >
         {t('viewTransactions')}
-      </Button>
+      </Button> */}
     </div>
   );
 }

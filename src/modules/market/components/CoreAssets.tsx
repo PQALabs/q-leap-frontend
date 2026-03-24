@@ -27,6 +27,7 @@ export interface CoreAsset {
   symbol: string;
   subtitle: string;
   underlyingAsset: string; // full contract address for copying
+  logoUrl?: string; // path to token logo (e.g. /token-icons/WABEL.svg)
   iconBg: string;
   iconColor: string;
   iconLabel: string;
@@ -84,18 +85,28 @@ function buildColumns(onDetails: (asset: CoreAsset) => void, t: (key: string) =>
       header: t('asset'),
       enableSorting: false,
       cell: ({ row }) => {
-        const { name, subtitle, underlyingAsset, iconBg, iconColor, iconLabel } = row.original;
+        const { name, subtitle, underlyingAsset, logoUrl, iconBg, iconColor, iconLabel } = row.original;
         return (
           <div className='flex items-center gap-3'>
-            <div
-              className={cn(
-                'flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-base shadow-sm',
-                iconBg,
-                iconColor
-              )}
-            >
-              {iconLabel}
-            </div>
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={name}
+                width={36}
+                height={36}
+                className='h-9 w-9 shrink-0 rounded-full object-cover'
+              />
+            ) : (
+              <div
+                className={cn(
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-base shadow-sm',
+                  iconBg,
+                  iconColor
+                )}
+              >
+                {iconLabel}
+              </div>
+            )}
             <div>
               <div className='font-semibold text-foreground'>{name}</div>
               <div className='flex items-center gap-1 text-muted-foreground text-xs'>
@@ -213,7 +224,7 @@ export function CoreAssets({ assets, onDetailsClick }: CoreAssetsProps) {
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, _columnId, filterValue: string) => {
-      const q = filterValue.toLowerCase();
+      const q = filterValue.trim().toLowerCase();
       const { name, symbol, subtitle, underlyingAsset } = row.original;
       return (
         name.toLowerCase().includes(q) ||

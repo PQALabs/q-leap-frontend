@@ -28,7 +28,7 @@ export const networkConfigs: Record<string, BaseNetworkConfig> = {
     publicJsonRPCUrl: ['https://rpc.qday.info'],
     addresses: {
       walletBalanceProvider: '',
-      uiPoolDataProvider: '0xF7350D4423600B91553353a4F8304de74EdAe941',
+      uiPoolDataProvider: '0x72A2EB1C439983193dcc7A9B9C7C615eD52B0C75',
       uiIncentiveDataProvider: '',
       chainlinkFeedRegistry: '',
     },

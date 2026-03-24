@@ -50,15 +50,25 @@ function AssetCard({
       {/* Header — icon + name */}
       <div className='flex items-center justify-between gap-3'>
         <div className='flex items-center gap-3'>
-          <div
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-base shadow-sm',
-              asset.iconBg,
-              asset.iconColor
-            )}
-          >
-            {asset.iconLabel}
-          </div>
+          {asset.logoUrl ? (
+            <img
+              src={asset.logoUrl}
+              alt={asset.name}
+              width={36}
+              height={36}
+              className='h-9 w-9 shrink-0 rounded-full object-cover shadow-sm'
+            />
+          ) : (
+            <div
+              className={cn(
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-base shadow-sm',
+                asset.iconBg,
+                asset.iconColor
+              )}
+            >
+              {asset.iconLabel}
+            </div>
+          )}
           <div>
             <div className='font-semibold text-foreground'>{asset.name}</div>
             <div className='flex items-center gap-1 text-muted-foreground text-xs'>
