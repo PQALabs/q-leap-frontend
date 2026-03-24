@@ -3,9 +3,10 @@
 import { Info, Landmark, LayoutGrid, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatHfValue, getHealthFactorLabel, getHfBgColor, getHfColor } from '@/lib/format-health-factor';
+import { formatHfValue, getHealthFactorLabel, getHfColor } from '@/lib/format-health-factor';
 import { valueToBigNumber } from '@/math-utils';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
+import { formatUsd } from '@/utils/format';
 
 // ---------------------------------------------------------------------------
 // Health factor bar
@@ -86,9 +87,7 @@ export function UserPositionSummary({ reserve, user, isConnected }: UserPosition
           <span className='flex items-center gap-1 font-bold text-muted-foreground text-xs uppercase tracking-wider'>
             <Landmark size={14} /> {t('suppliedAmount')}
           </span>
-          <span className='font-bold text-2xl text-foreground'>
-            ${suppliedUsd.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
-          </span>
+          <span className='font-bold text-2xl text-foreground'>{formatUsd(suppliedUsd)}</span>
         </div>
 
         {/* Borrowed */}
@@ -96,9 +95,7 @@ export function UserPositionSummary({ reserve, user, isConnected }: UserPosition
           <span className='flex items-center gap-1 font-bold text-muted-foreground text-xs uppercase tracking-wider'>
             <LayoutGrid size={14} /> {t('borrowedAmount')}
           </span>
-          <span className='font-bold text-2xl text-foreground'>
-            ${borrowedUsd.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
-          </span>
+          <span className='font-bold text-2xl text-foreground'>{formatUsd(borrowedUsd)}</span>
           <span className='flex items-center gap-1 text-muted-foreground text-xs'>
             <Info size={12} className='inline' /> {t('utilization')}: {utilization}%
           </span>

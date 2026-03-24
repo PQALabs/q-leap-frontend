@@ -72,7 +72,7 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
 
         <div className='flex flex-wrap items-start divide-x divide-border'>
           {/* Total supplied */}
-          <div className='flex flex-col gap-1 pr-8'>
+          <div className='flex flex-1 flex-col gap-1 pr-8'>
             <span className='font-semibold text-muted-foreground text-xs uppercase tracking-wider'>
               {t('totalSupplied')}
             </span>
@@ -85,7 +85,7 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
           </div>
 
           {/* APY */}
-          <div className='flex flex-col gap-1 pl-8'>
+          <div className='flex flex-1 flex-col gap-1 pl-8'>
             <span className='font-semibold text-muted-foreground text-xs uppercase tracking-wider'>{t('apy')}</span>
             <span className='font-bold text-2xl text-foreground'>
               {supplyApy < 0.01 && supplyApy > 0 ? '< 0.01' : supplyApy.toFixed(2)}{' '}
@@ -130,7 +130,7 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
         <h3 className='font-bold text-muted-foreground text-xs uppercase tracking-wider'>{t('borrowInfo')}</h3>
 
         <div className='flex flex-wrap items-start divide-x divide-border'>
-          <div className='flex flex-col gap-1 pr-8'>
+          <div className='flex flex-1 flex-col gap-1 pr-8'>
             <span className='flex items-center gap-1 font-semibold text-muted-foreground text-xs uppercase tracking-wider'>
               {t('totalBorrowed')}
               <InfoTooltip label={t('tooltipTotalBorrowed')} />
@@ -143,7 +143,7 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
             </span>
           </div>
 
-          <div className='flex flex-col gap-1 pl-8'>
+          <div className='flex flex-1 flex-col gap-1 pl-8'>
             <span className='flex items-center gap-1 font-semibold text-muted-foreground text-xs uppercase tracking-wider'>
               {t('apyVariable')}
               <InfoTooltip label={t('tooltipApyVariable')} />

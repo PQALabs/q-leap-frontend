@@ -4,38 +4,15 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { UsdValue } from '@/components/usd-value';
-import { getDisplayName, getDisplaySymbol } from '@/config/token-display';
-import { getTokenLogoUrl } from '@/config/token-logos';
+import { getDisplaySymbol } from '@/config/token-display';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
-import { formatApy } from '@/utils/format';
+import { formatApy, formatTokenAmount } from '@/utils/format';
+
 import { type CoreAsset, CoreAssets } from './components/CoreAssets';
 import { MarketBasicInfo } from './components/MarketBasicInfo';
 import { CoreAssetsSkeleton, MarketBasicInfoSkeleton, MarketSummarySkeleton } from './components/MarketSkeletons';
 import { MarketSummary } from './components/MarketSummary';
-
-/** Format a native token amount: 1,234.56 DAI */
-function formatTokenAmount(value: number, symbol: string): string {
-  return `${value.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })} ${symbol}`;
-}
-
-/** Simple deterministic icon background based on symbol */
-const ICON_COLORS = [
-  'bg-indigo-600',
-  'bg-amber-500',
-  'bg-emerald-500',
-  'bg-rose-500',
-  'bg-cyan-500',
-  'bg-violet-500',
-  'bg-orange-500',
-  'bg-teal-500',
-];
-
-function getIconBg(symbol: string): string {
-  let hash = 0;
-  for (const ch of symbol) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
-  return ICON_COLORS[Math.abs(hash) % ICON_COLORS.length];
-}
 
 // ---------------------------------------------------------------------------
 // Static fields
@@ -115,24 +92,19 @@ export function Market() {
   // Map sorted reserve data → CoreAsset[] for the table
   const coreAssets: CoreAsset[] = sortedData.map((item) => {
     const displaySymbol = getDisplaySymbol(item.currencySymbol);
-    const displayName = getDisplayName(item.currencySymbol);
 
     return {
       id: item.id,
       name: displaySymbol,
       symbol: displaySymbol,
-      subtitle: displayName + ' • ' + item.underlyingAsset.slice(0, 6) + '…' + item.underlyingAsset.slice(-4),
       underlyingAsset: item.underlyingAsset,
-      logoUrl: getTokenLogoUrl(item.currencySymbol),
-      iconBg: getIconBg(item.currencySymbol),
-      iconColor: 'text-white',
-      iconLabel: item.currencySymbol.charAt(0),
       supplyApy: item.depositAPY >= 0 ? item.depositAPY * 100 : 0,
       totalSupplied: <UsdValue value={item.totalLiquidityInUSD} />,
-      totalSuppliedNative: formatTokenAmount(item.totalLiquidity, item.currencySymbol),
+      totalSuppliedNative: `${formatTokenAmount(item.totalLiquidity, 2)} ${item.currencySymbol}`,
       borrowApy: item.variableBorrowRate >= 0 ? item.variableBorrowRate * 100 : 0,
       totalBorrowed: item.totalBorrowsInUSD >= 0 ? <UsdValue value={item.totalBorrowsInUSD} /> : '—',
-      totalBorrowedNative: item.totalBorrows >= 0 ? formatTokenAmount(item.totalBorrows, item.currencySymbol) : '—',
+      totalBorrowedNative:
+        item.totalBorrows >= 0 ? `${formatTokenAmount(item.totalBorrows, 2)} ${item.currencySymbol}` : '—',
       walletBalance: null,
       isStablecoin: STABLECOINS.has(item.currencySymbol.toUpperCase()),
     };
@@ -205,7 +177,7 @@ export function Market() {
         <MarketSummary
           totalMarketSize={totalLockedInUsd.toNumber()}
           totalAvailable={totalAvailableInUsd.toNumber()}
-          currentApy={formatApy(weightedApy.toNumber() * 100)}
+          totalBorrowed={totalBorrowedInUsd.toNumber()}
           utilizationRate={Number(utilizationRate.toFixed(2))}
           utilizationRateLabel={`${utilizationRate.toFixed(2)}%`}
         />

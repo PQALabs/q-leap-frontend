@@ -9,9 +9,10 @@ import {
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowUpDown, Check, ChevronDown, ChevronUp, Copy, Search } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { AssetCell } from '@/components/asset-cell';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -25,12 +26,7 @@ export interface CoreAsset {
   id: string;
   name: string;
   symbol: string;
-  subtitle: string;
-  underlyingAsset: string; // full contract address for copying
-  logoUrl?: string; // path to token logo (e.g. /token-icons/WABEL.svg)
-  iconBg: string;
-  iconColor: string;
-  iconLabel: string;
+  underlyingAsset: string; // full contract address
   supplyApy: number; // stored as number for proper sorting
   totalSupplied: React.ReactNode;
   totalSuppliedNative: string; // e.g. "1,234.56 DAI"
@@ -51,29 +47,26 @@ function SortIndicator({ sorted }: { sorted: false | 'asc' | 'desc' }) {
 }
 
 // ---------------------------------------------------------------------------
-// Copy address button
+// Borrow APY header with CSS-only tooltip (immune to React re-renders)
 // ---------------------------------------------------------------------------
-function CopyAddressButton({ address, title }: { address: string; title: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
+const BorrowApyHeader = React.memo(function BorrowApyHeader({
+  label,
+  sorted,
+  onSort,
+}: {
+  label: string;
+  sorted: false | 'asc' | 'desc';
+  onSort: ((event: unknown) => void) | undefined;
+}) {
   return (
-    <button
-      type='button'
-      onClick={handleCopy}
-      className='inline-flex cursor-pointer items-center text-muted-foreground/60 transition-colors hover:text-foreground'
-      title={title}
-    >
-      {copied ? <Check size={12} className='text-success' /> : <Copy size={12} />}
-    </button>
+    <div className='flex items-center justify-end gap-1'>
+      {label}
+      <button type='button' className='flex cursor-pointer items-center gap-1 uppercase' onClick={onSort}>
+        <SortIndicator sorted={sorted} />
+      </button>
+    </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Column definitions
@@ -85,36 +78,15 @@ function buildColumns(onDetails: (asset: CoreAsset) => void, t: (key: string) =>
       header: t('asset'),
       enableSorting: false,
       cell: ({ row }) => {
-        const { name, subtitle, underlyingAsset, logoUrl, iconBg, iconColor, iconLabel } = row.original;
+        const { symbol, underlyingAsset } = row.original;
         return (
-          <div className='flex items-center gap-3'>
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={name}
-                width={36}
-                height={36}
-                className='h-9 w-9 shrink-0 rounded-full object-cover'
-              />
-            ) : (
-              <div
-                className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-base shadow-sm',
-                  iconBg,
-                  iconColor
-                )}
-              >
-                {iconLabel}
-              </div>
-            )}
-            <div>
-              <div className='font-semibold text-foreground'>{name}</div>
-              <div className='flex items-center gap-1 text-muted-foreground text-xs'>
-                {subtitle}
-                <CopyAddressButton address={underlyingAsset} title={t('copyAddress')} />
-              </div>
-            </div>
-          </div>
+          <AssetCell
+            symbol={symbol}
+            underlyingAsset={underlyingAsset}
+            size={36}
+            copyTitle={t('copyAddress')}
+            href={`/reserve-overview?underlyingAsset=${underlyingAsset}`}
+          />
         );
       },
     },
@@ -148,14 +120,11 @@ function buildColumns(onDetails: (asset: CoreAsset) => void, t: (key: string) =>
     {
       accessorKey: 'borrowApy',
       header: ({ column }) => (
-        <button
-          type='button'
-          className='ml-auto flex items-center gap-1 uppercase'
-          onClick={column.getToggleSortingHandler()}
-        >
-          {t('borrowApy')}
-          <SortIndicator sorted={column.getIsSorted()} />
-        </button>
+        <BorrowApyHeader
+          label={t('borrowApy')}
+          sorted={column.getIsSorted()}
+          onSort={column.getToggleSortingHandler()}
+        />
       ),
       cell: ({ getValue }) => (
         <span className='block text-right text-destructive'>{formatApy(getValue<number>())}</span>
@@ -225,12 +194,9 @@ export function CoreAssets({ assets, onDetailsClick }: CoreAssetsProps) {
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, _columnId, filterValue: string) => {
       const q = filterValue.trim().toLowerCase();
-      const { name, symbol, subtitle, underlyingAsset } = row.original;
+      const { name, symbol, underlyingAsset } = row.original;
       return (
-        name.toLowerCase().includes(q) ||
-        symbol.toLowerCase().includes(q) ||
-        subtitle.toLowerCase().includes(q) ||
-        underlyingAsset.toLowerCase().includes(q)
+        name.toLowerCase().includes(q) || symbol.toLowerCase().includes(q) || underlyingAsset.toLowerCase().includes(q)
       );
     },
     getCoreRowModel: getCoreRowModel(),

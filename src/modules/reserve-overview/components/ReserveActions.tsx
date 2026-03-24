@@ -1,6 +1,7 @@
 'use client';
 
 import { Wallet } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useConnection } from 'wagmi';
 import { Button } from '@/components/ui/button';
@@ -24,17 +25,22 @@ export function ReserveActions({ reserve, user, marketRefPriceInUsd }: ReserveAc
   const t = useTranslations('modules.market.ReserveActions');
   const tHeader = useTranslations('header');
   const setTargetInView = useIntersectionStore.use.setTargetInView();
+  const searchParams = useSearchParams();
   const isConnected = !!address;
+
+  // Determine default tab from URL search param: ?action=borrow → borrow-repay tab
+  const action = searchParams.get('action');
+  const defaultTab = action === 'borrow' ? 'borrow-repay' : 'supply-withdraw';
 
   return (
     <div className='relative rounded-xs border border-border bg-card p-5'>
-      <Tabs defaultValue='supply-withdraw'>
+      <Tabs defaultValue={defaultTab}>
         <TabsList className='w-full'>
           <TabsTrigger value='supply-withdraw' className='flex-1'>
-            Supply / Withdraw
+            {t('supplyWithdraw')}
           </TabsTrigger>
           <TabsTrigger value='borrow-repay' className='flex-1'>
-            Borrow / Repay
+            {t('borrowRepay')}
           </TabsTrigger>
         </TabsList>
 

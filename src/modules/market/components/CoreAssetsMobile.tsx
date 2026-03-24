@@ -1,37 +1,11 @@
 'use client';
 
-import { Check, Copy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { AssetCell } from '@/components/asset-cell';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatApy } from '@/utils/format';
 import type { CoreAsset } from './CoreAssets';
-
-// ---------------------------------------------------------------------------
-// Copy button
-// ---------------------------------------------------------------------------
-function CopyButton({ text, title }: { text: string; title: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  return (
-    <button
-      type='button'
-      onClick={handleCopy}
-      className='inline-flex cursor-pointer items-center text-muted-foreground/60 transition-colors hover:text-foreground'
-      title={title}
-    >
-      {copied ? <Check size={12} className='text-success' /> : <Copy size={12} />}
-    </button>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Single card
@@ -49,34 +23,12 @@ function AssetCard({
     <div className='rounded-lg border border-border bg-card p-4 shadow-xs transition-shadow hover:shadow-sm'>
       {/* Header — icon + name */}
       <div className='flex items-center justify-between gap-3'>
-        <div className='flex items-center gap-3'>
-          {asset.logoUrl ? (
-            <img
-              src={asset.logoUrl}
-              alt={asset.name}
-              width={36}
-              height={36}
-              className='h-9 w-9 shrink-0 rounded-full object-cover shadow-sm'
-            />
-          ) : (
-            <div
-              className={cn(
-                'flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-base shadow-sm',
-                asset.iconBg,
-                asset.iconColor
-              )}
-            >
-              {asset.iconLabel}
-            </div>
-          )}
-          <div>
-            <div className='font-semibold text-foreground'>{asset.name}</div>
-            <div className='flex items-center gap-1 text-muted-foreground text-xs'>
-              {asset.subtitle}
-              <CopyButton text={asset.underlyingAsset} title={t('copyAddress')} />
-            </div>
-          </div>
-        </div>
+        <AssetCell
+          symbol={asset.symbol}
+          underlyingAsset={asset.underlyingAsset}
+          size={36}
+          copyTitle={t('copyAddress')}
+        />
 
         <Button size='xs' variant='outline' onClick={() => onDetails?.(asset)}>
           {t('details')}

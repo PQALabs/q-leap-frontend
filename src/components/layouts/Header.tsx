@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, PlusCircle, Wallet, X } from 'lucide-react';
+import { LayoutDashboard, Menu, PlusCircle, Wallet, X } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -90,6 +90,14 @@ export function Header() {
 
           {isConnected ? (
             <>
+              {/* Dashboard link */}
+              <Link
+                href='/dashboard'
+                className='mr-4 hidden items-center gap-1.5 font-medium text-primary text-sm transition-colors hover:text-foreground sm:flex'
+              >
+                {t('myDashboard')}
+              </Link>
+
               {/* Network badge */}
               <div className='hidden items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5 font-medium text-xs sm:flex'>
                 <span className='h-2 w-2 rounded-full bg-green-500' />
@@ -108,8 +116,6 @@ export function Header() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
-                  <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem variant='destructive' className='cursor-pointer' onClick={() => disconnect()}>
                     {t('disconnect')}
                   </DropdownMenuItem>
@@ -154,6 +160,16 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+            {isConnected && (
+              <Link
+                href='/dashboard'
+                onClick={() => setMobileOpen(false)}
+                className='flex items-center gap-2 font-medium text-muted-foreground text-sm transition-colors hover:text-foreground'
+              >
+                <LayoutDashboard size={14} />
+                {t('dashboard')}
+              </Link>
+            )}
           </nav>
           <div className='mt-4 flex flex-wrap items-center gap-2'>
             {isConnected ? (
@@ -173,8 +189,6 @@ export function Header() {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end'>
-                    <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem variant='destructive' className='cursor-pointer' onClick={() => disconnect()}>
                       {t('disconnect')}
                     </DropdownMenuItem>
