@@ -10,6 +10,13 @@
     "services": "Services",
     "back": "Back"
   },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switchTheme": "Switch theme (current: {theme})",
+    "currentTheme": "Current theme: {theme}. Click to cycle."
+  },
   "home": {
     "title": "To get started, edit the page.tsx file.",
     "description": "Looking for a starting point or more instructions? Head over to",
@@ -34,7 +41,9 @@
     "toggleMobileMenu": "Toggle mobile menu",
     "myDashboard": "My Dashboard",
     "myPortfolio": "My Portfolio",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "copyAddress": "Copy Address",
+    "copied": "Copied!"
   },
   "connectWallet": {
     "title": "Connect Wallet",
@@ -127,7 +136,6 @@
         "tooltipMaxLtv": "The Maximum LTV ratio represents the maximum borrowing power of a specific collateral. For example, if a collateral has an LTV of 75%, the user can borrow up to 0.75 worth of ETH in the principal currency for every 1 ETH worth of collateral.",
         "tooltipLiquidationThreshold": "This represents the threshold at which a borrow position will be considered undercollateralized and subject to liquidation for each collateral. For example, if a collateral has a liquidation threshold of 80%, it means that the position will be liquidated when the debt value is worth 80% of the collateral value.",
         "tooltipLiquidationPenalty": "When a liquidation occurs, liquidators repay up to 50% of the outstanding borrowed amount on behalf of the borrower. In return, they can buy the collateral at a discount and keep the difference (liquidation penalty) as a bonus.",
-        "tooltipTotalBorrowed": "Borrowing of this asset is limited to a certain amount to minimize liquidity pool insolvency.",
         "tooltipApyVariable": "Variable interest rate will fluctuate based on the market conditions.",
         "tooltipHealthFactor": "Your health factor represents the safety of your position. A value above 1 means your position is safe. Below 1 means you risk liquidation.",
         "addTokenToWallet": "Add token to wallet",

@@ -29,7 +29,7 @@ export function MarketBasicInfoSkeleton() {
 // ---------------------------------------------------------------------------
 export function MarketSummarySkeleton() {
   return (
-    <div className='flex flex-col gap-3 sm:flex-row'>
+    <div className='flex flex-col gap-5 sm:flex-row'>
       {[...Array(4)].map((_, i) => (
         <div key={i} className='flex flex-1 flex-col gap-3 rounded-xs border border-border bg-card p-5 shadow-xs'>
           <Skeleton className='h-3 w-24' />
@@ -80,8 +80,8 @@ export function CoreAssetsSkeleton() {
             </tr>
           </thead>
           <tbody>
-            {[...Array(4)].map((_, i) => (
-              <tr key={i} className={cn('border-border', i < 3 && 'border-b')}>
+            {[...Array(3)].map((_, i) => (
+              <tr key={i} className={cn('border-border', i < 2 && 'border-b')}>
                 {/* Asset */}
                 <td className='px-3 py-4 pl-5'>
                   <div className='flex items-center gap-3'>
