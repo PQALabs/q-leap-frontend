@@ -25,6 +25,8 @@ interface AmountInputProps {
   errorMessage?: string;
   /** When true, suppress the "exceeds max" validation (user explicitly selected MAX) */
   isMaxSelected?: boolean;
+  /** Optional USD equivalent to display below the amount */
+  usdValue?: number;
 }
 
 export function AmountInput({
@@ -36,6 +38,7 @@ export function AmountInput({
   maxAmount,
   errorMessage = 'Amount exceeds limit',
   isMaxSelected = false,
+  usdValue,
 }: AmountInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const cursorRef = useRef<number | null>(null);
@@ -95,6 +98,11 @@ export function AmountInput({
         />
         <span className='shrink-0 font-medium text-muted-foreground text-sm'>{symbol}</span>
       </div>
+      {usdValue != null && usdValue > 0 && (
+        <p className='mt-1 text-[11px] text-muted-foreground/70'>
+          ≈ $ {usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+      )}
       {exceedsMax && <p className='mt-1 font-medium text-red-500 text-xs'>{errorMessage}</p>}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -60,6 +60,12 @@ export function WithdrawSuccessDialog({
               <span className='font-medium text-foreground text-sm'>{symbol}</span>
             </div>
           )}
+
+          {/* ── Reassurance ── */}
+          <div className='flex items-center gap-2 rounded-lg bg-muted/50 px-4 py-2.5'>
+            <Wallet size={16} className='shrink-0 text-emerald-600' />
+            <span className='text-muted-foreground text-sm'>{t('tokensReturned')}</span>
+          </div>
 
           {/* ── Actions ── */}
           <div className='flex w-full flex-col gap-2'>

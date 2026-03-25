@@ -10,6 +10,16 @@ import { useProtocolDataContext } from '@/providers/protocol-data-provider';
 
 export type SupplyNativeTxStatus = 'idle' | 'supplying' | 'confirming' | 'success' | 'error';
 
+export interface SupplyNativeToastLabels {
+  supplyConfirmed?: string;
+  supplyConfirmedDesc?: string;
+  supplyFailed?: string;
+  supplyReverted?: string;
+  waitingSupplySignature?: string;
+  confirmingSupply?: string;
+  txFailed?: string;
+}
+
 interface UseSupplyNativeOptions {
   /** The user's wallet address */
   userAddress: `0x${string}` | undefined;
@@ -17,13 +27,15 @@ interface UseSupplyNativeOptions {
   amount: string;
   /** Callback after successful supply */
   onSuccess?: () => void;
+  /** Internationalized toast labels */
+  toastLabels?: SupplyNativeToastLabels;
 }
 
 /**
  * Hook for native QDAY supply flow via WETHGateway.depositETH.
  * No approval needed — native QDAY is sent as msg.value.
  */
-export function useSupplyNative({ userAddress, amount, onSuccess }: UseSupplyNativeOptions) {
+export function useSupplyNative({ userAddress, amount, onSuccess, toastLabels: l }: UseSupplyNativeOptions) {
   const [status, setStatus] = useState<SupplyNativeTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -55,7 +67,9 @@ export function useSupplyNative({ userAddress, amount, onSuccess }: UseSupplyNat
       handledTx.current = txHash;
       setStatus('success');
       toast.dismiss('supply-native');
-      toast.success('Supply confirmed', { description: `Successfully supplied ${amount} QDAY.` });
+      toast.success(l?.supplyConfirmed ?? 'Supply confirmed', {
+        description: l?.supplyConfirmedDesc ?? `Successfully supplied ${amount} QDAY.`,
+      });
       onSuccess?.();
     }
   }, [isConfirmed, txHash, onSuccess, amount]);
@@ -63,7 +77,7 @@ export function useSupplyNative({ userAddress, amount, onSuccess }: UseSupplyNat
   // Update loading toast when confirming
   useEffect(() => {
     if (isConfirming) {
-      toast.loading('Confirming supply on-chain...', { id: 'supply-native' });
+      toast.loading(l?.confirmingSupply ?? 'Confirming supply on-chain...', { id: 'supply-native' });
     }
   }, [isConfirming]);
 
@@ -72,8 +86,8 @@ export function useSupplyNative({ userAddress, amount, onSuccess }: UseSupplyNat
     if (isReceiptError && txHash) {
       setStatus('error');
       toast.dismiss('supply-native');
-      toast.error('Supply transaction reverted', {
-        description: receiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.supplyReverted ?? 'Supply transaction reverted', {
+        description: receiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isReceiptError, txHash, receiptError]);
@@ -83,7 +97,7 @@ export function useSupplyNative({ userAddress, amount, onSuccess }: UseSupplyNat
     if (!userAddress || !amount || Number(amount) <= 0 || !wethGatewayAddress) return;
     setStatus('supplying');
     resetWrite();
-    toast.loading('Waiting for supply signature...', { id: 'supply-native' });
+    toast.loading(l?.waitingSupplySignature ?? 'Waiting for supply signature...', { id: 'supply-native' });
 
     depositEthWrite(
       {
@@ -100,7 +114,7 @@ export function useSupplyNative({ userAddress, amount, onSuccess }: UseSupplyNat
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('supply-native');
-          toast.error('Supply failed', {
+          toast.error(l?.supplyFailed ?? 'Supply failed', {
             description: getEvmMessage(error),
           });
         },
