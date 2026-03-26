@@ -15,7 +15,7 @@ function InfoTooltip({ label }: { label: string }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <CircleHelp size={14} className='cursor-help text-muted-foreground' />
+          <CircleHelp size={14} width={14} className='min-h-3.5 min-w-3.5 cursor-help text-muted-foreground' />
         </TooltipTrigger>
         <TooltipContent className='max-w-xs'>{label}</TooltipContent>
       </Tooltip>
