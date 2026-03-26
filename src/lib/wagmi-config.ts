@@ -3,7 +3,6 @@ import { arbitrum, bsc, mainnet, polygon, sepolia } from 'wagmi/chains';
 import { injected, metaMask } from 'wagmi/connectors';
 import { env } from '@/config/env';
 import { EVM_CHAINS, qdayMainnet, qdayTestnet } from '@/constants/wagmi';
-import { isMobileDevice } from './utils';
 
 export const config = createConfig({
   chains: EVM_CHAINS,
@@ -19,7 +18,6 @@ export const config = createConfig({
               url: env.APP_URL,
               iconUrl: 'https://wagmi.io/favicon.ico',
             },
-            extensionOnly: !isMobileDevice(),
           }),
         ]
       : []),
