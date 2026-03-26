@@ -7,9 +7,12 @@ import { EVM_CHAINS, qdayMainnet, qdayTestnet } from '@/constants/wagmi';
 export const config = createConfig({
   chains: EVM_CHAINS,
   connectors: [
-    injected(),
-    // MetaMask SDK calls initProvider on import which requires `window`.
-    // Only include the connector on the client to avoid SSR crashes.
+    // EIP-6963: target MetaMask specifically via its rdns identifier.
+    // This avoids grabbing window.ethereum directly, so other extensions
+    // (e.g. TronLink) injecting into window.ethereum won't cause conflicts.
+    injected({ target: 'metaMask' }),
+    // MetaMask SDK connector — only on client to avoid SSR crashes.
+    // Provides QR code / mobile deep-link fallback if EIP-6963 announce fails.
     ...(typeof window !== 'undefined'
       ? [
           metaMask({
