@@ -10,11 +10,13 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ArrowUpDown, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AssetCell } from '@/components/asset-cell';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { UsdValue } from '@/components/usd-value';
 import { cn } from '@/lib/utils';
 import { formatApy } from '@/utils/format';
 import { CoreAssetsMobile } from './CoreAssetsMobile';
@@ -28,10 +30,10 @@ export interface CoreAsset {
   symbol: string;
   underlyingAsset: string; // full contract address
   supplyApy: number; // stored as number for proper sorting
-  totalSupplied: React.ReactNode;
+  totalSupplied: number;
   totalSuppliedNative: string; // e.g. "1,234.56 DAI"
   borrowApy: number;
-  totalBorrowed: React.ReactNode;
+  totalBorrowed: number | null;
   totalBorrowedNative: string; // e.g. "567.89 DAI"
   walletBalance: string | null;
   isStablecoin?: boolean;
@@ -71,7 +73,7 @@ const BorrowApyHeader = React.memo(function BorrowApyHeader({
 // ---------------------------------------------------------------------------
 // Column definitions
 // ---------------------------------------------------------------------------
-function buildColumns(onDetails: (asset: CoreAsset) => void, t: (key: string) => string): ColumnDef<CoreAsset>[] {
+function buildColumns(t: (key: string) => string): ColumnDef<CoreAsset>[] {
   return [
     {
       id: 'asset',
@@ -108,11 +110,21 @@ function buildColumns(onDetails: (asset: CoreAsset) => void, t: (key: string) =>
     },
     {
       accessorKey: 'totalSupplied',
-      header: () => <span className='block text-right'>{t('totalSupplied')}</span>,
-      enableSorting: false,
+      header: ({ column }) => (
+        <button
+          type='button'
+          className='ml-auto flex items-center gap-1 uppercase'
+          onClick={column.getToggleSortingHandler()}
+        >
+          {t('totalSupplied')}
+          <SortIndicator sorted={column.getIsSorted()} />
+        </button>
+      ),
       cell: ({ row }) => (
         <div className='text-right'>
-          <div className='text-foreground'>{row.original.totalSupplied}</div>
+          <div className='text-foreground'>
+            <UsdValue value={row.original.totalSupplied} />
+          </div>
           <div className='text-muted-foreground text-xs'>{row.original.totalSuppliedNative}</div>
         </div>
       ),
@@ -132,31 +144,34 @@ function buildColumns(onDetails: (asset: CoreAsset) => void, t: (key: string) =>
     },
     {
       accessorKey: 'totalBorrowed',
-      header: () => <span className='block text-right'>{t('totalBorrowed')}</span>,
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className='text-right'>
-          <div className='text-foreground'>{row.original.totalBorrowed}</div>
-          <div className='text-muted-foreground text-xs'>{row.original.totalBorrowedNative}</div>
-        </div>
+      header: ({ column }) => (
+        <button
+          type='button'
+          className='ml-auto flex items-center gap-1 uppercase'
+          onClick={column.getToggleSortingHandler()}
+        >
+          {t('totalBorrowed')}
+          <SortIndicator sorted={column.getIsSorted()} />
+        </button>
       ),
+      cell: ({ row }) => {
+        const val = row.original.totalBorrowed;
+        return (
+          <div className='text-right'>
+            <div className='text-foreground'>{val !== null && val >= 0 ? <UsdValue value={val} /> : '—'}</div>
+            <div className='text-muted-foreground text-xs'>{row.original.totalBorrowedNative}</div>
+          </div>
+        );
+      },
     },
-    // {
-    //   accessorKey: 'walletBalance',
-    //   header: () => <span className='block text-right'>Wallet Balance</span>,
-    //   enableSorting: false,
-    //   cell: ({ getValue }) => (
-    //     <span className='block text-right text-muted-foreground'>{getValue<string | null>() ?? '—'}</span>
-    //   ),
-    // },
     {
       id: 'actions',
       header: () => null,
       enableSorting: false,
       cell: ({ row }) => (
         <div className='flex justify-end'>
-          <Button size='xs' variant='outline' onClick={() => onDetails(row.original)}>
-            {t('details')}
+          <Button size='xs' variant='outline' asChild>
+            <Link href={`/reserve-overview?underlyingAsset=${row.original.underlyingAsset}`}>{t('details')}</Link>
           </Button>
         </div>
       ),
@@ -169,17 +184,15 @@ function buildColumns(onDetails: (asset: CoreAsset) => void, t: (key: string) =>
 // ---------------------------------------------------------------------------
 interface CoreAssetsProps {
   assets?: CoreAsset[];
-  onDetailsClick?: (asset: CoreAsset) => void;
 }
 
-export function CoreAssets({ assets, onDetailsClick }: CoreAssetsProps) {
+export function CoreAssets({ assets }: CoreAssetsProps) {
   const t = useTranslations('modules.market.CoreAssets');
   const [globalFilter, setGlobalFilter] = useState('');
   const [stablecoinsOnly, setStablecoinsOnly] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const onDetails = useCallback((asset: CoreAsset) => onDetailsClick?.(asset), [onDetailsClick]);
-  const columns = useMemo(() => buildColumns(onDetails, t), [onDetails, t]);
+  const columns = useMemo(() => buildColumns(t), [t]);
 
   const filteredData = useMemo(
     () => (stablecoinsOnly ? assets?.filter((a) => a.isStablecoin) : assets),
@@ -296,7 +309,7 @@ export function CoreAssets({ assets, onDetailsClick }: CoreAssetsProps) {
 
       {/* Cards — mobile (<md) */}
       <div className='md:hidden'>
-        <CoreAssetsMobile assets={filteredData ?? []} onDetailsClick={onDetailsClick} />
+        <CoreAssetsMobile assets={filteredData ?? []} />
       </div>
     </div>
   );

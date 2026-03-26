@@ -133,7 +133,6 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
           <div className='flex flex-1 flex-col gap-1 pr-8'>
             <span className='flex items-center gap-1 font-semibold text-muted-foreground text-xs uppercase tracking-wider'>
               {t('totalBorrowed')}
-              <InfoTooltip label={t('tooltipTotalBorrowed')} />
             </span>
             <span className='font-bold text-2xl text-foreground'>
               <CompactNumber value={totalDebt} />

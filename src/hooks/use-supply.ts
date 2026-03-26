@@ -17,6 +17,22 @@ export type SupplyTxStatus =
   | 'success'
   | 'error';
 
+export interface SupplyToastLabels {
+  approvalConfirmed?: string;
+  approvalConfirmedDesc?: string;
+  approvalFailed?: string;
+  approvalReverted?: string;
+  waitingApprovalSignature?: string;
+  confirmingApproval?: string;
+  supplyConfirmed?: string;
+  supplyConfirmedDesc?: string;
+  supplyFailed?: string;
+  supplyReverted?: string;
+  waitingSupplySignature?: string;
+  confirmingSupply?: string;
+  txFailed?: string;
+}
+
 interface UseSupplyOptions {
   /** The ERC20 token address (reserve.underlyingAsset) */
   tokenAddress: `0x${string}`;
@@ -28,12 +44,21 @@ interface UseSupplyOptions {
   amount: string;
   /** Callback after successful deposit */
   onSuccess?: () => void;
+  /** Internationalized toast labels */
+  toastLabels?: SupplyToastLabels;
 }
 
 /**
  * Hook for ERC20 supply flow: check allowance → approve → deposit.
  */
-export function useSupply({ tokenAddress, decimals, userAddress, amount, onSuccess }: UseSupplyOptions) {
+export function useSupply({
+  tokenAddress,
+  decimals,
+  userAddress,
+  amount,
+  onSuccess,
+  toastLabels: l,
+}: UseSupplyOptions) {
   const [status, setStatus] = useState<SupplyTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -100,7 +125,9 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
       refetchAllowance();
       setStatus('idle');
       toast.dismiss('supply-approve');
-      toast.success('Approval confirmed', { description: 'Token spending approved. You can now supply.' });
+      toast.success(l?.approvalConfirmed ?? 'Approval confirmed', {
+        description: l?.approvalConfirmedDesc ?? 'Token spending approved. You can now supply.',
+      });
     }
   }, [isApproveConfirmed, approveTxHash, refetchAllowance]);
 
@@ -109,7 +136,9 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
       handledDepositTx.current = depositTxHash;
       setStatus('success');
       toast.dismiss('supply-deposit');
-      toast.success('Supply confirmed', { description: `Successfully supplied ${amount} tokens.` });
+      toast.success(l?.supplyConfirmed ?? 'Supply confirmed', {
+        description: l?.supplyConfirmedDesc ?? `Successfully supplied ${amount} tokens.`,
+      });
       refetchAllowance();
       onSuccess?.();
     }
@@ -118,13 +147,13 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
   // Update loading toasts when confirming on-chain
   useEffect(() => {
     if (isApproveConfirming) {
-      toast.loading('Confirming approval on-chain...', { id: 'supply-approve' });
+      toast.loading(l?.confirmingApproval ?? 'Confirming approval on-chain...', { id: 'supply-approve' });
     }
   }, [isApproveConfirming]);
 
   useEffect(() => {
     if (isDepositConfirming) {
-      toast.loading('Confirming supply on-chain...', { id: 'supply-deposit' });
+      toast.loading(l?.confirmingSupply ?? 'Confirming supply on-chain...', { id: 'supply-deposit' });
     }
   }, [isDepositConfirming]);
 
@@ -133,8 +162,8 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
     if (isApproveReceiptError && approveTxHash) {
       setStatus('error');
       toast.dismiss('supply-approve');
-      toast.error('Approval transaction reverted', {
-        description: approveReceiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.approvalReverted ?? 'Approval transaction reverted', {
+        description: approveReceiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isApproveReceiptError, approveTxHash, approveReceiptError]);
@@ -143,8 +172,8 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
     if (isDepositReceiptError && depositTxHash) {
       setStatus('error');
       toast.dismiss('supply-deposit');
-      toast.error('Supply transaction reverted', {
-        description: depositReceiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.supplyReverted ?? 'Supply transaction reverted', {
+        description: depositReceiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isDepositReceiptError, depositTxHash, depositReceiptError]);
@@ -154,7 +183,7 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
     if (!userAddress) return;
     setStatus('approving');
     resetApprove();
-    toast.loading('Waiting for approval signature...', { id: 'supply-approve' });
+    toast.loading(l?.waitingApprovalSignature ?? 'Waiting for approval signature...', { id: 'supply-approve' });
     approveWrite(
       {
         address: tokenAddress,
@@ -164,7 +193,7 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('supply-approve');
-          toast.error('Approval failed', {
+          toast.error(l?.approvalFailed ?? 'Approval failed', {
             description: getEvmMessage(error),
           });
         },
@@ -176,7 +205,7 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
     if (!userAddress || !amount || Number(amount) <= 0) return;
     setStatus('supplying');
     resetDeposit();
-    toast.loading('Waiting for supply signature...', { id: 'supply-deposit' });
+    toast.loading(l?.waitingSupplySignature ?? 'Waiting for supply signature...', { id: 'supply-deposit' });
     depositWrite(
       {
         address: lendingPoolAddress,
@@ -186,7 +215,7 @@ export function useSupply({ tokenAddress, decimals, userAddress, amount, onSucce
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('supply-deposit');
-          toast.error('Supply failed', {
+          toast.error(l?.supplyFailed ?? 'Supply failed', {
             description: getEvmMessage(error),
           });
         },
