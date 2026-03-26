@@ -19,7 +19,7 @@ function MetricTooltip({ content }: { content: string }) {
             <Info size={12} className='text-muted-foreground/60' />
           </span>
         </TooltipTrigger>
-        <TooltipContent side='top' className='max-w-[260px] text-center text-xs leading-relaxed'>
+        <TooltipContent side='top' className='max-w-[260px] text-xs'>
           {content}
         </TooltipContent>
       </Tooltip>

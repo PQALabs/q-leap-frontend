@@ -143,7 +143,7 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
           onOpenChangeAction();
         }}
       >
-        <DialogContent aria-describedby='' className='rounded-xs border-border bg-background p-6 sm:max-w-[440px]'>
+        <DialogContent aria-describedby='' className='rounded-xs border-border bg-card p-6 sm:max-w-[440px]'>
           {isWrongChain ? (
             // Wrong Chain UI
             <>
