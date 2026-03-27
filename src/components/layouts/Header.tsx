@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Copy, LayoutDashboard, LogOut, Menu, PlusCircle, Wallet } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -57,9 +58,24 @@ export function Header() {
               href='/'
               className='flex items-center gap-2 font-bold text-foreground text-lg tracking-wide transition-opacity hover:opacity-80'
             >
-              <span className='flex h-8 w-8 items-center justify-center rounded-md bg-primary font-extrabold text-primary-foreground text-sm'>
-                Q
-              </span>
+              {/* Light theme logo */}
+              <Image
+                src='/logo-light.svg'
+                alt={siteConfig.name}
+                width={36}
+                height={36}
+                className='block dark:hidden'
+                priority
+              />
+              {/* Dark theme logo */}
+              <Image
+                src='/logo-dark.svg'
+                alt={siteConfig.name}
+                width={36}
+                height={36}
+                className='hidden dark:block'
+                priority
+              />
               <span className='hidden sm:inline'>{siteConfig.name}</span>
             </Link>
           </div>
@@ -157,9 +173,8 @@ export function Header() {
         <SheetContent side='right' className='w-72 p-0'>
           <SheetHeader className='border-border border-b px-4 py-4'>
             <SheetTitle className='flex items-center gap-2 font-bold text-lg'>
-              <span className='flex h-8 w-8 items-center justify-center rounded-md bg-primary font-extrabold text-primary-foreground text-sm'>
-                Q
-              </span>
+              <Image src='/logo-light.svg' alt={siteConfig.name} width={32} height={32} className='block dark:hidden' />
+              <Image src='/logo-dark.svg' alt={siteConfig.name} width={32} height={32} className='hidden dark:block' />
               {siteConfig.name}
             </SheetTitle>
           </SheetHeader>

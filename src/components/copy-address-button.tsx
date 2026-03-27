@@ -19,7 +19,7 @@ export function CopyAddressButton({ address, title }: CopyAddressButtonProps) {
     e.preventDefault();
     await navigator.clipboard.writeText(address);
     setCopied(true);
-    setTimeout(() => setCopied(false), 5000);
+    setTimeout(() => setCopied(false), 2_000);
   };
 
   return (
