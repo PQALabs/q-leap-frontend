@@ -225,6 +225,18 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     return maxAmount;
   }, [user, reserve]);
 
+  // ── Keep borrowAmount in sync when MAX is selected and price updates ──
+  // Clamp to the latest maxBorrowAmount so it never exceeds the fresh value.
+  useEffect(() => {
+    if (isMaxBorrowSelected && maxBorrowAmount > 0) {
+      setBorrowAmount((prev) => {
+        const prevNum = Number(prev);
+        // If current amount exceeds new max, clamp down; otherwise keep as-is
+        return prevNum > maxBorrowAmount ? maxBorrowAmount.toString() : prev;
+      });
+    }
+  }, [isMaxBorrowSelected, maxBorrowAmount]);
+
   // ── Projected HF after borrow ──
   const projectedBorrowHF = useMemo(() => {
     if (!user || !borrowAmount || Number(borrowAmount) <= 0) return null;
@@ -245,7 +257,9 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     }
 
     // 2. Insufficient collateral
-    if (user && amt > maxBorrowAmount) {
+    // Skip when MAX is selected — the amount was already computed safely.
+    // This prevents false positives when pool data refreshes mid-interaction.
+    if (user && !isMaxBorrowSelected && amt > maxBorrowAmount * 1.001) {
       error = t('insufficientCollateral');
     }
 
