@@ -1,6 +1,7 @@
 'use client';
 
-import { CheckCircle2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, ExternalLink, LayoutDashboard } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -20,6 +21,7 @@ interface BorrowSuccessDialogProps {
 
 export function BorrowSuccessDialog({ open, onClose, amount, symbol, txHash, explorerUrl }: BorrowSuccessDialogProps) {
   const t = useTranslations('modules.market.SuccessDialog');
+  const router = useRouter();
 
   const formattedAmount = Number(amount).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -48,6 +50,19 @@ export function BorrowSuccessDialog({ open, onClose, amount, symbol, txHash, exp
           <div className='flex w-full flex-col gap-2'>
             <Button className='w-full' size='lg' onClick={onClose}>
               {t('okClose')}
+            </Button>
+
+            <Button
+              variant='outline'
+              className='w-full'
+              size='lg'
+              icon={<LayoutDashboard size={14} />}
+              onClick={() => {
+                onClose();
+                router.push('/dashboard');
+              }}
+            >
+              {t('goToDashboard')}
             </Button>
 
             {txUrl && (

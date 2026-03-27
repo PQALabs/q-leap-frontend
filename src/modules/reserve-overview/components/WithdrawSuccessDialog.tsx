@@ -1,6 +1,7 @@
 'use client';
 
-import { CheckCircle2, ExternalLink, Wallet } from 'lucide-react';
+import { CheckCircle2, ExternalLink, LayoutDashboard, Wallet } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -28,6 +29,7 @@ export function WithdrawSuccessDialog({
   explorerUrl,
 }: WithdrawSuccessDialogProps) {
   const t = useTranslations('modules.market.WithdrawSuccessDialog');
+  const router = useRouter();
 
   const logoUrl = getTokenLogoUrl(symbol);
   const formattedAmount = Number(amount).toLocaleString(undefined, {
@@ -71,6 +73,19 @@ export function WithdrawSuccessDialog({
           <div className='flex w-full flex-col gap-2'>
             <Button className='w-full' size='lg' onClick={onClose}>
               {t('okClose')}
+            </Button>
+
+            <Button
+              variant='outline'
+              className='w-full'
+              size='lg'
+              icon={<LayoutDashboard size={14} />}
+              onClick={() => {
+                onClose();
+                router.push('/dashboard');
+              }}
+            >
+              {t('goToDashboard')}
             </Button>
 
             {txUrl && (

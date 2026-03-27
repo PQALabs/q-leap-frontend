@@ -1,6 +1,7 @@
 'use client';
 
-import { CheckCircle2, ExternalLink, Loader2, Wallet } from 'lucide-react';
+import { CheckCircle2, ExternalLink, LayoutDashboard, Loader2, Wallet } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -43,6 +44,7 @@ export function SupplySuccessDialog({
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const t = useTranslations('modules.market.SuccessDialog');
+  const router = useRouter();
   const { data: walletClient } = useWalletClient();
 
   const logoUrl = getTokenLogoUrl(symbol);
@@ -137,6 +139,19 @@ export function SupplySuccessDialog({
           <div className='flex w-full flex-col gap-2'>
             <Button className='w-full' size='lg' onClick={onClose}>
               {t('okClose')}
+            </Button>
+
+            <Button
+              variant='outline'
+              className='w-full'
+              size='lg'
+              icon={<LayoutDashboard size={14} />}
+              onClick={() => {
+                onClose();
+                router.push('/dashboard');
+              }}
+            >
+              {t('goToDashboard')}
             </Button>
 
             {txUrl && (
