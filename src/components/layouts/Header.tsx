@@ -38,7 +38,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { copied, copy } = useCopy();
   const { address, isConnected, chainId, chain } = useConnection();
-  const { mutate: disconnect } = useDisconnect();
+  const { mutateAsync: disconnect } = useDisconnect();
   const { switchToQday, isPending: isAddingChain } = useSwitchToQday();
 
   const targetChain = env.ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
@@ -46,6 +46,11 @@ export function Header() {
 
   const handleOpenConnectWallet = () => {
     setTargetInView('connectWallet');
+  };
+
+  const handleDisconnect = async () => {
+    await disconnect();
+    toast.success(t('disconnectSuccess'));
   };
 
   return (
@@ -135,7 +140,7 @@ export function Header() {
                       {copied ? <Check size={13} className='mr-1.5' /> : <Copy size={13} className='mr-1.5' />}
                       {copied ? t('copied') : t('copyAddress')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem variant='destructive' className='cursor-pointer' onClick={() => disconnect()}>
+                    <DropdownMenuItem variant='destructive' className='cursor-pointer' onClick={handleDisconnect}>
                       <LogOut size={13} className='mr-1.5' />
                       {t('disconnect')}
                     </DropdownMenuItem>

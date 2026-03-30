@@ -87,7 +87,6 @@ export function useMarketSummary() {
   // Map sorted reserve data -> CoreAsset[] for the table
   const coreAssets: CoreAsset[] = useMemo(() => {
     return sortedData.map((item) => {
-      console.log('🚀 ~ useMarketSummary ~ item:', item.currencySymbol);
       const displaySymbol = getDisplaySymbol(item.currencySymbol);
 
       return {

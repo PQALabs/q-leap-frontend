@@ -6,6 +6,7 @@ import { EVM_CHAINS, qdayMainnet, qdayTestnet } from '@/constants/wagmi';
 
 export const config = createConfig({
   chains: EVM_CHAINS,
+  ssr: true,
   connectors: [
     // EIP-6963: target MetaMask specifically via its rdns identifier.
     // This avoids grabbing window.ethereum directly, so other extensions
@@ -21,6 +22,7 @@ export const config = createConfig({
               url: env.APP_URL,
               iconUrl: 'https://wagmi.io/favicon.ico',
             },
+            extensionOnly: true,
           }),
         ]
       : []),

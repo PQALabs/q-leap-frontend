@@ -43,7 +43,8 @@
     "myPortfolio": "My Portfolio",
     "dashboard": "Dashboard",
     "copyAddress": "Copy Address",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "disconnectSuccess": "Wallet disconnected successfully"
   },
   "connectWallet": {
     "title": "Connect Wallet",
@@ -120,7 +121,6 @@
         "apyVariable": "APY, Variable",
         "borrowingEnabled": "Borrowing enabled",
         "borrowingDisabled": "Borrowing disabled",
-        "interestRateModel": "Interest Rate Model",
         "reserveFactor": "Reserve Factor",
         "userPositionSummary": "User Position Summary",
         "suppliedAmount": "Supplied Amount",

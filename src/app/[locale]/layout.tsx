@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import '../globals.css';
 import { Toaster } from '@/components/ui/sonner';
+import { env } from '@/config/env';
 import { routing } from '@/i18n/routing';
 import Providers from '../providers';
 
@@ -19,8 +20,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Home',
-  description: 'Q-LEAP',
+  title: { default: env.APP_NAME, template: `%s | ${env.APP_NAME}` },
+  description: 'Decentralized lending protocol on QDay Network',
+  applicationName: env.APP_NAME,
+  metadataBase: new URL(env.APP_URL),
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+  },
 };
 
 export function generateStaticParams() {

@@ -21,7 +21,7 @@ export function getEvmMessage(error: any): string {
   const revertReason =
     error?.cause?.reason || error?.cause?.data?.message || error?.cause?.shortMessage || error?.data?.message;
   if (revertReason) {
-    return `Contract error: ${revertReason}`;
+    return `${revertReason}`;
   }
 
   // ── Viem shortMessage (clean one-liner) ──

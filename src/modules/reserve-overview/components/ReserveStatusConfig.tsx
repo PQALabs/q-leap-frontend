@@ -17,7 +17,7 @@ function InfoTooltip({ label }: { label: string }) {
         <TooltipTrigger asChild>
           <CircleHelp size={14} width={14} className='min-h-3.5 min-w-3.5 cursor-help text-muted-foreground' />
         </TooltipTrigger>
-        <TooltipContent className='max-w-xs'>{label}</TooltipContent>
+        <TooltipContent>{label}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -52,7 +52,6 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
 
   const supplyApy = Number(reserve.supplyAPY) * 100;
   const variableBorrowApy = Number(reserve.variableBorrowAPY) * 100;
-  const utilizationRate = Number(reserve.utilizationRate) * 100;
 
   const maxLtv = Number(reserve.baseLTVasCollateral) * 100;
   const liquidationThreshold = Number(reserve.reserveLiquidationThreshold) * 100;
@@ -151,21 +150,6 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
               {variableBorrowApy.toFixed(2)} <span className='font-normal text-base'>%</span>
             </span>
           </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* ── Interest Rate Model ── */}
-      <div className='flex flex-col gap-3'>
-        <h3 className='font-bold text-muted-foreground text-xs uppercase tracking-wider'>{t('interestRateModel')}</h3>
-        <div className='flex flex-col gap-1'>
-          <span className='font-semibold text-muted-foreground text-xs uppercase tracking-wider'>
-            {t('utilizationRate')}
-          </span>
-          <span className='font-bold text-2xl text-foreground'>
-            {utilizationRate.toFixed(2)} <span className='font-normal text-base'>%</span>
-          </span>
         </div>
       </div>
     </div>

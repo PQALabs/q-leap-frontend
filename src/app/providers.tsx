@@ -11,23 +11,25 @@ import { DynamicPoolDataProvider } from '@/providers/dynamic-pool-data-provider'
 import { ProtocolDataProvider } from '@/providers/protocol-data-provider';
 import { StaticPoolDataProvider } from '@/providers/static-pool-data-provider';
 import { ThemeProvider } from '../providers/theme-provider';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      staleTime: 5 * 1000,
-      retry: false,
-    },
-  },
-});
-
 export interface ProvidersProps {
   children: ReactNode;
 }
 
 function Providers({ children }: ProvidersProps) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+            refetchOnMount: false,
+            staleTime: 5 * 1000,
+            retry: false,
+          },
+        },
+      })
+  );
+
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

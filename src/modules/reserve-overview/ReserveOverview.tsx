@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getDisplayName } from '@/config/token-display';
 import { getTokenLogoUrl } from '@/config/token-logos';
+import { useOracleAggregator } from '@/hooks/use-oracle-aggregator';
 import { cn } from '@/lib/utils';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
@@ -44,6 +45,8 @@ export function ReserveOverview() {
     () => reserves.find((r) => r.underlyingAsset.toLowerCase() === underlyingAsset),
     [reserves, underlyingAsset]
   );
+
+  const { aggregatorAddress } = useOracleAggregator(reserve?.underlyingAsset);
 
   const { totalSuppliedUsd, totalBorrowedUsd, availableLiquidityUsd, priceUsd } = useMemo(() => {
     if (!reserve) return { totalSuppliedUsd: 0, totalBorrowedUsd: 0, availableLiquidityUsd: 0, priceUsd: 0 };
@@ -199,12 +202,13 @@ export function ReserveOverview() {
             value={
               <span className='flex items-center gap-1'>
                 $ {priceUsd.toFixed(2)}
-                {explorerLink && (
+                {explorerLink && aggregatorAddress && (
                   <a
-                    href={`${explorerLink}/address/${reserve.underlyingAsset}`}
+                    href={`${explorerLink}/address/${aggregatorAddress}`}
                     target='_blank'
                     rel='noopener noreferrer'
                     className='text-muted-foreground transition-colors hover:text-foreground'
+                    title={t('viewOracleOnExplorer')}
                   >
                     <ExternalLink size={12} />
                   </a>
