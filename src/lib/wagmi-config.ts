@@ -23,7 +23,7 @@ export const config = createConfig({
               iconUrl: 'https://wagmi.io/favicon.ico',
             },
             extensionOnly: true,
-          }),
+          } as any),
         ]
       : []),
     // walletConnect({
