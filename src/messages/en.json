@@ -107,6 +107,7 @@
         "availableLiquidity": "Available Liquidity",
         "utilizationRate": "Utilization Rate",
         "oraclePrice": "Oracle Price",
+        "viewOracleOnExplorer": "View oracle on explorer",
         "reserveStatus": "Reserve status & configuration",
         "supplyInfo": "Supply Info",
         "totalSupplied": "Total Supplied",

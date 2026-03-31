@@ -16,7 +16,7 @@ import {
 import { getDisplayName } from '@/config/token-display';
 import { getTokenLogoUrl } from '@/config/token-logos';
 import { useOracleAggregator } from '@/hooks/use-oracle-aggregator';
-import { cn } from '@/lib/utils';
+import { cn, truncateDecimals } from '@/lib/utils';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
 import { AddToWalletButton } from './components/AddToWalletButton';
@@ -201,7 +201,7 @@ export function ReserveOverview() {
             label={t('oraclePrice')}
             value={
               <span className='flex items-center gap-1'>
-                $ {priceUsd.toFixed(2)}
+                $ {truncateDecimals(priceUsd)}
                 {explorerLink && aggregatorAddress && (
                   <a
                     href={`${explorerLink}/address/${aggregatorAddress}`}

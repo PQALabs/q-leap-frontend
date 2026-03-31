@@ -14,3 +14,13 @@ export const isMobileDevice = (): boolean => {
 
   return mobileRegex.test(userAgent.toLowerCase());
 };
+
+/**
+ * Truncates a number to the given number of decimal places WITHOUT rounding.
+ * e.g. truncateDecimals(1.239, 2) === "1.23"
+ */
+export const truncateDecimals = (value: number, decimals: number = 2): string => {
+  const factor = Math.pow(10, decimals);
+  const truncated = Math.trunc(value * factor) / factor;
+  return truncated.toFixed(decimals);
+};
