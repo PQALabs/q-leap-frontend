@@ -1,13 +1,12 @@
 ###################### BUILD STAGE ########################
 FROM node:24.14.0-alpine3.23 AS builder
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 WORKDIR /app
 
 COPY package*.json pnpm-lock.yaml ./
-RUN pnpm config set auto-install-peers false \
-  && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
@@ -16,17 +15,6 @@ ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm build
-
-###################### DEPS STAGE ########################
-FROM node:24.14.0-alpine3.23 AS deps
-
-RUN npm install -g pnpm
-
-WORKDIR /app
-
-COPY package*.json pnpm-lock.yaml ./
-RUN pnpm config set auto-install-peers false \
-  && pnpm install --frozen-lockfile --prod && pnpm store prune
 
 ###################### FINAL STAGE ########################
 FROM alpine:3.23 AS runner
