@@ -6,7 +6,8 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 COPY package*.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set auto-install-peers false \
+  && pnpm install --frozen-lockfile
 
 COPY . .
 
@@ -24,7 +25,8 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 COPY package*.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod && pnpm store prune
+RUN pnpm config set auto-install-peers false \
+  && pnpm install --frozen-lockfile --prod && pnpm store prune
 
 ###################### FINAL STAGE ########################
 FROM alpine:3.23 AS runner
@@ -52,4 +54,4 @@ USER app_user
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "server.js"]s
+CMD ["node", "server.js"]
