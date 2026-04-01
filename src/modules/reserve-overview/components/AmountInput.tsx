@@ -84,7 +84,7 @@ export function AmountInput({
             const oldFormatted = e.target.value;
             const raw = stripCommas(oldFormatted);
             // Allow empty, or valid decimal number with up to 6 decimal places
-            if (raw === '' || /^\d*\.?\d{0,6}$/.test(raw)) {
+            if (raw === '' || /^\d*\.?\d{0,4}$/.test(raw)) {
               // Calculate cursor offset from commas before cursor in old vs new formatted
               const commasBefore = (oldFormatted.slice(0, cursorPos).match(/,/g) || []).length;
               const newFormatted = formatWithCommas(raw);

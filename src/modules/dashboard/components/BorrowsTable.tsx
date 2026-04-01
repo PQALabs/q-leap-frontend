@@ -85,7 +85,7 @@ export function BorrowsTable({
                       <div className='flex flex-col'>
                         <span className='font-medium text-foreground'>{formatUsd(ur.totalBorrowsUSD)}</span>
                         <span className='text-muted-foreground text-xs'>
-                          {formatTokenAmount(ur.totalBorrows, 4)} {ur.reserve.symbol}
+                          {formatTokenAmount(ur.totalBorrows)} {ur.reserve.symbol}
                         </span>
                       </div>
                     </td>

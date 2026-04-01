@@ -722,15 +722,15 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
               value={
                 withdrawAmount && Number(withdrawAmount) > 0 ? (
                   <span className='flex items-center gap-1'>
-                    <span>{formatTokenAmount(suppliedBalance, 2)}</span>
+                    <span>{formatTokenAmount(suppliedBalance)}</span>
                     <span className='text-muted-foreground'>→</span>
                     <span className='font-semibold'>
-                      {formatTokenAmount(Math.max(suppliedBalance - Number(withdrawAmount), 0), 2)}
+                      {formatTokenAmount(Math.max(suppliedBalance - Number(withdrawAmount), 0))}
                     </span>
                     <span className='text-muted-foreground'>{reserve.symbol}</span>
                   </span>
                 ) : (
-                  `${formatTokenAmount(suppliedBalance, 2)} ${reserve.symbol}`
+                  `${formatTokenAmount(suppliedBalance)} ${reserve.symbol}`
                 )
               }
             />

@@ -7,7 +7,6 @@ import { WagmiProvider } from 'wagmi';
 import { PoolDataError } from '@/components/pool-data-status';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { config } from '@/lib/wagmi-config';
-import { DynamicPoolDataProvider } from '@/providers/dynamic-pool-data-provider';
 import { ProtocolDataProvider } from '@/providers/protocol-data-provider';
 import { StaticPoolDataProvider } from '@/providers/static-pool-data-provider';
 import { ThemeProvider } from '../providers/theme-provider';
@@ -43,7 +42,7 @@ function Providers({ children }: ProvidersProps) {
           <QueryClientProvider client={queryClient}>
             <ProtocolDataProvider>
               <StaticPoolDataProvider errorPage={<PoolDataError />}>
-                <DynamicPoolDataProvider>{isMounted ? children : <></>}</DynamicPoolDataProvider>
+                {isMounted ? children : <></>}
               </StaticPoolDataProvider>
             </ProtocolDataProvider>
             <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
