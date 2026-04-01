@@ -6,10 +6,14 @@ on:
       - main
       - develop
       - 'release/**'
+      - 'feat/**'
+      - 'fix/**'
+      - 'refactor/**'
   pull_request:
     branches:
       - main
       - develop
+      - 'release/**'
 
 jobs:
   build-and-push:
@@ -33,6 +37,11 @@ jobs:
           fi
 
       # Resolve image tags based on branch
+      # Branch convention:
+      #   main          → :latest + :sha  (production)
+      #   develop       → :develop        (staging, overwrites)
+      #   release/x.y.z → :x.y.z + :sha  (release candidate)
+      #   feat/* fix/* refactor/* chore/* → build only, no push
       - name: Resolve image tags
         id: tags
         run: |
@@ -50,6 +59,7 @@ jobs:
             VERSION="${BRANCH#release/}"
             TAGS="$REGISTRY:$VERSION,$REGISTRY:$SHA"
           fi
+          # feat/*, fix/*, refactor/*, chore/* → TAGS stays empty → no push
 
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
