@@ -12,13 +12,20 @@ import { formatUsd } from '@/utils/format';
 // Health factor bar
 // ---------------------------------------------------------------------------
 function HealthBar({ healthFactor }: { healthFactor: number }) {
-  // No borrows (-1) → full bar; otherwise piecewise: HF 0→0%, HF 1→75% (green zone), HF 3+→100%
-  const pct =
-    healthFactor < 0
-      ? 100
-      : healthFactor <= 1
-        ? Math.min(healthFactor * 75, 75)
-        : Math.min(75 + ((healthFactor - 1) / 2) * 25, 100);
+  // No borrows (-1) → full bar
+  // Danger (HF < 1.1) → mapped to 0% - 30% (Red zone)
+  // Warning (1.1 <= HF < 1.5) → mapped to 30% - 70% (Amber zone)
+  // Safe (HF >= 1.5) → mapped to 70% - 100% (Green zone)
+  let pct = 0;
+  if (healthFactor < 0) {
+    pct = 100;
+  } else if (healthFactor < 1.1) {
+    pct = (healthFactor / 1.1) * 15;
+  } else if (healthFactor < 1.5) {
+    pct = 30 + ((healthFactor - 1.1) / 0.4) * 40;
+  } else {
+    pct = Math.min(70 + ((healthFactor - 1.5) / 1.5) * 30, 100);
+  }
 
   return (
     <div className='mt-1 h-2 w-full overflow-hidden rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500'>

@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import type { useCollateralToggle } from '@/hooks/use-collateral-toggle';
 import type { ComputedUserReserve } from '@/math-utils/formatters/user';
-import type { usePoolDataStore } from '@/stores/use-pool-data-store';
+import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { formatTokenAmount, formatUsd } from '@/utils/format';
 import { CollateralCell } from './CollateralCell';
 
 interface SuppliesTableProps {
   suppliedReserves: ComputedUserReserve[];
-  user: ReturnType<typeof usePoolDataStore.use.user>;
-  reserves: ReturnType<typeof usePoolDataStore.use.reserves>;
+  user: UserSummary | undefined;
+  reserves: ComputedReserveData[];
   collateralToggle: ReturnType<typeof useCollateralToggle>;
   totalSupplyUsd: number;
   supplyApy: string | null;
@@ -97,7 +97,7 @@ export function SuppliesTable({
                       <div className='flex flex-col'>
                         <span className='font-medium text-foreground'>{formatUsd(ur.underlyingBalanceUSD)}</span>
                         <span className='text-muted-foreground text-xs'>
-                          {formatTokenAmount(ur.underlyingBalance, 4)} {ur.reserve.symbol}
+                          {formatTokenAmount(ur.underlyingBalance)} {ur.reserve.symbol}
                         </span>
                       </div>
                     </td>

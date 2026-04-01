@@ -32,7 +32,6 @@ export interface UserSummary extends FormatUserSummaryResponse {
 }
 
 export interface PoolDataState {
-  // Static state
   isLoading: boolean;
   userId: string | undefined;
   chainId: ChainId | undefined;
@@ -46,17 +45,10 @@ export interface PoolDataState {
   marketRefPriceInUsd: string;
   WrappedBaseNetworkAssetAddress: string;
   refresh: () => Promise<void>;
-
-  // Dynamic state
-  reserves: ComputedReserveData[];
-  user: UserSummary | undefined;
 }
 
 export interface PoolDataActions {
-  setStaticData: (
-    data: Omit<PoolDataState, 'isLoading' | 'reserves' | 'user' | 'setStaticData' | 'setDynamicData'>
-  ) => void;
-  setDynamicData: (data: { reserves: ComputedReserveData[]; user?: UserSummary }) => void;
+  setStaticData: (data: Omit<PoolDataState, 'isLoading' | 'setStaticData' | 'setIsLoading'>) => void;
   setIsLoading: (isLoading: boolean) => void;
 }
 
@@ -70,7 +62,6 @@ const useBasePoolDataStore = create<IPoolDataStore>((set) => ({
   networkConfig: undefined,
   rawUserReserves: undefined,
   rawUserReservesWithBase: undefined,
-  user: undefined,
   rawReserves: [],
   rawReservesWithBase: [],
   marketRefCurrencyDecimals: 18,
@@ -78,13 +69,10 @@ const useBasePoolDataStore = create<IPoolDataStore>((set) => ({
   WrappedBaseNetworkAssetAddress: '',
   refresh: async () => {},
 
-  reserves: [],
-
   setStaticData: (data) =>
     set({
       ...data,
     }),
-  setDynamicData: (data) => set(data),
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
 }));
 

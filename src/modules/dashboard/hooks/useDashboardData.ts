@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
+import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import type { ComputedUserReserve } from '@/math-utils/formatters/user';
-import { usePoolDataStore } from '@/stores/use-pool-data-store';
 import { formatApy } from '@/utils/format';
 
 export function useDashboardData() {
-  const user = usePoolDataStore.use.user();
-  const reserves = usePoolDataStore.use.reserves();
+  const { user, reserves } = useFormattedPoolData();
 
   const derived = useMemo(() => {
     if (!user)
@@ -74,5 +73,5 @@ export function useDashboardData() {
     return r ? (Number(r.variableBorrowAPY) * 100).toFixed(2) : '0.00';
   };
 
-  return { ...derived, getSupplyApy, getBorrowApy };
+  return { ...derived, reserves, user, getSupplyApy, getBorrowApy };
 }

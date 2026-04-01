@@ -1,12 +1,12 @@
 import type { useCollateralToggle } from '@/hooks/use-collateral-toggle';
 import type { ComputedUserReserve } from '@/math-utils/formatters/user';
-import type { usePoolDataStore } from '@/stores/use-pool-data-store';
+import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { CollateralSwitch } from './CollateralSwitch';
 
 interface CollateralCellProps {
   ur: ComputedUserReserve;
-  user: ReturnType<typeof usePoolDataStore.use.user>;
-  reserves: ReturnType<typeof usePoolDataStore.use.reserves>;
+  user: UserSummary | undefined;
+  reserves: ComputedReserveData[];
   collateralToggle: ReturnType<typeof useCollateralToggle>;
   cannotUseAsCollateralText: string;
   cannotDisableHfText: string;

@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { STABLECOINS } from '@/config/market';
 import { getDisplaySymbol } from '@/config/token-display';
+import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
 import { formatApy, formatTokenAmount } from '@/utils/format';
@@ -11,8 +12,7 @@ export function useMarketSummary() {
   const t = useTranslations('modules.market.Market');
   const isLoading = usePoolDataStore.use.isLoading();
   const marketRefPriceInUsd = usePoolDataStore.use.marketRefPriceInUsd();
-  const reserves = usePoolDataStore.use.reserves();
-  const user = usePoolDataStore.use.user();
+  const { reserves, user } = useFormattedPoolData();
 
   // ---------------------------------------------------------------------------
   // Derived summary values & Table Data (Single Pass)

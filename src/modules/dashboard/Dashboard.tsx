@@ -16,8 +16,6 @@ export function Dashboard() {
   const t = useTranslations('modules.market.Dashboard');
   const { address } = useConnection();
   const isLoading = usePoolDataStore.use.isLoading();
-  const user = usePoolDataStore.use.user();
-  const reserves = usePoolDataStore.use.reserves();
   const refresh = usePoolDataStore.use.refresh();
 
   const collateralToggle = useCollateralToggle({ onSuccess: () => refresh() });
@@ -37,6 +35,8 @@ export function Dashboard() {
     borrowPowerUsed,
     getSupplyApy,
     getBorrowApy,
+    user,
+    reserves,
   } = useDashboardData();
 
   if (isLoading) return <DashboardSkeleton />;

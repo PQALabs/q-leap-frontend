@@ -44,7 +44,7 @@ export function WithdrawSuccessDialog({
       <DialogContent className='sm:max-w-md'>
         <div className='flex flex-col items-center gap-5 pt-4'>
           {/* ── Success icon ── */}
-          <div className='flex size-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50'>
+          <div className='flex size-16 items-center justify-center rounded-full'>
             <CheckCircle2 className='size-10 text-emerald-600' />
           </div>
 

@@ -15,10 +15,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getDisplayName } from '@/config/token-display';
 import { getTokenLogoUrl } from '@/config/token-logos';
+import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import { useOracleAggregator } from '@/hooks/use-oracle-aggregator';
 import { cn } from '@/lib/utils';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
+import { formatTokenPrice } from '@/utils/format';
 import { AddToWalletButton } from './components/AddToWalletButton';
 import { ReserveActions } from './components/ReserveActions';
 import { ReserveOverviewSkeleton } from './components/ReserveOverviewSkeleton';
@@ -35,8 +37,7 @@ export function ReserveOverview() {
   const underlyingAsset = searchParams.get('underlyingAsset')?.toLowerCase() ?? '';
 
   const isLoading = usePoolDataStore.use.isLoading();
-  const reserves = usePoolDataStore.use.reserves();
-  const user = usePoolDataStore.use.user();
+  const { reserves, user } = useFormattedPoolData();
   const userId = usePoolDataStore.use.userId();
   const marketRefPriceInUsd = usePoolDataStore.use.marketRefPriceInUsd();
   const networkConfig = usePoolDataStore.use.networkConfig();
@@ -201,7 +202,7 @@ export function ReserveOverview() {
             label={t('oraclePrice')}
             value={
               <span className='flex items-center gap-1'>
-                $ {priceUsd.toFixed(2)}
+                {formatTokenPrice(priceUsd)}
                 {explorerLink && aggregatorAddress && (
                   <a
                     href={`${explorerLink}/address/${aggregatorAddress}`}

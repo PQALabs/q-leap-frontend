@@ -2,11 +2,6 @@
   "name": "nextjs-boilerplate",
   "version": "0.1.0",
   "private": true,
-  "author": {
-    "email": "contact.huuphuc@gmail.com",
-    "name": "Phuc Tran",
-    "url": "https://github.com/phucdevnew"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -24,8 +19,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@mantine/hooks": "^8.3.16",
-    "@metamask/connect-evm": "^0.9.0",
-    "@metamask/sdk": "^0.34.0",
+    "@metamask/sdk": "~0.33.1",
     "@radix-ui/react-slot": "^1.2.4",
     "@tanstack/react-query": "^5.90.14",
     "@tanstack/react-query-devtools": "^5.91.2",
