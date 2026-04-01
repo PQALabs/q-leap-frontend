@@ -1,0 +1,140 @@
+name: Build & Push to Huawei SWR
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Determine whether to push (only on protected branches, not PRs)
+      - name: Set push flag
+        id: flags
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "should_push=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_push=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Resolve image tags based on branch
+      # Branch convention:
+      #   main          → :latest + :sha  (production)
+      #   develop       → :develop        (staging, overwrites)
+      #   release/x.y.z → :x.y.z + :sha  (release candidate)
+      #   feat/* fix/* refactor/* chore/* → build only, no push
+      - name: Resolve image tags
+        id: tags
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          REGISTRY="swr.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/${{ vars.SWR_ORG }}/$REPO_NAME"
+          BRANCH="${{ github.ref_name }}"
+          SHA="${{ github.sha }}"
+          TAGS=""
+
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+            TAGS="$REGISTRY:latest,$REGISTRY:$SHA"
+          elif [[ "$BRANCH" == "develop" ]]; then
+            TAGS="$REGISTRY:develop"
+          elif [[ "$BRANCH" == release/* ]]; then
+            VERSION="${BRANCH#release/}"
+            TAGS="$REGISTRY:$VERSION,$REGISTRY:$SHA"
+          fi
+          # feat/*, fix/*, refactor/*, chore/* → TAGS stays empty → no push
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
+
+      - name: Get GitHub OIDC Token
+        id: oidc
+        if: steps.flags.outputs.should_push == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const audience = '${{ vars.HUAWEI_OIDC_AUDIENCE }}';
+            const idToken = await core.getIDToken(audience);
+            core.setOutput('id-token', idToken);
+
+      - name: Exchange for Huawei IAM Token
+        if: steps.flags.outputs.should_push == 'true'
+        env:
+          ID_TOKEN: ${{ steps.oidc.outputs.id-token }}
+        run: |
+          curl -s -D headers.txt \
+            -X POST \
+            -H "X-Idp-Id: ${{ vars.HUAWEI_IDP_ID }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"auth\":{\"id_token\":{\"id\":\"$ID_TOKEN\"},\"scope\":{\"project\":{\"id\":\"${{ vars.HUAWEI_PROJECT_ID }}\"}}}}" \
+            https://iam.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/v3.0/OS-AUTH/id-token/tokens \
+            > body.txt
+
+          HUAWEI_TOKEN=$(grep -i "X-Subject-Token:" headers.txt | awk '{print $2}' | tr -d '\r')
+
+          [ -z "$HUAWEI_TOKEN" ] && { echo "Failed to obtain Huawei token"; exit 1; }
+
+          echo "::add-mask::$HUAWEI_TOKEN"
+          echo "HUAWEI_TOKEN=$HUAWEI_TOKEN" >> $GITHUB_ENV
+
+      - name: Generate Temporary SWR Login Command
+        if: steps.flags.outputs.should_push == 'true'
+        env:
+          HUAWEI_TOKEN: ${{ env.HUAWEI_TOKEN }}
+        run: |
+          ENDPOINT="https://swr-api.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/v2/manage/utils/secret"
+
+          curl -s -D headers.txt -o response.json \
+            -X POST \
+            -H "X-Auth-Token: $HUAWEI_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"duration_seconds": 86400}' \
+            "$ENDPOINT"
+
+          LOGIN_CMD=$(grep -i "^X-Swr-Dockerlogin:" headers.txt | cut -d: -f2- | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+          [ -z "$LOGIN_CMD" ] && { echo "Failed to get login command"; cat headers.txt; exit 1; }
+
+          echo "::add-mask::$LOGIN_CMD"
+          echo "SWR_LOGIN_CMD=$LOGIN_CMD" >> $GITHUB_ENV
+
+      - name: Docker Login to SWR
+        if: steps.flags.outputs.should_push == 'true'
+        env:
+          SWR_LOGIN_CMD: ${{ env.SWR_LOGIN_CMD }}
+        run: |
+          USER=$(echo "$SWR_LOGIN_CMD" | grep -oP '(?<=-u )\S+')
+          PASS=$(echo "$SWR_LOGIN_CMD" | grep -oP '(?<=-p )\S+')
+          HOST="swr.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com"
+
+          [ -z "$USER" ] || [ -z "$PASS" ] || [ -z "$HOST" ] && { echo "Failed to parse login command"; exit 1; }
+
+          echo "$PASS" | docker login -u "$USER" --password-stdin "$HOST"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile
+          context: .
+          push: ${{ steps.flags.outputs.should_push == 'true' && steps.tags.outputs.tags != '' }}
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
