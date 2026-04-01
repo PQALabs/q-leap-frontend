@@ -1,0 +1,10 @@
+.git
+.github
+.husky
+.vscode
+.next
+node_modules
+*.log
+*.md
+.env*
+docker
