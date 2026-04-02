@@ -50,7 +50,10 @@ export function StaticPoolDataProvider({ children, errorPage }: StaticPoolDataPr
     currentAccount as `0x${string}` | undefined
   );
   console.log('🚀 ~ StaticPoolDataProvider ~ rpcDataError:', rpcDataError);
-  console.log('🚀 ~ StaticPoolDataProvider ~ rpcDataError:', env.ENABLE_TESTNET);
+  console.log(
+    '🚀 ~ StaticPoolDataProvider ~ process.env.NEXT_PUBLIC_ENABLE_TESTNET:',
+    process.env.NEXT_PUBLIC_ENABLE_TESTNET
+  );
 
   const activeData = rpcData;
 
