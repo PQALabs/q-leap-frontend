@@ -46,6 +46,7 @@ export function usePoolData(
       refetchInterval: POLLING_INTERVAL,
     },
   });
+  console.log('🚀 ~ usePoolData ~ errorReservesData:', errorReservesData);
 
   const {
     data: userReservesDataRaw,
@@ -62,6 +63,7 @@ export function usePoolData(
       refetchInterval: POLLING_INTERVAL,
     },
   });
+  console.log('🚀 ~ usePoolData ~ errorUserReservesData:', errorUserReservesData);
 
   const loading = loadingReserves || loadingUserReserves;
   const error = errorReserves || errorUserReserves;
