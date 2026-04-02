@@ -1,12 +1,23 @@
 import { getTokenLogoUrl } from '@/config/token-logos';
 import { formatHfValue, getHfColor } from '@/lib/format-health-factor';
+import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Info Row
 // ---------------------------------------------------------------------------
-export function InfoRow({ label, value, valueColor }: { label: string; value: React.ReactNode; valueColor?: string }) {
+export function InfoRow({
+  label,
+  value,
+  valueColor,
+  className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  valueColor?: string;
+  className?: string;
+}) {
   return (
-    <div className='flex items-center justify-between text-sm'>
+    <div className={cn('flex items-center justify-between text-sm', className)}>
       <span className='text-muted-foreground'>{label}</span>
       <span className={valueColor ?? 'text-foreground'}>{value}</span>
     </div>

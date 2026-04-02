@@ -79,7 +79,7 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
               <CompactNumber value={totalLiquidity} />
             </span>
             <span className='text-muted-foreground text-xs'>
-              $ <CompactNumber value={totalSuppliedUsd} />
+              $<CompactNumber value={totalSuppliedUsd} />
             </span>
           </div>
 
@@ -137,7 +137,7 @@ export function ReserveStatusConfig({ reserve, totalSuppliedUsd, totalBorrowedUs
               <CompactNumber value={totalDebt} />
             </span>
             <span className='text-muted-foreground text-xs'>
-              $ <CompactNumber value={totalBorrowedUsd} />
+              $<CompactNumber value={totalBorrowedUsd} />
             </span>
           </div>
 

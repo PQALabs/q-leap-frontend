@@ -359,15 +359,17 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
               setBorrowAmount(maxBorrowAmount.toString());
               setIsMaxBorrowSelected(true);
             }}
-            maxAmount={maxBorrowAmount.toString()}
-            errorMessage={t('exceedsMaxBorrow')}
             label={t('amount')}
-            isMaxSelected={isMaxBorrowSelected}
             usdValue={
               borrowAmount && Number(borrowAmount) > 0
                 ? Number(borrowAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
+            validate={(v) => {
+              if (!v || Number(v) <= 0) return null;
+              if (!isMaxBorrowSelected && Number(v) > maxBorrowAmount) return t('exceedsMaxBorrow');
+              return null;
+            }}
           />
           <div className='ml-auto flex flex-col items-end'>
             <span className='flex items-center gap-1 text-muted-foreground text-xs'>
@@ -579,14 +581,18 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
               setRepayAmount(buffered.toString());
               setIsRepayMax(buffered >= borrowedBalance);
             }}
-            maxAmount={Math.min(Number(repayWalletBalance), borrowedBalance).toString()}
-            errorMessage={t('exceedsAvailableBalance')}
             label={t('repayAmount')}
             usdValue={
               repayAmount && Number(repayAmount) > 0
                 ? Number(repayAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
+            validate={(v) => {
+              if (!v || Number(v) <= 0) return null;
+              if (Number(v) > Number(repayWalletBalance)) return t('insufficientWalletBalance');
+              if (Number(v) > borrowedBalance) return t('exceedsRemainingDebt');
+              return null;
+            }}
           />
           <div className='ml-auto flex flex-col items-end'>
             <span className='flex items-center gap-1 text-muted-foreground text-xs'>
@@ -599,13 +605,6 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
             <Alert>
               <TriangleAlert className='size-4' />
               <AlertDescription className='text-xs'>{t('noOutstandingDebt')}</AlertDescription>
-            </Alert>
-          )}
-
-          {repayAmount && Number(repayAmount) > 0 && Number(repayAmount) > Number(repayWalletBalance) && (
-            <Alert variant='destructive'>
-              <TriangleAlert className='size-4' />
-              <AlertDescription className='text-xs'>{t('insufficientWalletBalance')}</AlertDescription>
             </Alert>
           )}
 
@@ -661,11 +660,39 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
 
           <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
             <InfoRow
+              className='items-baseline'
               label={t('remainingDebt')}
               value={
-                repayAmount && Number(repayAmount) > 0
-                  ? `${formatTokenAmount(Math.max(borrowedBalance - Number(repayAmount), 0))} ${reserve.symbol}`
-                  : `${formatTokenAmount(borrowedBalance)} ${reserve.symbol}`
+                <div className='flex flex-col items-end gap-0.5'>
+                  <span className='font-medium text-foreground text-sm'>
+                    {formatTokenAmount(borrowedBalance)} {reserve.symbol}
+                    {repayAmount && Number(repayAmount) > 0 && (
+                      <>
+                        {' '}
+                        <span className='text-muted-foreground'>→</span>{' '}
+                        {formatTokenAmount(Math.max(borrowedBalance - Number(repayAmount), 0))} {reserve.symbol}
+                      </>
+                    )}
+                  </span>
+                  <span className='text-[11px] text-muted-foreground'>
+                    $
+                    {(
+                      borrowedBalance *
+                      Number(reserve.priceInMarketReferenceCurrency) *
+                      Number(marketRefPriceInUsd)
+                    ).toFixed(2)}
+                    {repayAmount && Number(repayAmount) > 0 && (
+                      <>
+                        {' → $'}
+                        {(
+                          Math.max(borrowedBalance - Number(repayAmount), 0) *
+                          Number(reserve.priceInMarketReferenceCurrency) *
+                          Number(marketRefPriceInUsd)
+                        ).toFixed(2)}
+                      </>
+                    )}
+                  </span>
+                </div>
               }
             />
             <InfoRow label={t('borrowApyVariable')} value={`${variableBorrowApy}%`} />

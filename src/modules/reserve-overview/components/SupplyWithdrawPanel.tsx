@@ -392,14 +392,17 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
                 setSupplyAmount(walletBalance);
               }
             }}
-            maxAmount={walletBalance}
-            errorMessage={t('insufficientBalance')}
             label={t('amount')}
             usdValue={
               supplyAmount && Number(supplyAmount) > 0
                 ? Number(supplyAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
+            validate={(v) => {
+              if (!v || Number(v) <= 0) return null;
+              if (Number(v) > Number(walletBalance)) return t('insufficientBalance');
+              return null;
+            }}
           />
           <div className='ml-auto flex flex-col items-end'>
             <span className='flex items-center gap-1 text-muted-foreground text-xs'>
@@ -601,15 +604,17 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
               const hasBorrows = user && Number(user.totalBorrowsMarketReferenceCurrency) > 0;
               setIsMaxWithdraw(!hasBorrows && maxWithdrawAmount >= suppliedBalance);
             }}
-            maxAmount={maxWithdrawAmount.toString()}
-            errorMessage={t('exceedsMaxWithdraw')}
             label={t('withdrawalAmount')}
-            isMaxSelected={isMaxWithdrawSelected}
             usdValue={
               withdrawAmount && Number(withdrawAmount) > 0
                 ? Number(withdrawAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
+            validate={(v) => {
+              if (!v || Number(v) <= 0) return null;
+              if (!isMaxWithdrawSelected && Number(v) > maxWithdrawAmount) return t('exceedsMaxWithdraw');
+              return null;
+            }}
           />
           <span className='ml-auto text-muted-foreground text-xs'>
             <Landmark size={14} className='inline' /> {t('suppliedAmount')}: {formatTokenAmount(suppliedBalance)}{' '}

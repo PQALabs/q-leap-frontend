@@ -214,7 +214,7 @@
         "repay": "Repay",
         "repaying": "Repaying…",
         "repayAmount": "Repay Amount",
-        "exceedsAvailableBalance": "Exceeds available balance",
+        "exceedsRemainingDebt": "Amount cannot exceed remaining debt",
         "debt": "Debt",
         "noOutstandingDebt": "You have no outstanding debt to repay.",
         "insufficientWalletBalance": "Insufficient wallet balance to repay this amount.",

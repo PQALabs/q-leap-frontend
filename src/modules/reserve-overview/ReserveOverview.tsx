@@ -185,7 +185,7 @@ export function ReserveOverview() {
             label={t('reserveSize')}
             value={
               <>
-                $ <CompactNumber value={totalSuppliedUsd} />
+                $<CompactNumber value={totalSuppliedUsd} />
               </>
             }
           />
@@ -193,7 +193,7 @@ export function ReserveOverview() {
             label={t('availableLiquidity')}
             value={
               <>
-                $ <CompactNumber value={availableLiquidityUsd} />
+                $<CompactNumber value={availableLiquidityUsd} />
               </>
             }
           />

@@ -21,28 +21,23 @@ interface AmountInputProps {
   symbol: string;
   onMax?: () => void;
   label: string;
-  maxAmount?: string;
-  errorMessage?: string;
-  /** When true, suppress the "exceeds max" validation (user explicitly selected MAX) */
-  isMaxSelected?: boolean;
   /** Optional USD equivalent to display below the amount */
   usdValue?: number;
+  /**
+   * Validation callback — receives the current value and returns an error
+   * message string if invalid, or null/undefined if valid.
+   * The parent controls validation priority by returning only the
+   * highest-priority error.
+   */
+  validate?: (value: string) => string | null | undefined;
 }
 
-export function AmountInput({
-  value,
-  onChange,
-  symbol,
-  onMax,
-  label,
-  maxAmount,
-  errorMessage = 'Amount exceeds limit',
-  isMaxSelected = false,
-  usdValue,
-}: AmountInputProps) {
+export function AmountInput({ value, onChange, symbol, onMax, label, usdValue, validate }: AmountInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const cursorRef = useRef<number | null>(null);
-  const exceedsMax = !isMaxSelected && maxAmount !== undefined && value !== '' && Number(value) > Number(maxAmount);
+
+  const errorMessage = validate?.(value) ?? null;
+  const hasError = !!errorMessage;
 
   const displayValue = formatWithCommas(value);
 
@@ -56,7 +51,7 @@ export function AmountInput({
 
   return (
     <div
-      className={`rounded-xs border p-3 ${exceedsMax ? 'border-red-500 bg-red-50/50 dark:bg-red-950/20' : 'border-border bg-muted/30'}`}
+      className={`rounded-xs border p-3 ${hasError ? 'border-red-500 bg-red-50/50 dark:bg-red-950/20' : 'border-border bg-muted/30'}`}
     >
       <div className='mb-1 flex items-center justify-between'>
         <span className='font-semibold text-muted-foreground text-xs uppercase tracking-wider'>{label}</span>
@@ -100,10 +95,10 @@ export function AmountInput({
       </div>
       {usdValue != null && usdValue > 0 && (
         <p className='mt-1 text-[11px] text-muted-foreground/70'>
-          ≈ $ {usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ≈ ${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       )}
-      {exceedsMax && <p className='mt-1 font-medium text-red-500 text-xs'>{errorMessage}</p>}
+      {hasError && <p className='mt-1 font-medium text-red-500 text-xs'>{errorMessage}</p>}
     </div>
   );
 }
