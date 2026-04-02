@@ -1,5 +1,6 @@
 import { type ReactElement, type ReactNode, useEffect } from 'react';
 import { useConnection } from 'wagmi';
+import { env } from '@/config/env';
 import type { ReserveDataHumanized } from '@/helpers/contract/ui-pool-data-provider';
 import { usePoolData } from '@/hooks/use-pool-data';
 import { normalize } from '@/math-utils';
@@ -49,6 +50,7 @@ export function StaticPoolDataProvider({ children, errorPage }: StaticPoolDataPr
     currentAccount as `0x${string}` | undefined
   );
   console.log('🚀 ~ StaticPoolDataProvider ~ rpcDataError:', rpcDataError);
+  console.log('🚀 ~ StaticPoolDataProvider ~ rpcDataError:', env.ENABLE_TESTNET);
 
   const activeData = rpcData;
 
