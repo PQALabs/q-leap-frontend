@@ -47,19 +47,24 @@ jobs:
           BRANCH="${{ github.ref_name }}"
           SHA="${{ github.sha }}"
           TAGS=""
+          TESTNET="false"
 
           if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
             TAGS="$REGISTRY:latest,$REGISTRY:$SHA"
+            TESTNET="false"
           elif [[ "$BRANCH" == "develop" ]]; then
             TAGS="$REGISTRY:develop"
+            TESTNET="true"
           elif [[ "$BRANCH" == release/* ]]; then
             VERSION="${BRANCH#release/}"
             TAGS="$REGISTRY:$VERSION,$REGISTRY:$SHA"
+            TESTNET="false"
           fi
           # feat/*, fix/*, refactor/*, chore/* → TAGS stays empty → no push
 
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
+          echo "testnet=$TESTNET" >> $GITHUB_OUTPUT
 
       - name: Get GitHub OIDC Token
         id: oidc
@@ -135,6 +140,8 @@ jobs:
           context: .
           push: ${{ steps.flags.outputs.should_push == 'true' && steps.tags.outputs.tags != '' }}
           tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            NEXT_PUBLIC_ENABLE_TESTNET=${{ steps.tags.outputs.testnet }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
