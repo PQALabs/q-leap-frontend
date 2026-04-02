@@ -6,9 +6,9 @@ import { siteConfig } from '@/config/site';
 
 const footerLinks = ['privacy', 'terms', 'documentation'] as const;
 const footerHrefs: Record<(typeof footerLinks)[number], string> = {
-  privacy: '/privacy',
-  terms: '/terms',
-  documentation: '/docs',
+  privacy: '#',
+  terms: '#',
+  documentation: '#',
 };
 
 export function Footer() {
