@@ -1,5 +1,7 @@
+ARG NODE_IMAGE=node:24.14.0-alpine3.23
+
 ###################### BUILD STAGE ########################
-FROM node:24.14.0-alpine3.23 AS builder
+FROM $NODE_IMAGE AS builder
 
 RUN npm install -g pnpm@9
 
@@ -17,7 +19,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
 ###################### FINAL STAGE ########################
-FROM alpine:3.23 AS runner
+FROM $NODE_IMAGE AS runner
 
 RUN apk upgrade --no-cache \
   && apk add --no-cache dumb-init
