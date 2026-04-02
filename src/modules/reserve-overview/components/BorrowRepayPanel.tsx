@@ -11,6 +11,7 @@ import {
   TriangleAlert,
   Wallet,
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatUnits } from 'viem';
@@ -60,7 +61,9 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   const [isMaxBorrowSelected, setIsMaxBorrowSelected] = useState(false);
   const [repayAmount, setRepayAmount] = useState('');
   const [isRepayMax, setIsRepayMax] = useState(false);
-  const [openSection, setOpenSection] = useState<'borrow' | 'repay'>('borrow');
+  const searchParams = useSearchParams();
+  const actionParam = searchParams.get('action');
+  const [openSection, setOpenSection] = useState<'borrow' | 'repay'>(actionParam === 'repay' ? 'repay' : 'borrow');
   const [borrowSuccessInfo, setBorrowSuccessInfo] = useState<{
     amount: string;
     symbol: string;
@@ -83,6 +86,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   // ── Context ──
   const { address } = useConnection();
   const t = useTranslations('modules.market.ReserveActions');
+  const tt = useTranslations('modules.market.Toasts');
   const refresh = usePoolDataStore.use.refresh();
   const networkConfig = usePoolDataStore.use.networkConfig();
   const explorerUrl = networkConfig?.explorerLink;
@@ -132,6 +136,15 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     userAddress: address,
     amount: borrowAmount,
     onSuccess: onTxSuccess,
+    toastLabels: {
+      borrowConfirmed: tt('borrowConfirmed'),
+      borrowConfirmedDesc: tt('borrowConfirmedDesc', { amount: borrowAmount, symbol: activeBorrowSymbol }),
+      borrowFailed: tt('borrowFailed'),
+      borrowReverted: tt('borrowReverted'),
+      waitingBorrowSignature: tt('waitingBorrowSignature'),
+      confirmingBorrow: tt('confirmingBorrow'),
+      txFailed: tt('txFailed'),
+    },
   });
 
   const nativeBorrow = useBorrowNative({
@@ -139,6 +152,21 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     userAddress: address,
     amount: borrowAmount,
     onSuccess: onTxSuccess,
+    toastLabels: {
+      delegationConfirmed: tt('delegationConfirmed'),
+      delegationConfirmedDesc: tt('delegationConfirmedDesc'),
+      delegationFailed: tt('delegationFailed'),
+      delegationReverted: tt('delegationReverted'),
+      waitingDelegationSignature: tt('waitingDelegationSignature'),
+      confirmingDelegation: tt('confirmingDelegation'),
+      borrowConfirmed: tt('borrowConfirmed'),
+      borrowConfirmedDesc: tt('borrowConfirmedDesc', { amount: borrowAmount, symbol: activeBorrowSymbol }),
+      borrowFailed: tt('borrowFailed'),
+      borrowReverted: tt('borrowReverted'),
+      waitingBorrowSignature: tt('waitingBorrowSignature'),
+      confirmingBorrow: tt('confirmingBorrow'),
+      txFailed: tt('txFailed'),
+    },
   });
 
   const erc20Repay = useRepay({
@@ -225,17 +253,10 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     return maxAmount;
   }, [user, reserve]);
 
-  // ── Keep borrowAmount in sync when MAX is selected and price updates ──
-  // Clamp to the latest maxBorrowAmount so it never exceeds the fresh value.
-  useEffect(() => {
-    if (isMaxBorrowSelected && maxBorrowAmount > 0) {
-      setBorrowAmount((prev) => {
-        const prevNum = Number(prev);
-        // If current amount exceeds new max, clamp down; otherwise keep as-is
-        return prevNum > maxBorrowAmount ? maxBorrowAmount.toString() : prev;
-      });
-    }
-  }, [isMaxBorrowSelected, maxBorrowAmount]);
+  // Removed real-time clamping for MAX borrow:
+  // Using a static pre-calculated number with a 1% safety buffer (implemented above)
+  // handles slight debt growth between interaction and transaction execution.
+  // This matches the standard implementation and prevents annoying UI jumps.
 
   // ── Projected HF after borrow ──
   const projectedBorrowHF = useMemo(() => {
@@ -659,6 +680,16 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
           />
 
           <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
+            {!isRepayNative && (
+              <InfoRow
+                label={t('currentAllowance')}
+                value={
+                  Number(erc20Repay.allowance) > 1e15
+                    ? `∞ ${reserve.symbol}`
+                    : `${formatTokenAmount(erc20Repay.allowance)} ${reserve.symbol}`
+                }
+              />
+            )}
             <InfoRow
               className='items-baseline'
               label={t('remainingDebt')}

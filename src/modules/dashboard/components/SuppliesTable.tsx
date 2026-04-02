@@ -120,7 +120,7 @@ export function SuppliesTable({
                           <Link href={`${reserveLink}&action=supply`}>{t('supply')}</Link>
                         </Button>
                         <Button size='sm' variant='ghost' asChild>
-                          <Link href={`${reserveLink}&action=supply`}>{t('withdraw')}</Link>
+                          <Link href={`${reserveLink}&action=withdraw`}>{t('withdraw')}</Link>
                         </Button>
                       </div>
                     </td>

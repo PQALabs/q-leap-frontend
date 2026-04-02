@@ -10,6 +10,16 @@ import { useProtocolDataContext } from '@/providers/protocol-data-provider';
 
 export type BorrowTxStatus = 'idle' | 'borrowing' | 'confirming' | 'success' | 'error';
 
+export interface BorrowToastLabels {
+  borrowConfirmed?: string;
+  borrowConfirmedDesc?: string;
+  borrowFailed?: string;
+  borrowReverted?: string;
+  waitingBorrowSignature?: string;
+  confirmingBorrow?: string;
+  txFailed?: string;
+}
+
 interface UseBorrowOptions {
   /** The ERC20 token address (reserve.underlyingAsset) */
   tokenAddress: `0x${string}`;
@@ -21,6 +31,8 @@ interface UseBorrowOptions {
   amount: string;
   /** Callback after successful borrow */
   onSuccess?: () => void;
+  /** Internationalized toast labels */
+  toastLabels?: BorrowToastLabels;
 }
 
 /**
@@ -28,7 +40,14 @@ interface UseBorrowOptions {
  * No approval is needed — the protocol mints debt tokens to the user directly.
  * Uses variable rate mode (2) by default.
  */
-export function useBorrow({ tokenAddress, decimals, userAddress, amount, onSuccess }: UseBorrowOptions) {
+export function useBorrow({
+  tokenAddress,
+  decimals,
+  userAddress,
+  amount,
+  onSuccess,
+  toastLabels: l,
+}: UseBorrowOptions) {
   const [status, setStatus] = useState<BorrowTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -59,7 +78,9 @@ export function useBorrow({ tokenAddress, decimals, userAddress, amount, onSucce
       handledTx.current = txHash;
       setStatus('success');
       toast.dismiss('borrow-erc20');
-      toast.success('Borrow confirmed', { description: `Successfully borrowed ${amount} tokens.` });
+      toast.success(l?.borrowConfirmed ?? 'Borrow confirmed', {
+        description: l?.borrowConfirmedDesc ?? `Successfully borrowed ${amount} tokens.`,
+      });
       onSuccess?.();
     }
   }, [isConfirmed, txHash, onSuccess, amount]);
@@ -67,7 +88,7 @@ export function useBorrow({ tokenAddress, decimals, userAddress, amount, onSucce
   // Update loading toast when confirming
   useEffect(() => {
     if (isConfirming) {
-      toast.loading('Confirming borrow on-chain...', { id: 'borrow-erc20' });
+      toast.loading(l?.confirmingBorrow ?? 'Confirming borrow on-chain...', { id: 'borrow-erc20' });
     }
   }, [isConfirming]);
 
@@ -76,8 +97,8 @@ export function useBorrow({ tokenAddress, decimals, userAddress, amount, onSucce
     if (isReceiptError && txHash) {
       setStatus('error');
       toast.dismiss('borrow-erc20');
-      toast.error('Borrow transaction reverted', {
-        description: receiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.borrowReverted ?? 'Borrow transaction reverted', {
+        description: receiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isReceiptError, txHash, receiptError]);
@@ -87,7 +108,7 @@ export function useBorrow({ tokenAddress, decimals, userAddress, amount, onSucce
     if (!userAddress || !amount || Number(amount) <= 0) return;
     setStatus('borrowing');
     resetWrite();
-    toast.loading('Waiting for borrow signature...', { id: 'borrow-erc20' });
+    toast.loading(l?.waitingBorrowSignature ?? 'Waiting for borrow signature...', { id: 'borrow-erc20' });
 
     borrowWrite(
       {
@@ -104,7 +125,7 @@ export function useBorrow({ tokenAddress, decimals, userAddress, amount, onSucce
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('borrow-erc20');
-          toast.error('Borrow failed', {
+          toast.error(l?.borrowFailed ?? 'Borrow failed', {
             description: getEvmMessage(error),
           });
         },

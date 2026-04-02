@@ -97,9 +97,7 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
       handleSwitchChain();
       if (!accountsAddress) return;
 
-      // if (!isWrongChain) {
-      //   setTargetInView('');
-      // }
+      toast.success(t('connectSuccess'));
     } catch (error: any) {
       toast.error(parseWalletError(error) || t('failedConnect'));
       disConnectEvm();
@@ -110,7 +108,6 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
     setIsSwitching(true);
     try {
       await switchToQday();
-      toast.success(t('switchSuccess', { chainName: targetChain.name }));
 
       setTargetInView('');
     } catch (error: any) {

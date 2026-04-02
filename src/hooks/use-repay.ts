@@ -61,8 +61,9 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
 
   const needsApproval = useMemo(() => {
     if (!amount || Number(amount) <= 0) return false;
-    return Number(allowance) < Number(amount);
-  }, [amount, allowance]);
+    const requiredAmount = isMax ? Number(amount) * 1.01 : Number(amount);
+    return Number(allowance) < requiredAmount;
+  }, [amount, allowance, isMax]);
 
   // ── Approve write ──
   const {
@@ -154,15 +155,18 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
 
   // ── Actions ──
   const approve = () => {
-    if (!userAddress) return;
+    if (!userAddress || !amount || Number(amount) <= 0) return;
     setStatus('approving');
     resetApprove();
     toast.loading('Waiting for approval signature...', { id: 'repay-approve' });
 
+    const baseAmount = parseUnits(amount, decimals);
+    const approveAmount = isMax ? (baseAmount * BigInt(101)) / BigInt(100) : baseAmount;
+
     approveWrite(
       {
         address: tokenAddress,
-        args: [lendingPoolAddress, maxUint256],
+        args: [lendingPoolAddress, approveAmount],
       },
       {
         onError: (error: any) => {

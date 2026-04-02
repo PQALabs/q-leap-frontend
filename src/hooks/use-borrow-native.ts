@@ -18,6 +18,22 @@ export type BorrowNativeTxStatus =
   | 'success'
   | 'error';
 
+export interface BorrowNativeToastLabels {
+  delegationConfirmed?: string;
+  delegationConfirmedDesc?: string;
+  delegationFailed?: string;
+  delegationReverted?: string;
+  waitingDelegationSignature?: string;
+  confirmingDelegation?: string;
+  borrowConfirmed?: string;
+  borrowConfirmedDesc?: string;
+  borrowFailed?: string;
+  borrowReverted?: string;
+  waitingBorrowSignature?: string;
+  confirmingBorrow?: string;
+  txFailed?: string;
+}
+
 interface UseBorrowNativeOptions {
   /** Variable debt token address for the wrapped native asset (WQDAY) */
   variableDebtTokenAddress: `0x${string}`;
@@ -27,6 +43,8 @@ interface UseBorrowNativeOptions {
   amount: string;
   /** Callback after successful borrow */
   onSuccess?: () => void;
+  /** Internationalized toast labels */
+  toastLabels?: BorrowNativeToastLabels;
 }
 
 /**
@@ -36,7 +54,13 @@ interface UseBorrowNativeOptions {
  * 1. approveDelegation on variable debt token → WETHGateway (if needed)
  * 2. gateway.borrowETH(pool, amount, 2, 0)
  */
-export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount, onSuccess }: UseBorrowNativeOptions) {
+export function useBorrowNative({
+  variableDebtTokenAddress,
+  userAddress,
+  amount,
+  onSuccess,
+  toastLabels: l,
+}: UseBorrowNativeOptions) {
   const [status, setStatus] = useState<BorrowNativeTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -67,7 +91,7 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
 
   // ── approveDelegation write ──
   const {
-    writeContract: delegationWrite,
+    mutate: delegationWrite,
     data: delegationTxHash,
     isPending: isDelegationPending,
     reset: resetDelegation,
@@ -106,13 +130,15 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
       refetchDelegation();
       setStatus('idle');
       toast.dismiss('borrow-delegation');
-      toast.success('Delegation approved', { description: 'Debt delegation approved. You can now borrow.' });
+      toast.success(l?.delegationConfirmed ?? 'Delegation approved', {
+        description: l?.delegationConfirmedDesc ?? 'Debt delegation approved. You can now borrow.',
+      });
     }
   }, [isDelegationConfirmed, delegationTxHash, refetchDelegation]);
 
   useEffect(() => {
     if (isDelegationConfirming) {
-      toast.loading('Confirming delegation on-chain...', { id: 'borrow-delegation' });
+      toast.loading(l?.confirmingDelegation ?? 'Confirming delegation on-chain...', { id: 'borrow-delegation' });
     }
   }, [isDelegationConfirming]);
 
@@ -120,8 +146,8 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
     if (isDelegationReceiptError && delegationTxHash) {
       setStatus('error');
       toast.dismiss('borrow-delegation');
-      toast.error('Delegation reverted', {
-        description: delegationReceiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.delegationReverted ?? 'Delegation reverted', {
+        description: delegationReceiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isDelegationReceiptError, delegationTxHash, delegationReceiptError]);
@@ -132,14 +158,16 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
       handledBorrowTx.current = borrowTxHash;
       setStatus('success');
       toast.dismiss('borrow-native');
-      toast.success('Borrow confirmed', { description: `Successfully borrowed ${amount} QDAY.` });
+      toast.success(l?.borrowConfirmed ?? 'Borrow confirmed', {
+        description: l?.borrowConfirmedDesc ?? `Successfully borrowed ${amount} QDAY.`,
+      });
       onSuccess?.();
     }
   }, [isBorrowConfirmed, borrowTxHash, onSuccess, amount]);
 
   useEffect(() => {
     if (isBorrowConfirming) {
-      toast.loading('Confirming borrow on-chain...', { id: 'borrow-native' });
+      toast.loading(l?.confirmingBorrow ?? 'Confirming borrow on-chain...', { id: 'borrow-native' });
     }
   }, [isBorrowConfirming]);
 
@@ -147,8 +175,8 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
     if (isBorrowReceiptError && borrowTxHash) {
       setStatus('error');
       toast.dismiss('borrow-native');
-      toast.error('Borrow transaction reverted', {
-        description: borrowReceiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(l?.borrowReverted ?? 'Borrow transaction reverted', {
+        description: borrowReceiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
       });
     }
   }, [isBorrowReceiptError, borrowTxHash, borrowReceiptError]);
@@ -158,7 +186,7 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
     if (!userAddress || !wethGatewayAddress) return;
     setStatus('approving-delegation');
     resetDelegation();
-    toast.loading('Waiting for delegation signature...', { id: 'borrow-delegation' });
+    toast.loading(l?.waitingDelegationSignature ?? 'Waiting for delegation signature...', { id: 'borrow-delegation' });
 
     delegationWrite(
       {
@@ -171,7 +199,7 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('borrow-delegation');
-          toast.error('Delegation failed', {
+          toast.error(l?.delegationFailed ?? 'Delegation failed', {
             description: getEvmMessage(error),
           });
         },
@@ -183,7 +211,7 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
     if (!userAddress || !amount || Number(amount) <= 0 || !wethGatewayAddress) return;
     setStatus('borrowing');
     resetBorrow();
-    toast.loading('Waiting for borrow signature...', { id: 'borrow-native' });
+    toast.loading(l?.waitingBorrowSignature ?? 'Waiting for borrow signature...', { id: 'borrow-native' });
 
     borrowEthWrite(
       {
@@ -199,7 +227,7 @@ export function useBorrowNative({ variableDebtTokenAddress, userAddress, amount,
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('borrow-native');
-          toast.error('Borrow failed', {
+          toast.error(l?.borrowFailed ?? 'Borrow failed', {
             description: getEvmMessage(error),
           });
         },

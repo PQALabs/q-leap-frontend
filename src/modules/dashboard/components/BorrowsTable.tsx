@@ -98,7 +98,7 @@ export function BorrowsTable({
                           <Link href={`${reserveLink}&action=borrow`}>{t('borrow')}</Link>
                         </Button>
                         <Button size='sm' variant='ghost' asChild>
-                          <Link href={`${reserveLink}&action=borrow`}>{t('repay')}</Link>
+                          <Link href={`${reserveLink}&action=repay`}>{t('repay')}</Link>
                         </Button>
                       </div>
                     </td>

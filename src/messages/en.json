@@ -62,7 +62,7 @@
     "failedConnect": "Failed to connect wallet. Please try again.",
     "switchRejected": "Chain switch was rejected. Please switch to continue.",
     "switchFailed": "Failed to switch chain. Please try again.",
-    "switchSuccess": "Successfully switched to {chainName}"
+    "connectSuccess": "Wallet connected successfully"
   },
   "modules": {
     "market": {
@@ -208,7 +208,7 @@
         "healthFactor": "Health Factor",
         "liquidationAtOne": "Liquidation at <1.0",
         "approveDelegation": "Approve Delegation",
-        "delegationApprovedBtn": "Delegation Approved",
+        "delegationApprovedBtn": "Delegation \u2713",
         "borrow": "Borrow",
         "borrowConfirmed": "Borrow confirmed!",
         "repay": "Repay",

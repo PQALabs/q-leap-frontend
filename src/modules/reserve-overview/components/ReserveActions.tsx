@@ -30,7 +30,7 @@ export function ReserveActions({ reserve, user, marketRefPriceInUsd }: ReserveAc
 
   // Determine default tab from URL search param: ?action=borrow → borrow-repay tab
   const action = searchParams.get('action');
-  const defaultTab = action === 'borrow' ? 'borrow-repay' : 'supply-withdraw';
+  const defaultTab = action === 'borrow' || action === 'repay' ? 'borrow-repay' : 'supply-withdraw';
 
   return (
     <div className='relative rounded-xs border border-border bg-card p-5'>

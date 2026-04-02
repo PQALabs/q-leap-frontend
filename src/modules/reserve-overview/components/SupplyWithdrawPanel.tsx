@@ -5,8 +5,6 @@ import {
   ArrowUpToLine,
   ChevronDown,
   ChevronRight,
-  CircleMinus,
-  CirclePlus,
   Info,
   Landmark,
   Loader2,
@@ -14,6 +12,7 @@ import {
   TriangleAlert,
   Wallet,
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatUnits } from 'viem';
@@ -63,7 +62,11 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isMaxWithdraw, setIsMaxWithdraw] = useState(false);
   const [isMaxWithdrawSelected, setIsMaxWithdrawSelected] = useState(false);
-  const [openSection, setOpenSection] = useState<'supply' | 'withdraw'>('supply');
+  const searchParams = useSearchParams();
+  const actionParam = searchParams.get('action');
+  const [openSection, setOpenSection] = useState<'supply' | 'withdraw'>(
+    actionParam === 'withdraw' ? 'withdraw' : 'supply'
+  );
   const [successInfo, setSuccessInfo] = useState<{
     amount: string;
     symbol: string;
