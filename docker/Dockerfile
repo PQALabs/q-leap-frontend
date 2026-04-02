@@ -3,6 +3,10 @@ ARG NODE_IMAGE=node:24.14.0-alpine3.23
 ###################### BUILD STAGE ########################
 FROM $NODE_IMAGE AS builder
 
+# Re-declare ARG after FROM (Docker scope requirement)
+ARG NEXT_PUBLIC_ENABLE_TESTNET=false
+ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
+
 RUN npm install -g pnpm@9
 
 WORKDIR /app
@@ -11,9 +15,6 @@ COPY package*.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-
-ARG NEXT_PUBLIC_ENABLE_TESTNET
-ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm build
