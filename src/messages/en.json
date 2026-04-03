@@ -318,6 +318,18 @@
         "cannotUseAsCollateral": "This asset cannot be used as collateral",
         "cannotDisableHf": "Cannot disable — health factor would drop below 1.0"
       }
+    },
+    "price": {
+      "title": "Real-Time Price Feed",
+      "subtitle": "Live WQDAY/QDAY price from Chainlink V3 oracle aggregator",
+      "refresh": "Refresh",
+      "error": "Failed to fetch price data",
+      "decimals": "Decimals",
+      "lastUpdated": "Last Updated",
+      "pollingInterval": "Polling Interval",
+      "contractAddress": "Contract",
+      "viewOnExplorer": "View on Explorer",
+      "source": "Source"
     }
   },
   "footer": {
