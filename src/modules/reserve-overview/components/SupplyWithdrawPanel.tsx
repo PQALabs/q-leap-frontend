@@ -421,7 +421,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             </span>
             {address && (
               <span className='text-[11px] text-muted-foreground/60'>
-                ${' '}
+                $
                 {(
                   Number(walletBalance) *
                   Number(reserve.priceInMarketReferenceCurrency) *

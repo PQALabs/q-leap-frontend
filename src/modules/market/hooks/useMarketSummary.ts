@@ -96,11 +96,11 @@ export function useMarketSummary() {
         underlyingAsset: item.underlyingAsset,
         supplyApy: item.depositAPY >= 0 ? item.depositAPY * 100 : 0,
         totalSupplied: item.totalLiquidityInUSD,
-        totalSuppliedNative: `${formatTokenAmount(item.totalLiquidity, 2)} ${item.currencySymbol}`,
+        totalSuppliedNative: `${formatTokenAmount(item.totalLiquidity)} ${item.currencySymbol}`,
         borrowApy: item.variableBorrowRate >= 0 ? item.variableBorrowRate * 100 : 0,
         totalBorrowed: item.totalBorrowsInUSD !== null ? item.totalBorrowsInUSD : null,
         totalBorrowedNative:
-          item.totalBorrows !== null ? `${formatTokenAmount(item.totalBorrows, 2)} ${item.currencySymbol}` : '—',
+          item.totalBorrows !== null ? `${formatTokenAmount(item.totalBorrows)} ${item.currencySymbol}` : '—',
         walletBalance: null,
         isStablecoin: STABLECOINS.has(item.currencySymbol.toUpperCase()),
       };

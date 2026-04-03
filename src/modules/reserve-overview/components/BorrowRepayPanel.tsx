@@ -405,7 +405,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
               </Tooltip>
             </span>
             <span className='text-[11px] text-muted-foreground/60'>
-              ${' '}
+              $
               {(maxBorrowAmount * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)).toFixed(
                 2
               )}

@@ -14,8 +14,7 @@ export function UsdValue({ value }: { value: number }) {
 
   return (
     <>
-      $&nbsp;
-      {/* Desktop: full number */}
+      ${/* Desktop: full number */}
       <span className='hidden md:inline'>{full}</span>
       {/* Mobile: compact number */}
       <span className='md:hidden'>
