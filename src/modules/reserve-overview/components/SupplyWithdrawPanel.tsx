@@ -283,7 +283,10 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
       }
     }
 
-    return Math.max(maxAmount, 0);
+    // Clamp dust (floating-point rounding artifacts like 6.409e-15) to 0.
+    // parseEther does not accept scientific notation strings.
+    const DUST_THRESHOLD = 1e-9;
+    return maxAmount < DUST_THRESHOLD ? 0 : maxAmount;
   }, [suppliedBalance, reserve, user, userReserve]);
 
   // ── Projected HF after withdraw ──

@@ -79,7 +79,10 @@ export function useWithdrawNative({
 
   const needsApproval = useMemo(() => {
     if (!amount || Number(amount) <= 0 || allowanceRaw == null) return true;
-    const required = parseEther(amount);
+    // parseEther does not accept scientific notation (e.g. 6.409e-15).
+    // Convert to a fixed-point string truncated to 18 decimal places.
+    const safeAmount = Number(amount).toFixed(18);
+    const required = parseEther(safeAmount as `${number}`);
     return allowanceRaw < required;
   }, [amount, allowanceRaw]);
 
@@ -172,7 +175,8 @@ export function useWithdrawNative({
     });
 
     // Approve exact amount (not unlimited)
-    const approveAmount = isMax ? maxUint256 : parseEther(amount);
+    const safeAmount = Number(amount).toFixed(18);
+    const approveAmount = isMax ? maxUint256 : parseEther(safeAmount as `${number}`);
     approveWrite(
       {
         address: aTokenAddress,
@@ -194,7 +198,8 @@ export function useWithdrawNative({
     resetWithdraw();
     toast.loading(l?.waitingWithdrawSignature ?? 'Waiting for withdrawal signature...', { id: 'withdraw-native' });
 
-    const withdrawAmount = isMax ? maxUint256 : parseEther(amount);
+    const safeAmount = Number(amount).toFixed(18);
+    const withdrawAmount = isMax ? maxUint256 : parseEther(safeAmount as `${number}`);
 
     withdrawWrite(
       {

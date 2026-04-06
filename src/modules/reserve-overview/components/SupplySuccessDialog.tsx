@@ -75,7 +75,7 @@ export function SupplySuccessDialog({
           type: 'ERC20',
           options: {
             address: aTokenAddress,
-            symbol: aTokenSymbol.slice(0, 11),
+            symbol: aTokenSymbol,
             decimals,
           },
         },

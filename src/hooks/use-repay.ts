@@ -61,9 +61,8 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
 
   const needsApproval = useMemo(() => {
     if (!amount || Number(amount) <= 0) return false;
-    const requiredAmount = isMax ? Number(amount) * 1.01 : Number(amount);
-    return Number(allowance) < requiredAmount;
-  }, [amount, allowance, isMax]);
+    return Number(allowance) < Number(amount);
+  }, [amount, allowance]);
 
   // ── Approve write ──
   const {
