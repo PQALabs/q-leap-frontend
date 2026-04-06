@@ -20,7 +20,7 @@ export function CollateralSwitch({ enabled, onClick, disabled, busy, tooltipText
         'relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full border transition-colors',
         enabled
           ? 'border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-500'
-          : 'border-muted-foreground/30 bg-muted dark:border-muted-foreground/40 dark:bg-muted-foreground/20',
+          : 'border-muted-foreground/40 bg-muted-foreground/20 dark:border-muted-foreground/50 dark:bg-muted-foreground/30',
         (disabled || busy) && 'cursor-not-allowed opacity-50'
       )}
     >

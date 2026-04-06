@@ -1,5 +1,6 @@
 import { Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { HealthBar } from '@/components/health-bar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatHfValue, getHealthFactorLabel, getHfColor } from '@/lib/format-health-factor';
 import { cn } from '@/lib/utils';
@@ -27,23 +28,6 @@ function StatCard({ label, tooltip, children }: { label: string; tooltip?: strin
         )}
       </span>
       {children}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// HealthFactorBar
-// ---------------------------------------------------------------------------
-function HealthFactorBar({ value }: { value: number }) {
-  // No borrows (-1) → full bar; otherwise piecewise: HF 0→0%, HF 1→75% (green zone), HF 3+→100%
-  const pct = value < 0 ? 100 : value <= 1 ? Math.min(value * 75, 75) : Math.min(75 + ((value - 1) / 2) * 25, 100);
-
-  return (
-    <div className='mt-1 h-2 w-full overflow-hidden rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500'>
-      <div
-        className='h-full rounded-r-full bg-muted transition-all duration-500'
-        style={{ width: `${100 - pct}%`, marginLeft: 'auto' }}
-      />
     </div>
   );
 }
@@ -104,7 +88,7 @@ export function DashboardStatCards({ netWorth, netApy, healthFactor, ltv, totalB
             {hfMeta.label}
           </span>
         </div>
-        {healthFactor > 0 && Number.isFinite(healthFactor) && <HealthFactorBar value={healthFactor} />}
+        {healthFactor > 0 && Number.isFinite(healthFactor) && <HealthBar value={healthFactor} />}
       </StatCard>
 
       <StatCard label={t('currentLtv')} tooltip={t('currentLtvTooltip')}>

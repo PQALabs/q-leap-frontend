@@ -2,40 +2,12 @@
 
 import { Info, Landmark, LayoutGrid, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { HealthBar } from '@/components/health-bar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatHfValue, getHealthFactorLabel, getHfColor } from '@/lib/format-health-factor';
 import { valueToBigNumber } from '@/math-utils';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { formatUsd } from '@/utils/format';
-
-// ---------------------------------------------------------------------------
-// Health factor bar
-// ---------------------------------------------------------------------------
-function HealthBar({ healthFactor }: { healthFactor: number }) {
-  // No borrows (-1) → full bar
-  // Danger (HF < 1.1) → mapped to 0% - 30% (Red zone)
-  // Warning (1.1 <= HF < 1.5) → mapped to 30% - 70% (Amber zone)
-  // Safe (HF >= 1.5) → mapped to 70% - 100% (Green zone)
-  let pct = 0;
-  if (healthFactor < 0) {
-    pct = 100;
-  } else if (healthFactor < 1.1) {
-    pct = (healthFactor / 1.1) * 15;
-  } else if (healthFactor < 1.5) {
-    pct = 30 + ((healthFactor - 1.1) / 0.4) * 40;
-  } else {
-    pct = Math.min(70 + ((healthFactor - 1.5) / 1.5) * 30, 100);
-  }
-
-  return (
-    <div className='mt-1 h-2 w-full overflow-hidden rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500'>
-      <div
-        className='h-full rounded-r-full bg-muted transition-all duration-500'
-        style={{ width: `${100 - pct}%`, marginLeft: 'auto' }}
-      />
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -129,7 +101,7 @@ export function UserPositionSummary({ reserve, user, isConnected }: UserPosition
               {hfMeta.label}
             </span>
           </div>
-          <HealthBar healthFactor={healthFactor} />
+          <HealthBar value={healthFactor} />
         </div>
       </div>
     </div>
