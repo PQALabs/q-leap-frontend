@@ -1,17 +1,16 @@
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { STABLECOINS } from '@/config/market';
 import { getDisplaySymbol } from '@/config/token-display';
 import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import { valueToBigNumber } from '@/math-utils';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
-import { formatApy, formatTokenAmount } from '@/utils/format';
+import { formatTokenAmount } from '@/utils/format';
 import type { CoreAsset } from '../components/CoreAssets';
 
 export function useMarketSummary() {
   const isLoading = usePoolDataStore.use.isLoading();
   const marketRefPriceInUsd = usePoolDataStore.use.marketRefPriceInUsd();
-  const { reserves, user } = useFormattedPoolData();
+  const { reserves } = useFormattedPoolData();
 
   // ---------------------------------------------------------------------------
   // Derived summary values & Table Data (Single Pass)
@@ -106,57 +105,8 @@ export function useMarketSummary() {
     });
   }, [sortedData]);
 
-  // ---------------------------------------------------------------------------
-  // User net worth & net APY
-  // ---------------------------------------------------------------------------
-  const { netWorth, netApy } = useMemo(() => {
-    if (!user) return { netWorth: 0, netApy: null as string | null };
-
-    const totalSupplyUsd = valueToBigNumber(user.totalLiquidityUSD);
-    const totalBorrowUsd = valueToBigNumber(user.totalBorrowsUSD);
-    const worth = totalSupplyUsd.minus(totalBorrowUsd);
-
-    // Build a reserve APY lookup from computed reserves
-    const reserveApyMap = new Map<string, { supplyAPY: string; variableBorrowAPY: string }>();
-    for (const r of reserves) {
-      reserveApyMap.set(r.underlyingAsset, {
-        supplyAPY: r.supplyAPY,
-        variableBorrowAPY: r.variableBorrowAPY,
-      });
-    }
-
-    // Weighted net APY: sum(supplyUSD * supplyAPY) - sum(borrowUSD * borrowAPY)
-    let weightedSupplyApy = valueToBigNumber(0);
-    let weightedBorrowApy = valueToBigNumber(0);
-
-    for (const ur of user.userReservesData) {
-      const apys = reserveApyMap.get(ur.reserve.underlyingAsset);
-      if (!apys) continue;
-
-      const supplyUsd = valueToBigNumber(ur.underlyingBalanceUSD);
-      const borrowUsd = valueToBigNumber(ur.totalBorrowsUSD);
-
-      weightedSupplyApy = weightedSupplyApy.plus(supplyUsd.multipliedBy(apys.supplyAPY));
-      weightedBorrowApy = weightedBorrowApy.plus(borrowUsd.multipliedBy(apys.variableBorrowAPY));
-    }
-
-    let apyStr: string | null = null;
-    if (totalSupplyUsd.gt(0)) {
-      const netApyValue = weightedSupplyApy.minus(weightedBorrowApy).dividedBy(totalSupplyUsd);
-      apyStr = formatApy(netApyValue.toNumber() * 100);
-    } else if (totalBorrowUsd.gt(0)) {
-      // Avoid negative infinity if only borrowing
-      const netApyValue = weightedBorrowApy.dividedBy(totalBorrowUsd).multipliedBy(-1);
-      apyStr = formatApy(netApyValue.toNumber() * 100);
-    }
-
-    return { netWorth: worth.toNumber(), netApy: apyStr };
-  }, [user, reserves]);
-
   return {
     isLoading,
-    netWorth,
-    netApy,
     totalLockedInUsd: totalLockedInUsd.toNumber(),
     totalAvailableInUsd: totalAvailableInUsd.toNumber(),
     totalBorrowedInUsd: totalBorrowedInUsd.toNumber(),

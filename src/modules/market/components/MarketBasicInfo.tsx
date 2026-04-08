@@ -6,8 +6,6 @@ interface MarketBasicInfoProps {
   name: string;
   description: string;
   logoUrl?: string;
-  netWorth: number;
-  netApy: string | null;
 }
 
 export function MarketBasicInfo({ name, description }: MarketBasicInfoProps) {
