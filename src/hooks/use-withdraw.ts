@@ -56,6 +56,12 @@ export function useWithdraw({
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
 
+  // Always keep a ref to the latest toast labels to avoid stale closure in effects
+  const lRef = useRef(l);
+  useEffect(() => {
+    lRef.current = l;
+  });
+
   // Track which tx hash we've already shown toast for
   const handledTx = useRef<string | null>(null);
 
@@ -82,8 +88,10 @@ export function useWithdraw({
       handledTx.current = txHash;
       setStatus('success');
       toast.dismiss('withdraw');
-      toast.success(l?.withdrawConfirmed ?? 'Withdrawal confirmed', {
-        description: l?.withdrawConfirmedDesc ?? `Successfully withdrew ${isMax ? 'all' : amount} tokens.`,
+      // Use lRef to always get the latest labels (avoids stale closure with dust amount)
+      const labels = lRef.current;
+      toast.success(labels?.withdrawConfirmed ?? 'Withdrawal confirmed', {
+        description: labels?.withdrawConfirmedDesc ?? `Successfully withdrew ${isMax ? 'all' : amount} tokens.`,
       });
       onSuccess?.();
     }

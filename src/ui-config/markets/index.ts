@@ -34,11 +34,13 @@ export const marketsData: { [key in keyof typeof CustomMarket]: MarketDataType }
       governance: false,
       staking: false,
       incentives: false,
+      collateralRepay: true,
     },
     addresses: {
       LENDING_POOL_ADDRESS_PROVIDER: '0xf11d1dAc1abEdb5eEb32375154939AE7348c4227'.toLowerCase(),
       LENDING_POOL: '0xc31F921Bcdb22A5B8D3A40088c7ac75F3Ac8EFD8',
       WETH_GATEWAY: '0x46602aFE192A0a65eA6F48f76CCA677e42172c43',
+      REPAY_WITH_COLLATERAL_ADAPTER: '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
     },
   },
 } as const;

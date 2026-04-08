@@ -29,23 +29,28 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EM_DASH } from '@/constants/common';
+import { isFeatureEnabled } from '@/helpers/config/markets-and-network-config';
 import { useBorrow } from '@/hooks/use-borrow';
 import { useBorrowNative } from '@/hooks/use-borrow-native';
 import { useRepay } from '@/hooks/use-repay';
 import { useRepayNative } from '@/hooks/use-repay-native';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
+import { useProtocolDataContext } from '@/providers/protocol-data-provider';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
 import { formatTokenAmount } from '@/utils/format';
 import { AmountInput } from './AmountInput';
 import { BorrowSuccessDialog } from './BorrowSuccessDialog';
 import { RepaySuccessDialog } from './RepaySuccessDialog';
+import { RepayWithCollateralPanel } from './RepayWithCollateralPanel';
 import { HealthFactorDisplay, InfoRow, TokenIcon } from './ReserveActionHelpers';
 
 /** Whether this reserve supports native token borrow (WQDAY ↔ QDAY) */
 const NATIVE_WRAP_MAP: Record<string, string> = {
   WQDAY: 'QDAY',
 };
+
+const GAS_BUFFER_NATIVE = 0.001;
 
 type BorrowMode = 'wrapped' | 'native';
 type RepayMode = 'wrapped' | 'native';
@@ -56,14 +61,18 @@ interface BorrowRepayPanelProps {
   marketRefPriceInUsd: string;
 }
 
+type RepaySource = 'wallet' | 'collateral';
+
 export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowRepayPanelProps) {
   const [borrowAmount, setBorrowAmount] = useState('');
   const [isMaxBorrowSelected, setIsMaxBorrowSelected] = useState(false);
   const [repayAmount, setRepayAmount] = useState('');
   const [isRepayMax, setIsRepayMax] = useState(false);
+  const [repaySource, setRepaySource] = useState<RepaySource>('wallet');
   const searchParams = useSearchParams();
   const actionParam = searchParams.get('action');
   const [openSection, setOpenSection] = useState<'borrow' | 'repay'>(actionParam === 'repay' ? 'repay' : 'borrow');
+  const { currentMarketData } = useProtocolDataContext();
   const [borrowSuccessInfo, setBorrowSuccessInfo] = useState<{
     amount: string;
     symbol: string;
@@ -90,6 +99,9 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   const refresh = usePoolDataStore.use.refresh();
   const networkConfig = usePoolDataStore.use.networkConfig();
   const explorerUrl = networkConfig?.explorerLink;
+
+  // ── Feature flags ──
+  const collateralRepayEnabled = !!isFeatureEnabled.collateralRepay(currentMarketData);
 
   const variableBorrowApy = (Number(reserve.variableBorrowAPY) * 100).toFixed(2);
 
@@ -223,10 +235,16 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     }
   }, [repayStatus, repayAmount, activeRepaySymbol, repayTxHash]);
 
-  const handleBorrowDelegation = () => nativeBorrow.approveDelegation();
-  const handleBorrow = () => (isBorrowNative ? nativeBorrow.borrow() : erc20Borrow.borrow());
-  const handleRepayApprove = () => erc20Repay.approve();
-  const handleRepay = () => (isRepayNative ? nativeRepay.repay() : erc20Repay.repay());
+  const handleBorrowDelegation = useCallback(() => nativeBorrow.approveDelegation(), [nativeBorrow]);
+  const handleBorrow = useCallback(
+    () => (isBorrowNative ? nativeBorrow.borrow() : erc20Borrow.borrow()),
+    [isBorrowNative, nativeBorrow, erc20Borrow]
+  );
+  const handleRepayApprove = useCallback(() => erc20Repay.approve(), [erc20Repay]);
+  const handleRepay = useCallback(
+    () => (isRepayNative ? nativeRepay.repay() : erc20Repay.repay()),
+    [isRepayNative, nativeRepay, erc20Repay]
+  );
 
   // ── Max borrow calculation (per business-logic doc §2) ──
   const maxBorrowAmount = useMemo(() => {
@@ -253,11 +271,6 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     return maxAmount;
   }, [user, reserve]);
 
-  // Removed real-time clamping for MAX borrow:
-  // Using a static pre-calculated number with a 1% safety buffer (implemented above)
-  // handles slight debt growth between interaction and transaction execution.
-  // This matches the standard implementation and prevents annoying UI jumps.
-
   // ── Projected HF after borrow ──
   const projectedBorrowHF = useMemo(() => {
     if (!user || !borrowAmount || Number(borrowAmount) <= 0) return null;
@@ -269,27 +282,20 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     if (!borrowAmount || Number(borrowAmount) <= 0) return null;
     const amt = Number(borrowAmount);
 
-    // Check in order (later errors override earlier as per docs)
     let error: string | null = null;
 
-    // 1. Borrowing not enabled
     if (!reserve.borrowingEnabled) {
       error = t('borrowingNotAvailable');
     }
 
-    // 2. Insufficient collateral
-    // Skip when MAX is selected — the amount was already computed safely.
-    // This prevents false positives when pool data refreshes mid-interaction.
     if (user && !isMaxBorrowSelected && amt > maxBorrowAmount * 1.001) {
       error = t('insufficientCollateral');
     }
 
-    // 3. Insufficient liquidity
     if (amt > Number(reserve.availableLiquidity)) {
       error = t('insufficientLiquidity', { symbol: reserve.symbol });
     }
 
-    // 4. HF would drop below 1
     if (user && Number(user.totalBorrowsMarketReferenceCurrency) > 0 && projectedBorrowHF) {
       const hfNum = Number(projectedBorrowHF);
       if (!Number.isNaN(hfNum) && projectedBorrowHF !== '∞' && hfNum < 1) {
@@ -298,18 +304,13 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     }
 
     return error;
-  }, [borrowAmount, reserve, user, maxBorrowAmount, projectedBorrowHF]);
+  }, [borrowAmount, reserve, user, maxBorrowAmount, projectedBorrowHF, isMaxBorrowSelected, t]);
 
   // ── HF danger warning (HF < 1.5) ──
   const isBorrowHFDangerous = useMemo(() => {
-    if (!user || Number(user.totalBorrowsMarketReferenceCurrency) === 0) {
-      // First borrow — check projected HF
-      if (!projectedBorrowHF || projectedBorrowHF === '∞') return false;
-      return Number(projectedBorrowHF) < 1.5;
-    }
     if (!projectedBorrowHF || projectedBorrowHF === '∞') return false;
     return Number(projectedBorrowHF) < 1.5;
-  }, [user, projectedBorrowHF]);
+  }, [projectedBorrowHF]);
 
   const canBorrow =
     !!address &&
@@ -320,18 +321,208 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     reserve.isActive &&
     !reserve.isFrozen;
 
+  // ── Section toggle handlers ──
+  const handleBorrowSectionToggle = useCallback((open: boolean) => setOpenSection(open ? 'borrow' : 'repay'), []);
+  const handleRepaySectionToggle = useCallback((open: boolean) => setOpenSection(open ? 'repay' : 'borrow'), []);
+
+  // ── Borrow mode dropdown handlers ──
+  const handleSetBorrowModeWrapped = useCallback(() => setBorrowMode('wrapped'), []);
+  const handleSetBorrowModeNative = useCallback(() => setBorrowMode('native'), []);
+
+  // ── Repay mode dropdown handlers ──
+  const handleSetRepayModeWrapped = useCallback(() => setRepayMode('wrapped'), []);
+  const handleSetRepayModeNative = useCallback(() => setRepayMode('native'), []);
+
+  // ── Repay source handlers ──
+  const handleSetRepaySourceWallet = useCallback(() => setRepaySource('wallet'), []);
+  const handleSetRepaySourceCollateral = useCallback(() => setRepaySource('collateral'), []);
+
+  // ── Borrow amount handlers ──
+  const handleBorrowAmountChange = useCallback((v: string) => {
+    setBorrowAmount(v);
+    setIsMaxBorrowSelected(false);
+  }, []);
+  const handleBorrowMax = useCallback(() => {
+    setBorrowAmount(maxBorrowAmount.toString());
+    setIsMaxBorrowSelected(true);
+  }, [maxBorrowAmount]);
+  const validateBorrowAmount = useCallback(
+    (v: string) => {
+      if (!v || Number(v) <= 0) return null;
+      if (!isMaxBorrowSelected && Number(v) > maxBorrowAmount) return t('exceedsMaxBorrow');
+      return null;
+    },
+    [isMaxBorrowSelected, maxBorrowAmount, t]
+  );
+
+  // ── Repay amount handlers ──
+  const handleRepayAmountChange = useCallback((v: string) => {
+    setRepayAmount(v);
+    setIsRepayMax(false);
+  }, []);
+  const handleRepayMax = useCallback(() => {
+    // Max repay = min(wallet balance, debt)
+    const maxRepay = Math.min(Number(repayWalletBalance), borrowedBalance);
+    // isRepayMax = user intends to repay ALL debt (wallet can cover it)
+    const wantsFullRepay = Number(repayWalletBalance) >= borrowedBalance;
+    let repayAmt: number;
+    if (isRepayNative) {
+      // For native (QDAY), reserve a small gas buffer ONLY when wallet covers debt.
+      // If debt itself is tiny (≤ buffer), still repay the full debt amount — the
+      // contract will use type(uint256).max to sweep accrued interest.
+      if (wantsFullRepay && Number(repayWalletBalance) - borrowedBalance >= GAS_BUFFER_NATIVE) {
+        // wallet has plenty, just repay the debt; buffer comes from the surplus
+        repayAmt = borrowedBalance;
+      } else if (!wantsFullRepay && Number(repayWalletBalance) > GAS_BUFFER_NATIVE) {
+        // wallet is the cap, reserve gas from the wallet side
+        repayAmt = Number(repayWalletBalance) - GAS_BUFFER_NATIVE;
+      } else {
+        // wallet ≤ buffer or very tiny amounts — use all we can
+        repayAmt = maxRepay;
+      }
+    } else {
+      repayAmt = maxRepay;
+    }
+    setRepayAmount(repayAmt.toString());
+    // Set isRepayMax=true when user wants to clear the full debt so the
+    // contract receives type(uint256).max and handles interest accrued since fetch.
+    setIsRepayMax(wantsFullRepay);
+  }, [repayWalletBalance, borrowedBalance, isRepayNative]);
+
+  const validateRepayAmount = useCallback(
+    (v: string) => {
+      if (!v || Number(v) <= 0) return null;
+      if (Number(v) > Number(repayWalletBalance)) return t('insufficientWalletBalance');
+      if (Number(v) > borrowedBalance) return t('exceedsRemainingDebt');
+      return null;
+    },
+    [repayWalletBalance, borrowedBalance, t]
+  );
+
+  // ── Dialog close handlers ──
+  const handleBorrowSuccessClose = useCallback(() => {
+    setBorrowSuccessInfo(null);
+    erc20Borrow.reset();
+    nativeBorrow.reset();
+  }, [erc20Borrow, nativeBorrow]);
+
+  const handleRepaySuccessClose = useCallback(() => {
+    setRepaySuccessInfo(null);
+    erc20Repay.reset();
+    nativeRepay.reset();
+  }, [erc20Repay, nativeRepay]);
+
+  // ── Borrow trigger stopPropagation ──
+  const handleBorrowDropdownStopPropagation = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
+  const handleRepayDropdownStopPropagation = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
+
+  // ── Computed values for display ──
+  const borrowUsdValue = useMemo(
+    () =>
+      borrowAmount && Number(borrowAmount) > 0
+        ? Number(borrowAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
+        : undefined,
+    [borrowAmount, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd]
+  );
+
+  const repayUsdValue = useMemo(
+    () =>
+      repayAmount && Number(repayAmount) > 0
+        ? Number(repayAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
+        : undefined,
+    [repayAmount, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd]
+  );
+
+  const borrowedBalanceUsd = useMemo(
+    () => (borrowedBalance * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)).toFixed(2),
+    [borrowedBalance, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd]
+  );
+
+  const remainingDebtAfterRepayUsd = useMemo(() => {
+    if (!repayAmount || Number(repayAmount) <= 0) return null;
+    return (
+      Math.max(borrowedBalance - Number(repayAmount), 0) *
+      Number(reserve.priceInMarketReferenceCurrency) *
+      Number(marketRefPriceInUsd)
+    ).toFixed(2);
+  }, [repayAmount, borrowedBalance, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd]);
+
+  const newBorrowHf = useMemo(
+    () =>
+      user && borrowAmount && Number(borrowAmount) > 0
+        ? computeNewHealthFactor('borrow', borrowAmount, reserve, user, marketRefPriceInUsd)
+        : EM_DASH,
+    [borrowAmount, reserve, user, marketRefPriceInUsd]
+  );
+
+  const newRepayHf = useMemo(
+    () =>
+      user && repayAmount && Number(repayAmount) > 0
+        ? computeNewHealthFactor('repay', repayAmount, reserve, user, marketRefPriceInUsd)
+        : EM_DASH,
+    [repayAmount, reserve, user, marketRefPriceInUsd]
+  );
+
+  const maxBorrowUsd = useMemo(
+    () => (maxBorrowAmount * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)).toFixed(2),
+    [maxBorrowAmount, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd]
+  );
+
+  const nativeDelegationAllowanceDisplay = useMemo(
+    () =>
+      Number(nativeBorrow.delegationAllowance) > 1e15
+        ? t('delegationApproved')
+        : `${formatTokenAmount(nativeBorrow.delegationAllowance)} ${reserve.symbol}`,
+    [nativeBorrow.delegationAllowance, reserve.symbol, t]
+  );
+
+  const erc20AllowanceDisplay = useMemo(
+    () =>
+      Number(erc20Repay.allowance) > 1e15
+        ? `∞ ${reserve.symbol}`
+        : `${formatTokenAmount(erc20Repay.allowance)} ${reserve.symbol}`,
+    [erc20Repay.allowance, reserve.symbol]
+  );
+
+  const remainingDebtDisplay = useMemo(() => {
+    if (repayAmount && Number(repayAmount) > 0) {
+      return (
+        <span className='flex items-center gap-1'>
+          <span>{formatTokenAmount(borrowedBalance)}</span>
+          <span className='text-muted-foreground'>→</span>
+          <span className='font-semibold'>{formatTokenAmount(Math.max(borrowedBalance - Number(repayAmount), 0))}</span>
+          <span className='text-muted-foreground'>{reserve.symbol}</span>
+        </span>
+      );
+    }
+    return `${formatTokenAmount(borrowedBalance)} ${reserve.symbol}`;
+  }, [repayAmount, borrowedBalance, reserve.symbol]);
+
+  const remainingDebtUsdDisplay = useMemo(() => {
+    if (!repayAmount || Number(repayAmount) <= 0) {
+      return <>${borrowedBalanceUsd}</>;
+    }
+    return (
+      <>
+        ${borrowedBalanceUsd}
+        {' → $'}
+        {remainingDebtAfterRepayUsd}
+      </>
+    );
+  }, [repayAmount, borrowedBalanceUsd, remainingDebtAfterRepayUsd]);
+
   return (
     <div className='flex flex-col gap-5'>
       {/* ── Borrow section ── */}
       <Collapsible
         open={openSection === 'borrow'}
-        onOpenChange={(open) => setOpenSection(open ? 'borrow' : 'repay')}
+        onOpenChange={handleBorrowSectionToggle}
         className='flex flex-col gap-3'
       >
         <CollapsibleTrigger asChild>
           <div className='flex cursor-pointer items-center justify-between'>
             {hasNativeOption && openSection === 'borrow' ? (
-              <div onClick={(e) => e.stopPropagation()}>
+              <div onClick={handleBorrowDropdownStopPropagation}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -343,12 +534,12 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='start'>
-                    <DropdownMenuItem onClick={() => setBorrowMode('wrapped')}>
+                    <DropdownMenuItem onClick={handleSetBorrowModeWrapped}>
                       <TokenIcon symbol={reserve.symbol} size={16} />
                       {t('borrowSymbol', { symbol: reserve.symbol })}
                       <span className='ml-auto text-muted-foreground text-xs'>{t('erc20')}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setBorrowMode('native')}>
+                    <DropdownMenuItem onClick={handleSetBorrowModeNative}>
                       <TokenIcon symbol={reserve.symbol} size={16} />
                       {t('borrowSymbol', { symbol: nativeSymbol })}
                       <span className='ml-auto text-muted-foreground text-xs'>{t('native')}</span>
@@ -371,26 +562,12 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
         <CollapsibleContent className='flex flex-col gap-3'>
           <AmountInput
             value={borrowAmount}
-            onChange={(v) => {
-              setBorrowAmount(v);
-              setIsMaxBorrowSelected(false);
-            }}
+            onChange={handleBorrowAmountChange}
             symbol={activeBorrowSymbol}
-            onMax={() => {
-              setBorrowAmount(maxBorrowAmount.toString());
-              setIsMaxBorrowSelected(true);
-            }}
+            onMax={handleBorrowMax}
             label={t('amount')}
-            usdValue={
-              borrowAmount && Number(borrowAmount) > 0
-                ? Number(borrowAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
-                : undefined
-            }
-            validate={(v) => {
-              if (!v || Number(v) <= 0) return null;
-              if (!isMaxBorrowSelected && Number(v) > maxBorrowAmount) return t('exceedsMaxBorrow');
-              return null;
-            }}
+            usdValue={borrowUsdValue}
+            validate={validateBorrowAmount}
           />
           <div className='ml-auto flex flex-col items-end'>
             <span className='flex items-center gap-1 text-muted-foreground text-xs'>
@@ -404,12 +581,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
                 </TooltipContent>
               </Tooltip>
             </span>
-            <span className='text-[11px] text-muted-foreground/60'>
-              $
-              {(maxBorrowAmount * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)).toFixed(
-                2
-              )}
-            </span>
+            <span className='text-[11px] text-muted-foreground/60'>${maxBorrowUsd}</span>
           </div>
 
           {(!reserve.isActive || reserve.isFrozen || !reserve.borrowingEnabled) && (
@@ -493,11 +665,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
           {/* ── Borrow Success Dialog ── */}
           <BorrowSuccessDialog
             open={!!borrowSuccessInfo}
-            onClose={() => {
-              setBorrowSuccessInfo(null);
-              erc20Borrow.reset();
-              nativeBorrow.reset();
-            }}
+            onClose={handleBorrowSuccessClose}
             amount={borrowSuccessInfo?.amount ?? '0'}
             symbol={borrowSuccessInfo?.symbol ?? reserve.symbol}
             txHash={borrowSuccessInfo?.txHash}
@@ -505,30 +673,14 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
           />
 
           <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
-            {isBorrowNative && (
-              <InfoRow
-                label={t('debtDelegation')}
-                value={
-                  Number(nativeBorrow.delegationAllowance) > 1e15
-                    ? t('delegationApproved')
-                    : `${formatTokenAmount(nativeBorrow.delegationAllowance)} ${reserve.symbol}`
-                }
-              />
-            )}
+            {isBorrowNative && <InfoRow label={t('debtDelegation')} value={nativeDelegationAllowanceDisplay} />}
             <InfoRow label={t('borrowApyVariable')} value={`${variableBorrowApy}%`} valueColor='text-red-500' />
             <InfoRow
               label={t('healthFactor')}
               value={
                 user ? (
                   <div className='flex flex-col items-end gap-0.5'>
-                    <HealthFactorDisplay
-                      currentHf={Number(user.healthFactor).toFixed(2)}
-                      newHf={
-                        borrowAmount && Number(borrowAmount) > 0
-                          ? computeNewHealthFactor('borrow', borrowAmount, reserve, user, marketRefPriceInUsd)
-                          : EM_DASH
-                      }
-                    />
+                    <HealthFactorDisplay currentHf={Number(user.healthFactor).toFixed(2)} newHf={newBorrowHf} />
                     <span className='text-[11px] text-muted-foreground'>{t('liquidationAtOne')}</span>
                   </div>
                 ) : (
@@ -545,13 +697,13 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
       {/* ── Repay section ── */}
       <Collapsible
         open={openSection === 'repay'}
-        onOpenChange={(open) => setOpenSection(open ? 'repay' : 'borrow')}
+        onOpenChange={handleRepaySectionToggle}
         className='flex flex-col gap-3'
       >
         <CollapsibleTrigger asChild>
           <div className='flex cursor-pointer items-center justify-between'>
             {hasNativeOption && openSection === 'repay' ? (
-              <div onClick={(e) => e.stopPropagation()}>
+              <div onClick={handleRepayDropdownStopPropagation}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -563,11 +715,11 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='start'>
-                    <DropdownMenuItem onClick={() => setRepayMode('wrapped')}>
+                    <DropdownMenuItem onClick={handleSetRepayModeWrapped}>
                       <TokenIcon symbol={reserve.symbol} />
                       {reserve.symbol}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setRepayMode('native')}>
+                    <DropdownMenuItem onClick={handleSetRepayModeNative}>
                       <TokenIcon symbol={nativeSymbol!} />
                       {nativeSymbol}
                     </DropdownMenuItem>
@@ -587,167 +739,143 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
         </CollapsibleTrigger>
 
         <CollapsibleContent className='flex flex-col gap-3'>
-          <AmountInput
-            value={repayAmount}
-            onChange={(v) => {
-              setRepayAmount(v);
-              setIsRepayMax(false);
-            }}
-            symbol={activeRepaySymbol}
-            onMax={() => {
-              // Max repay = min(wallet balance, debt)
-              const maxRepay = Math.min(Number(repayWalletBalance), borrowedBalance);
-              // For native, leave a small gas buffer
-              const buffered = isRepayNative ? Math.max(maxRepay - 0.004, 0) : maxRepay;
-              setRepayAmount(buffered.toString());
-              setIsRepayMax(buffered >= borrowedBalance);
-            }}
-            label={t('repayAmount')}
-            usdValue={
-              repayAmount && Number(repayAmount) > 0
-                ? Number(repayAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
-                : undefined
-            }
-            validate={(v) => {
-              if (!v || Number(v) <= 0) return null;
-              if (Number(v) > Number(repayWalletBalance)) return t('insufficientWalletBalance');
-              if (Number(v) > borrowedBalance) return t('exceedsRemainingDebt');
-              return null;
-            }}
-          />
-          <div className='ml-auto flex flex-col items-end'>
-            <span className='flex items-center gap-1 text-muted-foreground text-xs'>
-              <Wallet size={14} className='inline' /> {t('balance')}: {formatTokenAmount(repayWalletBalance)}{' '}
-              {activeRepaySymbol}
-            </span>
-          </div>
-
-          {borrowedBalance <= 0 && (
-            <Alert>
-              <TriangleAlert className='size-4' />
-              <AlertDescription className='text-xs'>{t('noOutstandingDebt')}</AlertDescription>
-            </Alert>
+          {/* ── Repay Source Toggle (Wallet vs Collateral) ── */}
+          {collateralRepayEnabled && borrowedBalance > 0 && user && (
+            <div className='flex rounded-md border border-border p-0.5'>
+              <button
+                type='button'
+                onClick={handleSetRepaySourceWallet}
+                className={`flex-1 rounded-sm py-1 font-medium text-xs transition-colors ${
+                  repaySource === 'wallet'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                From Wallet
+              </button>
+              <button
+                type='button'
+                onClick={handleSetRepaySourceCollateral}
+                className={`flex-1 rounded-sm py-1 font-medium text-xs transition-colors ${
+                  repaySource === 'collateral'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                With Collateral
+              </button>
+            </div>
           )}
 
-          <div className='flex gap-3'>
-            {/* Approve button — only for ERC20 repay */}
-            {!isRepayNative && (
-              <Button
-                variant='outline'
-                className='flex-1'
-                icon={
-                  erc20Repay.status === 'approving' || erc20Repay.status === 'confirming-approve' ? (
-                    <Loader2 size={14} className='animate-spin' />
-                  ) : (
-                    <Lock size={14} />
-                  )
-                }
-                disabled={!erc20Repay.needsApproval || erc20Repay.isBusy || borrowedBalance <= 0}
-                onClick={handleRepayApprove}
-              >
-                {erc20Repay.needsApproval ? t('approve') : t('approved')}
-              </Button>
-            )}
-            <Button
-              className='flex-1'
-              icon={isRepayBusy ? <Loader2 size={14} className='animate-spin' /> : <ArrowUpToLine size={14} />}
-              disabled={
-                isRepayBusy ||
-                !repayAmount ||
-                Number(repayAmount) <= 0 ||
-                borrowedBalance <= 0 ||
-                Number(repayAmount) > Number(repayWalletBalance) ||
-                (!isRepayNative && erc20Repay.needsApproval)
-              }
-              onClick={handleRepay}
-            >
-              {isRepayBusy ? t('repaying') : t('repay')}
-            </Button>
-          </div>
-
-          {/* ── Repay Success Dialog ── */}
-          <RepaySuccessDialog
-            open={!!repaySuccessInfo}
-            onClose={() => {
-              setRepaySuccessInfo(null);
-              erc20Repay.reset();
-              nativeRepay.reset();
-            }}
-            amount={repaySuccessInfo?.amount ?? '0'}
-            symbol={repaySuccessInfo?.symbol ?? reserve.symbol}
-            txHash={repaySuccessInfo?.txHash}
-            explorerUrl={explorerUrl}
-          />
-
-          <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
-            {!isRepayNative && (
-              <InfoRow
-                label={t('currentAllowance')}
-                value={
-                  Number(erc20Repay.allowance) > 1e15
-                    ? `∞ ${reserve.symbol}`
-                    : `${formatTokenAmount(erc20Repay.allowance)} ${reserve.symbol}`
-                }
+          {/* ── Repay With Collateral ── */}
+          {repaySource === 'collateral' && collateralRepayEnabled && user ? (
+            <RepayWithCollateralPanel
+              debtReserve={reserve}
+              user={user}
+              marketRefPriceInUsd={marketRefPriceInUsd}
+              userAddress={address}
+              onSuccess={onTxSuccess}
+            />
+          ) : (
+            <>
+              <AmountInput
+                value={repayAmount}
+                onChange={handleRepayAmountChange}
+                symbol={activeRepaySymbol}
+                onMax={handleRepayMax}
+                label={t('repayAmount')}
+                usdValue={repayUsdValue}
+                validate={validateRepayAmount}
               />
-            )}
-            <InfoRow
-              className='items-baseline'
-              label={t('remainingDebt')}
-              value={
-                <div className='flex flex-col items-end gap-0.5'>
-                  <span className='font-medium text-foreground text-sm'>
-                    {formatTokenAmount(borrowedBalance)} {reserve.symbol}
-                    {repayAmount && Number(repayAmount) > 0 && (
-                      <>
-                        {' '}
-                        <span className='text-muted-foreground'>→</span>{' '}
-                        {formatTokenAmount(Math.max(borrowedBalance - Number(repayAmount), 0))} {reserve.symbol}
-                      </>
-                    )}
-                  </span>
-                  <span className='text-[11px] text-muted-foreground'>
-                    $
-                    {(
-                      borrowedBalance *
-                      Number(reserve.priceInMarketReferenceCurrency) *
-                      Number(marketRefPriceInUsd)
-                    ).toFixed(2)}
-                    {repayAmount && Number(repayAmount) > 0 && (
-                      <>
-                        {' → $'}
-                        {(
-                          Math.max(borrowedBalance - Number(repayAmount), 0) *
-                          Number(reserve.priceInMarketReferenceCurrency) *
-                          Number(marketRefPriceInUsd)
-                        ).toFixed(2)}
-                      </>
-                    )}
-                  </span>
-                </div>
-              }
-            />
-            <InfoRow label={t('borrowApyVariable')} value={`${variableBorrowApy}%`} />
-            <InfoRow
-              label={t('healthFactor')}
-              value={
-                user ? (
-                  <div className='flex flex-col items-end gap-0.5'>
-                    <HealthFactorDisplay
-                      currentHf={Number(user.healthFactor).toFixed(2)}
-                      newHf={
-                        repayAmount && Number(repayAmount) > 0
-                          ? computeNewHealthFactor('repay', repayAmount, reserve, user, marketRefPriceInUsd)
-                          : EM_DASH
-                      }
-                    />
-                    <span className='text-[11px] text-muted-foreground'>{t('liquidationAtOne')}</span>
-                  </div>
-                ) : (
-                  EM_DASH
-                )
-              }
-            />
-          </div>
+              <div className='ml-auto flex flex-col items-end'>
+                <span className='flex items-center gap-1 text-muted-foreground text-xs'>
+                  <Wallet size={14} className='inline' /> {t('balance')}: {formatTokenAmount(repayWalletBalance)}{' '}
+                  {activeRepaySymbol}
+                </span>
+              </div>
+
+              {borrowedBalance <= 0 && (
+                <Alert>
+                  <TriangleAlert className='size-4' />
+                  <AlertDescription className='text-xs'>{t('noOutstandingDebt')}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className='flex gap-3'>
+                {/* Approve button — only for ERC20 repay */}
+                {!isRepayNative && (
+                  <Button
+                    variant='outline'
+                    className='flex-1'
+                    icon={
+                      erc20Repay.status === 'approving' || erc20Repay.status === 'confirming-approve' ? (
+                        <Loader2 size={14} className='animate-spin' />
+                      ) : (
+                        <Lock size={14} />
+                      )
+                    }
+                    disabled={!erc20Repay.needsApproval || erc20Repay.isBusy || borrowedBalance <= 0}
+                    onClick={handleRepayApprove}
+                  >
+                    {erc20Repay.needsApproval ? t('approve') : t('approved')}
+                  </Button>
+                )}
+                <Button
+                  className='flex-1'
+                  icon={isRepayBusy ? <Loader2 size={14} className='animate-spin' /> : <ArrowUpToLine size={14} />}
+                  disabled={
+                    isRepayBusy ||
+                    !repayAmount ||
+                    Number(repayAmount) <= 0 ||
+                    borrowedBalance <= 0 ||
+                    Number(repayAmount) > Number(repayWalletBalance) ||
+                    (!isRepayNative && erc20Repay.needsApproval)
+                  }
+                  onClick={handleRepay}
+                >
+                  {isRepayBusy ? t('repaying') : t('repay')}
+                </Button>
+              </div>
+
+              {/* ── Repay Success Dialog ── */}
+              <RepaySuccessDialog
+                open={!!repaySuccessInfo}
+                onClose={handleRepaySuccessClose}
+                amount={repaySuccessInfo?.amount ?? '0'}
+                symbol={repaySuccessInfo?.symbol ?? reserve.symbol}
+                txHash={repaySuccessInfo?.txHash}
+                explorerUrl={explorerUrl}
+              />
+
+              <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
+                {!isRepayNative && <InfoRow label={t('currentAllowance')} value={erc20AllowanceDisplay} />}
+                <InfoRow
+                  className='items-baseline'
+                  label={t('remainingDebt')}
+                  value={
+                    <div className='flex flex-col items-end gap-0.5'>
+                      <span className='font-medium text-foreground text-sm'>{remainingDebtDisplay}</span>
+                      <span className='text-[11px] text-muted-foreground'>{remainingDebtUsdDisplay}</span>
+                    </div>
+                  }
+                />
+                <InfoRow label={t('borrowApyVariable')} value={`${variableBorrowApy}%`} />
+                <InfoRow
+                  label={t('healthFactor')}
+                  value={
+                    user ? (
+                      <div className='flex flex-col items-end gap-0.5'>
+                        <HealthFactorDisplay currentHf={Number(user.healthFactor).toFixed(2)} newHf={newRepayHf} />
+                        <span className='text-[11px] text-muted-foreground'>{t('liquidationAtOne')}</span>
+                      </div>
+                    ) : (
+                      EM_DASH
+                    )
+                  }
+                />
+              </div>
+            </>
+          )}
         </CollapsibleContent>
       </Collapsible>
     </div>

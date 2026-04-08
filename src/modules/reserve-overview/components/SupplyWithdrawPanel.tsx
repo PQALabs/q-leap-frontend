@@ -283,10 +283,14 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
       }
     }
 
-    // Clamp dust (floating-point rounding artifacts like 6.409e-15) to 0.
-    // parseEther does not accept scientific notation strings.
-    const DUST_THRESHOLD = 1e-9;
-    return maxAmount < DUST_THRESHOLD ? 0 : maxAmount;
+    console.debug('[maxWithdraw] FINAL maxAmount:', maxAmount);
+
+    // Clamp only genuine floating-point rounding artifacts (< 1e-15) to 0.
+    // DO NOT clamp legitimate on-chain dust balances — users should be able to withdraw them.
+    // parseEther does not accept scientific notation strings, so we return the raw number
+    // and handle formatting at call sites.
+    const FLOAT_ARTIFACT_THRESHOLD = 1e-15;
+    return maxAmount < FLOAT_ARTIFACT_THRESHOLD ? 0 : maxAmount;
   }, [suppliedBalance, reserve, user, userReserve]);
 
   // ── Projected HF after withdraw ──
@@ -604,7 +608,9 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             }}
             symbol={activeWithdrawSymbol}
             onMax={() => {
-              setWithdrawAmount(maxWithdrawAmount.toString());
+              // Use toFixed(18) to avoid scientific notation strings (e.g. "1.2e-10")
+              // that viem's parseEther cannot parse.
+              setWithdrawAmount(maxWithdrawAmount.toFixed(18).replace(/\.?0+$/, '') || '0');
               setIsMaxWithdrawSelected(true);
               // Only use MAX_UINT256 if user has no borrows (safe to withdraw all including interest)
               const hasBorrows = user && Number(user.totalBorrowsMarketReferenceCurrency) > 0;
@@ -623,7 +629,8 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             }}
           />
           <span className='ml-auto text-muted-foreground text-xs'>
-            <Landmark size={14} className='inline' /> {t('suppliedAmount')}: {formatTokenAmount(suppliedBalance)}{' '}
+            <Landmark size={14} className='inline' /> {t('suppliedAmount')}:{' '}
+            {formatTokenAmount(suppliedBalance, suppliedBalance > 0 && suppliedBalance < 0.0001 ? 8 : 4)}{' '}
             {reserve.symbol}
           </span>
 

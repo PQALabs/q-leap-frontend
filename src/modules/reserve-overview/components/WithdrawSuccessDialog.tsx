@@ -32,9 +32,17 @@ export function WithdrawSuccessDialog({
   const router = useRouter();
 
   const logoUrl = getTokenLogoUrl(symbol);
-  const formattedAmount = Number(amount).toLocaleString(undefined, {
+  const numAmount = Number(amount);
+  // Dynamic precision: avoid rounding dust to zero
+  let maxDecimals: number;
+  if (numAmount >= 0.01) maxDecimals = 6;
+  else if (numAmount >= 0.000001) maxDecimals = 8;
+  else if (numAmount >= 0.000000001) maxDecimals = 12;
+  else maxDecimals = 18;
+
+  const formattedAmount = numAmount.toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 6,
+    maximumFractionDigits: maxDecimals,
   });
 
   const txUrl = explorerUrl && txHash ? `${explorerUrl}/tx/${txHash}` : undefined;

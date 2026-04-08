@@ -14,6 +14,9 @@ export function formatApy(value: number): string {
 export function formatUsd(val: number | string): string {
   const num = Number(val);
   if (Number.isNaN(num) || num === 0) return '$0.00';
+  // Show dust amounts (> 0 but < $0.01) as "<$0.01" instead of "$0.00"
+  if (num > 0 && num < 0.01) return '<$0.01';
+  if (num < 0 && num > -0.01) return '>-$0.01';
   // Truncate to 2 decimals (no rounding) — e.g. 1234.567 → 1234.56
   const truncated = Math.trunc(num * 100) / 100;
   if (Math.abs(num) >= 1e9) return `$${(Math.trunc((num / 1e9) * 100) / 100).toFixed(2)}B`;

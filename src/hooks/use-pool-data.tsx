@@ -36,7 +36,6 @@ export function usePoolData(
     isLoading: loadingReserves,
     isError: errorReserves,
     refetch: refetchReserves,
-    error: errorReservesData,
   } = useReadUiPoolDataProviderV2GetReservesData({
     address: poolDataProviderAddress,
     args: [lendingPoolAddressProvider],
@@ -52,7 +51,6 @@ export function usePoolData(
     isLoading: loadingUserReserves,
     isError: errorUserReserves,
     refetch: refetchUserReserves,
-    error: errorUserReservesData,
   } = useReadUiPoolDataProviderV2GetUserReservesData({
     address: poolDataProviderAddress,
     args: userAddress ? [lendingPoolAddressProvider, userAddress] : undefined,

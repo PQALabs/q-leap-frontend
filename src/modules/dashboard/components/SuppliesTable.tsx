@@ -97,7 +97,11 @@ export function SuppliesTable({
                       <div className='flex flex-col'>
                         <span className='font-medium text-foreground'>{formatUsd(ur.underlyingBalanceUSD)}</span>
                         <span className='text-muted-foreground text-xs'>
-                          {formatTokenAmount(ur.underlyingBalance)} {ur.reserve.symbol}
+                          {formatTokenAmount(
+                            ur.underlyingBalance,
+                            Number(ur.underlyingBalance) > 0 && Number(ur.underlyingBalance) < 0.0001 ? 8 : 4
+                          )}{' '}
+                          {ur.reserve.symbol}
                         </span>
                       </div>
                     </td>
