@@ -337,11 +337,16 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   const handleSetRepaySourceWallet = useCallback(() => setRepaySource('wallet'), []);
   const handleSetRepaySourceCollateral = useCallback(() => setRepaySource('collateral'), []);
 
-  // ── Borrow amount handlers ──
-  const handleBorrowAmountChange = useCallback((v: string) => {
-    setBorrowAmount(v);
-    setIsMaxBorrowSelected(false);
-  }, []);
+  // ── Borrow amount handlers (also clears revert error on change) ──
+  const handleBorrowAmountChange = useCallback(
+    (v: string) => {
+      setBorrowAmount(v);
+      setIsMaxBorrowSelected(false);
+      // Clear the last on-chain error so the alert disappears when user edits input
+      erc20Borrow.reset();
+    },
+    [erc20Borrow]
+  );
   const handleBorrowMax = useCallback(() => {
     setBorrowAmount(maxBorrowAmount.toString());
     setIsMaxBorrowSelected(true);

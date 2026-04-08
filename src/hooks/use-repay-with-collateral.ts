@@ -35,7 +35,6 @@ export type RepayWithCollateralStatus =
   | 'confirming-approve'
   | 'executing'
   | 'confirming-exec'
-  | 'success'
   | 'error';
 
 export interface UseRepayWithCollateralOptions {
@@ -304,17 +303,28 @@ export function useRepayWithCollateral({
     }
   }, [isExecConfirming]);
 
+  const reset = useCallback(() => {
+    setStatus('idle');
+    setQuoteError(null);
+    setCollateralNeededRaw(null);
+    setApproveTxHash(undefined);
+    setExecTxHash(undefined);
+    handledApproveTx.current = null;
+    handledExecTx.current = null;
+  }, []);
+
   useEffect(() => {
     if (isExecConfirmed && execTxHash && handledExecTx.current !== execTxHash) {
       handledExecTx.current = execTxHash;
-      setStatus('success');
       toast.dismiss('rwc-exec');
       toast.success('Repay with collateral confirmed!', {
         description: `Repaid ${debtAmountHuman} using your deposited collateral.`,
       });
       onSuccess?.();
+      // Reset all stale state so user can immediately start another repay cycle
+      reset();
     }
-  }, [isExecConfirmed, execTxHash, onSuccess, debtAmountHuman]);
+  }, [isExecConfirmed, execTxHash, onSuccess, debtAmountHuman, reset]);
 
   useEffect(() => {
     if (isExecError && execTxHash) {
@@ -378,6 +388,29 @@ export function useRepayWithCollateral({
       return;
 
     if (!maxCollateralRaw) return;
+
+    // ── On-chain balance guard ───────────────────────────────────────────────
+    // Read the LIVE aToken balance immediately before submitting.
+    // This prevents "SafeMath: subtraction overflow" on consecutive repays
+    // where the UI's polling-based balance is stale (5s interval).
+    try {
+      const liveBalance = (await publicClient.readContract({
+        address: collateralATokenAddress!,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [userAddress],
+      })) as bigint;
+
+      if (liveBalance < maxCollateralRaw) {
+        toast.error('Insufficient collateral balance', {
+          description:
+            'Your aToken balance is lower than needed. Please reduce the repay amount or wait for balance to update.',
+        });
+        return;
+      }
+    } catch {
+      // If the check fails (RPC error), proceed anyway — contract will revert with a clear message
+    }
 
     setStatus('executing');
     toast.loading('Waiting for transaction signature...', { id: 'rwc-exec' });
@@ -449,6 +482,7 @@ export function useRepayWithCollateral({
     publicClient,
     adapterAddress,
     collateralAsset,
+    collateralATokenAddress,
     debtAsset,
     userAddress,
     debtAmountRaw,
@@ -458,16 +492,6 @@ export function useRepayWithCollateral({
     needsFlashLoan,
     lendingPoolAddress,
   ]);
-
-  const reset = useCallback(() => {
-    setStatus('idle');
-    setQuoteError(null);
-    setCollateralNeededRaw(null);
-    setApproveTxHash(undefined);
-    setExecTxHash(undefined);
-    handledApproveTx.current = null;
-    handledExecTx.current = null;
-  }, []);
 
   // ─── Derived combined status ─────────────────────────────────────────────────
 
@@ -495,5 +519,6 @@ export function useRepayWithCollateral({
     reset,
     approveTxHash,
     execTxHash,
+    aTokenAllowance, // raw bigint allowance for display
   };
 }

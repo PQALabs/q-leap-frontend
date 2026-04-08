@@ -49,6 +49,7 @@ export function useBorrow({
   toastLabels: l,
 }: UseBorrowOptions) {
   const [status, setStatus] = useState<BorrowTxStatus>('idle');
+  const [lastError, setLastError] = useState<any>(null);
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
 
@@ -96,6 +97,7 @@ export function useBorrow({
   useEffect(() => {
     if (isReceiptError && txHash) {
       setStatus('error');
+      setLastError(receiptError);
       toast.dismiss('borrow-erc20');
       toast.error(l?.borrowReverted ?? 'Borrow transaction reverted', {
         description: receiptError?.message?.split('\n')[0] || l?.txFailed || 'Transaction failed',
@@ -107,6 +109,7 @@ export function useBorrow({
   const borrow = () => {
     if (!userAddress || !amount || Number(amount) <= 0) return;
     setStatus('borrowing');
+    setLastError(null);
     resetWrite();
     toast.loading(l?.waitingBorrowSignature ?? 'Waiting for borrow signature...', { id: 'borrow-erc20' });
 
@@ -124,6 +127,7 @@ export function useBorrow({
       {
         onError: (error: any) => {
           setStatus('error');
+          setLastError(error);
           toast.dismiss('borrow-erc20');
           toast.error(l?.borrowFailed ?? 'Borrow failed', {
             description: getEvmMessage(error),
@@ -135,6 +139,7 @@ export function useBorrow({
 
   const reset = () => {
     setStatus('idle');
+    setLastError(null);
     resetWrite();
   };
 
@@ -147,5 +152,6 @@ export function useBorrow({
     reset,
     isBusy: isSigningPending || isConfirming,
     txHash,
+    lastError,
   };
 }

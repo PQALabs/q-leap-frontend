@@ -19,6 +19,7 @@
  */
 
 import { AlertTriangle, ArrowRight, ChevronDown, Info, Loader2, Lock, RefreshCw, Zap } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { formatUnits } from 'viem';
 import { useReadErc20BalanceOf } from '@/abi/generated';
@@ -75,6 +76,8 @@ export function RepayWithCollateralPanel({
   const [isMaxDebt, setIsMaxDebt] = useState(false);
   const [slippageBps, setSlippageBps] = useState(200); // default 2%
   const [selectedCollateral, setSelectedCollateral] = useState<UserReserveDataExtended | null>(null);
+
+  const t = useTranslations('modules.market.ReserveActions');
 
   // ── Get enriched user reserve data from the pool store ───────────────────
   // rawUserReservesWithBase has UserReserveDataExtended (with reserve: ReserveDataHumanized)
@@ -136,7 +139,7 @@ export function RepayWithCollateralPanel({
   const maxDebtToRepay = Number(userDebtComputed?.totalBorrows ?? 0);
 
   // ── aToken balance for selected collateral (on-chain confirmation) ────────
-  const { data: aTokenBalRaw } = useReadErc20BalanceOf({
+  const { data: aTokenBalRaw, refetch: refetchATokenBalance } = useReadErc20BalanceOf({
     address: activeCollateral?.reserve.aTokenAddress as `0x${string}` | undefined,
     args: userAddress ? [userAddress] : undefined,
     query: { enabled: !!userAddress && !!activeCollateral, refetchInterval: 5000 },
@@ -193,6 +196,7 @@ export function RepayWithCollateralPanel({
     approve,
     execute,
     reset,
+    aTokenAllowance,
   } = useRepayWithCollateral({
     collateralAsset: activeCollateral?.reserve.underlyingAsset as `0x${string}` | undefined,
     collateralDecimals: activeCollateral?.reserve.decimals ?? 18,
@@ -208,6 +212,9 @@ export function RepayWithCollateralPanel({
     onSuccess: () => {
       setDebtAmount('');
       setIsMaxDebt(false);
+      // Force-refetch aToken balance immediately so the next repay cycle
+      // uses the updated (post-repay) balance — not the stale polling value.
+      refetchATokenBalance();
       onSuccess?.();
     },
   });
@@ -246,14 +253,68 @@ export function RepayWithCollateralPanel({
   const blockingError = useMemo(() => {
     if (!debtAmount || Number(debtAmount) <= 0) return null;
     if (Number(debtAmount) > maxDebtToRepay)
-      return `Exceeds remaining debt (${formatTokenAmount(maxDebtToRepay)} ${debtReserve.symbol})`;
+      return `${t('exceedsRemainingDebt')} (${formatTokenAmount(maxDebtToRepay)} ${debtReserve.symbol})`;
     if (maxCollateral && Number(collateralATokenBalance) < Number(maxCollateral))
-      return `Insufficient collateral: need ${formatTokenAmount(maxCollateral)} ${activeCollateral?.reserve.symbol ?? ''}`;
-    if (quoteError) return `Quote error: ${quoteError}`;
+      return t('insufficientCollateralForSwap', {
+        amount: formatTokenAmount(maxCollateral),
+        symbol: activeCollateral?.reserve.symbol ?? '',
+      });
+    if (quoteError) return t('quoteError', { error: quoteError });
     return null;
-  }, [debtAmount, maxDebtToRepay, maxCollateral, collateralATokenBalance, activeCollateral, quoteError, debtReserve]);
+  }, [
+    debtAmount,
+    maxDebtToRepay,
+    maxCollateral,
+    collateralATokenBalance,
+    activeCollateral,
+    quoteError,
+    debtReserve,
+    t,
+  ]);
 
   const isHFDangerous = projectedHF !== null && projectedHF !== '∞' && Number(projectedHF) < 1.05;
+
+  // ── Remaining debt display (mirrors BorrowRepayPanel repay-with-wallet style) ────
+  const remainingDebtAfterRepay = useMemo(() => {
+    if (!debtAmount || Number(debtAmount) <= 0) return null;
+    return Math.max(maxDebtToRepay - Number(debtAmount), 0);
+  }, [debtAmount, maxDebtToRepay]);
+
+  const debtPriceUsd = Number(debtReserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd);
+
+  const remainingDebtUsdDisplay = useMemo(() => {
+    const currentUsd = (maxDebtToRepay * debtPriceUsd).toFixed(2);
+    if (remainingDebtAfterRepay === null) return <>${currentUsd}</>;
+    const newUsd = (remainingDebtAfterRepay * debtPriceUsd).toFixed(2);
+    return (
+      <>
+        ${currentUsd}
+        {' → $'}
+        {newUsd}
+      </>
+    );
+  }, [maxDebtToRepay, remainingDebtAfterRepay, debtPriceUsd]);
+
+  const remainingDebtDisplay = useMemo(() => {
+    if (remainingDebtAfterRepay !== null) {
+      return (
+        <span className='flex items-center gap-1'>
+          <span>{formatTokenAmount(maxDebtToRepay)}</span>
+          <span className='text-muted-foreground'>→</span>
+          <span className='font-semibold'>{formatTokenAmount(remainingDebtAfterRepay)}</span>
+          <span className='text-muted-foreground'>{debtReserve.symbol}</span>
+        </span>
+      );
+    }
+    return `${formatTokenAmount(maxDebtToRepay)} ${debtReserve.symbol}`;
+  }, [remainingDebtAfterRepay, maxDebtToRepay, debtReserve.symbol]);
+
+  const aTokenAllowanceDisplay = useMemo(() => {
+    if (!activeCollateral) return '—';
+    const sym = `a${activeCollateral.reserve.symbol}`;
+    const formatted = formatUnits(aTokenAllowance, activeCollateral.reserve.decimals);
+    return Number(formatted) > 1e15 ? `∞ ${sym}` : `${formatTokenAmount(formatted)} ${sym}`;
+  }, [aTokenAllowance, activeCollateral]);
 
   const canExecute =
     !!userAddress &&
@@ -262,8 +323,7 @@ export function RepayWithCollateralPanel({
     !blockingError &&
     !isQuoting &&
     !!collateralNeeded &&
-    !needsApproval &&
-    status !== 'success';
+    !needsApproval;
 
   const canApprove = !!userAddress && needsApproval && !isBusy && !!collateralNeeded;
 
@@ -278,9 +338,7 @@ export function RepayWithCollateralPanel({
     return (
       <Alert>
         <AlertTriangle className='size-4' />
-        <AlertDescription className='text-xs'>
-          No eligible collateral available. Deposit assets first to use this feature.
-        </AlertDescription>
+        <AlertDescription className='text-xs'>{t('noEligibleCollateral')}</AlertDescription>
       </Alert>
     );
   }
@@ -289,7 +347,7 @@ export function RepayWithCollateralPanel({
     <div className='flex flex-col gap-3'>
       {/* ── Collateral Selector ── */}
       <div className='flex flex-col gap-1'>
-        <span className='text-muted-foreground text-xs'>Collateral to use</span>
+        <span className='text-muted-foreground text-xs'>{t('collateralToUse')}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -298,9 +356,9 @@ export function RepayWithCollateralPanel({
             >
               <span className='flex items-center gap-2'>
                 {activeCollateral && <TokenIcon symbol={activeCollateral.reserve.symbol} size={18} />}
-                <span className='font-medium'>{activeCollateral?.reserve.symbol ?? 'Select collateral'}</span>
+                <span className='font-medium'>{activeCollateral?.reserve.symbol ?? t('selectCollateral')}</span>
                 <span className='text-muted-foreground text-xs'>
-                  ({formatTokenAmount(collateralATokenBalance)} deposited)
+                  {t('depositedAmount', { amount: formatTokenAmount(collateralATokenBalance) })}
                 </span>
               </span>
               <ChevronDown size={14} className='text-muted-foreground' />
@@ -322,7 +380,9 @@ export function RepayWithCollateralPanel({
                   <span>{ur.reserve.symbol}</span>
                 </span>
                 <span className='text-muted-foreground text-xs'>
-                  {formatTokenAmount(getComputedBalance(ur.reserve.underlyingAsset))} deposited
+                  {t('depositedAmountPlain', {
+                    amount: formatTokenAmount(getComputedBalance(ur.reserve.underlyingAsset)),
+                  })}
                 </span>
               </DropdownMenuItem>
             ))}
@@ -339,7 +399,7 @@ export function RepayWithCollateralPanel({
         }}
         symbol={debtReserve.symbol}
         onMax={handleMax}
-        label='Debt to repay'
+        label={t('debtToRepay')}
         usdValue={
           debtAmount && Number(debtAmount) > 0
             ? Number(debtAmount) * Number(debtReserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
@@ -347,7 +407,7 @@ export function RepayWithCollateralPanel({
         }
         validate={(v) => {
           if (!v || Number(v) <= 0) return null;
-          if (Number(v) > maxDebtToRepay) return 'Exceeds remaining debt';
+          if (Number(v) > maxDebtToRepay) return t('exceedsRemainingDebt');
           return null;
         }}
       />
@@ -358,12 +418,12 @@ export function RepayWithCollateralPanel({
           <div className='mb-2 flex items-center justify-between'>
             <span className='flex items-center gap-1.5 text-muted-foreground text-xs'>
               <RefreshCw size={11} className={isQuoting ? 'animate-spin' : ''} />
-              Collateral required
+              {t('collateralRequired')}
             </span>
             {needsFlashLoan && (
               <span className='flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-600 dark:text-amber-400'>
                 <Zap size={9} />
-                Flash Loan
+                {t('flashLoan')}
               </span>
             )}
           </div>
@@ -371,7 +431,7 @@ export function RepayWithCollateralPanel({
           {isQuoting ? (
             <div className='flex items-center gap-2 text-muted-foreground text-sm'>
               <Loader2 size={14} className='animate-spin' />
-              Fetching V3 quote...
+              {t('fetchingQuote')}
             </div>
           ) : quoteError ? (
             <p className='text-red-500 text-xs'>{quoteError}</p>
@@ -386,14 +446,17 @@ export function RepayWithCollateralPanel({
                     <Info size={11} className='cursor-help text-muted-foreground' />
                   </TooltipTrigger>
                   <TooltipContent side='top' className='max-w-[220px] text-xs'>
-                    Exact V3 quote: {formatTokenAmount(collateralNeeded)} + {slippageBps / 100}% slippage ={' '}
-                    {formatTokenAmount(maxCollateral)}
+                    {t('exactQuote', {
+                      quote: formatTokenAmount(collateralNeeded),
+                      slippage: slippageBps / 100,
+                      total: formatTokenAmount(maxCollateral),
+                    })}
                   </TooltipContent>
                 </Tooltip>
               </div>
               <p className='text-[11px] text-muted-foreground'>
-                Quoted via Uniswap V3 · {slippageBps / 100}% max slippage
-                {needsFlashLoan && ' · Atomic flash loan required'}
+                {t('quoteInfo', { slippage: slippageBps / 100 })}
+                {needsFlashLoan && t('flashLoanRequired')}
               </p>
             </div>
           ) : null}
@@ -402,7 +465,7 @@ export function RepayWithCollateralPanel({
 
       {/* ── Slippage Selector ── */}
       <div className='flex items-center gap-1.5'>
-        <span className='shrink-0 text-muted-foreground text-xs'>Max slippage:</span>
+        <span className='shrink-0 text-muted-foreground text-xs'>{t('maxSlippage')}</span>
         <div className='flex gap-1'>
           {SLIPPAGE_PRESETS.map((preset) => (
             <button
@@ -433,9 +496,7 @@ export function RepayWithCollateralPanel({
       {isHFDangerous && !blockingError && (
         <Alert variant='warning'>
           <AlertTriangle className='size-4' />
-          <AlertDescription className='text-xs'>
-            Projected Health Factor is very low ({projectedHF}). You are close to liquidation.
-          </AlertDescription>
+          <AlertDescription className='text-xs'>{t('projectedHfDanger', { hf: projectedHF })}</AlertDescription>
         </Alert>
       )}
 
@@ -443,10 +504,7 @@ export function RepayWithCollateralPanel({
       {needsFlashLoan && (
         <Alert>
           <Zap className='size-4' />
-          <AlertDescription className='text-xs'>
-            A flash loan will be used to atomically repay your debt and pull collateral, preventing a dangerous Health
-            Factor drop during the transaction.
-          </AlertDescription>
+          <AlertDescription className='text-xs'>{t('flashLoanWarning')}</AlertDescription>
         </Alert>
       )}
 
@@ -468,10 +526,10 @@ export function RepayWithCollateralPanel({
             disabled={!canApprove || isBusy}
           >
             {status === 'approving'
-              ? 'Signing...'
+              ? t('signing')
               : status === 'confirming-approve'
-                ? 'Approving...'
-                : `Approve ${activeCollateral?.reserve.symbol ?? ''}`}
+                ? t('confirming')
+                : t('approveSymbol', { symbol: activeCollateral?.reserve.symbol ?? '' })}
           </Button>
         )}
 
@@ -489,28 +547,36 @@ export function RepayWithCollateralPanel({
           disabled={!canExecute || isBusy}
         >
           {status === 'executing'
-            ? 'Signing...'
+            ? t('signing')
             : status === 'confirming-exec'
-              ? 'Confirming...'
-              : status === 'success'
-                ? 'Done!'
-                : needsFlashLoan
-                  ? 'Flash Repay'
-                  : 'Repay with Collateral'}
+              ? t('confirming')
+              : needsFlashLoan
+                ? t('flashRepay')
+                : t('repay')}
         </Button>
       </div>
 
       {/* ── Info Summary Box ── */}
       <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
-        <InfoRow label='Remaining debt' value={`${formatTokenAmount(maxDebtToRepay)} ${debtReserve.symbol}`} />
+        <InfoRow
+          className='items-baseline'
+          label={t('remainingDebt')}
+          value={
+            <div className='flex flex-col items-end gap-0.5'>
+              <span className='font-medium text-foreground text-sm'>{remainingDebtDisplay}</span>
+              <span className='text-[11px] text-muted-foreground'>{remainingDebtUsdDisplay}</span>
+            </div>
+          }
+        />
         {collateralNeeded && activeCollateral && (
           <InfoRow
-            label='Collateral to swap'
+            label={t('collateralToSwap')}
             value={`≈ ${formatTokenAmount(maxCollateral ?? '0')} ${activeCollateral.reserve.symbol}`}
           />
         )}
+        {activeCollateral && <InfoRow label={t('currentAllowance')} value={aTokenAllowanceDisplay} />}
         <InfoRow
-          label='Health Factor'
+          label={t('healthFactor')}
           value={
             <div className='flex flex-col items-end gap-0.5'>
               <HealthFactorDisplay
@@ -522,21 +588,21 @@ export function RepayWithCollateralPanel({
                     : '—')
                 }
               />
-              <span className='text-[11px] text-muted-foreground'>Liquidation at 1.0</span>
+              <span className='text-[11px] text-muted-foreground'>{t('liquidationAtOne')}</span>
             </div>
           }
         />
         <InfoRow
-          label='Swap method'
+          label={t('swapMethod')}
           value={
             <span className='flex items-center gap-1 text-xs'>
               {needsFlashLoan ? (
                 <>
                   <Zap size={11} className='text-amber-500' />
-                  Flash Loan + Uniswap V3
+                  {t('flashSwap')}
                 </>
               ) : (
-                'Direct Uniswap V3'
+                t('directSwap')
               )}
             </span>
           }
