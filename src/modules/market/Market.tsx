@@ -1,15 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { MARKET_NAME } from '@/config/market';
 import { CoreAssets } from './components/CoreAssets';
 import { MarketBasicInfo } from './components/MarketBasicInfo';
-import { CoreAssetsSkeleton, MarketBasicInfoSkeleton, MarketSummarySkeleton } from './components/MarketSkeletons';
+import { CoreAssetsSkeleton, MarketSummarySkeleton } from './components/MarketSkeletons';
 import { MarketSummary } from './components/MarketSummary';
 import { useMarketSummary } from './hooks/useMarketSummary';
 
 export function Market() {
+  const t = useTranslations('modules.market.Market');
+
   const {
-    t,
     isLoading,
     netWorth,
     netApy,
@@ -24,11 +26,7 @@ export function Market() {
   return (
     <main className='mx-auto flex w-full max-w-7xl flex-col gap-6 pt-0 pb-8 md:pt-8'>
       {/* ① Basic info */}
-      {isLoading ? (
-        <MarketBasicInfoSkeleton />
-      ) : (
-        <MarketBasicInfo name={MARKET_NAME} description={t('marketDescription')} netWorth={netWorth} netApy={netApy} />
-      )}
+      <MarketBasicInfo name={MARKET_NAME} description={t('marketDescription')} netWorth={netWorth} netApy={netApy} />
 
       {/* ② Summary */}
       {isLoading ? (

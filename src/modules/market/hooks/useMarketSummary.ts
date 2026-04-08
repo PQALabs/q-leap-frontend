@@ -9,7 +9,6 @@ import { formatApy, formatTokenAmount } from '@/utils/format';
 import type { CoreAsset } from '../components/CoreAssets';
 
 export function useMarketSummary() {
-  const t = useTranslations('modules.market.Market');
   const isLoading = usePoolDataStore.use.isLoading();
   const marketRefPriceInUsd = usePoolDataStore.use.marketRefPriceInUsd();
   const { reserves, user } = useFormattedPoolData();
@@ -155,7 +154,6 @@ export function useMarketSummary() {
   }, [user, reserves]);
 
   return {
-    t,
     isLoading,
     netWorth,
     netApy,
