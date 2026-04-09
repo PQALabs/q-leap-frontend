@@ -87,6 +87,7 @@ export function SuppliesTable({
                   <tr key={ur.reserve.underlyingAsset} className='border-border border-b last:border-b-0'>
                     <td className='px-4 py-3'>
                       <AssetCell
+                        name={ur.reserve.name}
                         symbol={ur.reserve.symbol}
                         underlyingAsset={ur.reserve.underlyingAsset}
                         copyTitle={t('copyAddress')}

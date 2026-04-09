@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { getDisplayName } from '@/config/token-display';
 import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import type { ComputedUserReserve } from '@/math-utils/formatters/user';
 import { formatApy } from '@/utils/format';
@@ -23,8 +24,12 @@ export function useDashboardData() {
         borrowPowerUsed: 0,
       };
 
-    const supplied = user.userReservesData.filter((ur) => Number(ur.underlyingBalance) > 0);
-    const borrowed = user.userReservesData.filter((ur) => Number(ur.totalBorrows) > 0);
+    const supplied = user.userReservesData
+      .filter((ur) => Number(ur.underlyingBalance) > 0)
+      .map((ur) => ({ ...ur, reserve: { ...ur.reserve, name: getDisplayName(ur.reserve.symbol) } }));
+    const borrowed = user.userReservesData
+      .filter((ur) => Number(ur.totalBorrows) > 0)
+      .map((ur) => ({ ...ur, reserve: { ...ur.reserve, name: getDisplayName(ur.reserve.symbol) } }));
 
     const totalSupply = Number(user.totalCollateralUSD);
     const totalBorrow = Number(user.totalBorrowsUSD);
