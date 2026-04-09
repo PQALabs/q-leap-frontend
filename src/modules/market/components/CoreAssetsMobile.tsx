@@ -18,6 +18,7 @@ function AssetCard({ asset, t }: { asset: CoreAsset; t: (key: string) => string 
       {/* Header — icon + name */}
       <div className='flex items-center justify-between gap-3'>
         <AssetCell
+          name={asset.name}
           symbol={asset.symbol}
           underlyingAsset={asset.underlyingAsset}
           size={36}
