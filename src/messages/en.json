@@ -243,7 +243,9 @@
         "insufficientCollateralForSwap": "Insufficient collateral: need {amount} {symbol}",
         "quoteError": "Quote error: {error}",
         "projectedHfDanger": "Projected Health Factor is very low ({hf}). You are close to liquidation.",
-        "approveSymbol": "Approve {symbol}"
+        "approveSymbol": "Approve {symbol}",
+        "revokeAllowance": "Reset to 0",
+        "revokeAllowanceTitle": "Revoke infinite allowance and reset to 0"
       },
       "Toasts": {
         "approvalConfirmed": "Approval confirmed",

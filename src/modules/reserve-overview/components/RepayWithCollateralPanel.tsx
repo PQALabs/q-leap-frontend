@@ -18,7 +18,7 @@
  * - `rawUserReserves` (from pool store): UserReserveDataExtended[] for reserve metadata (aTokenAddress)
  */
 
-import { AlertTriangle, ArrowRight, ChevronDown, Info, Loader2, Lock, RefreshCw, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ChevronDown, Info, Loader2, Lock, RefreshCw, ShieldOff, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { formatUnits } from 'viem';
@@ -191,10 +191,12 @@ export function RepayWithCollateralPanel({
     maxCollateral,
     needsApproval,
     needsFlashLoan,
+    isInfiniteAllowance,
     isQuoting,
     isRefreshing,
     isBusy,
     approve,
+    revoke,
     execute,
     reset,
     aTokenAllowance,
@@ -576,7 +578,32 @@ export function RepayWithCollateralPanel({
             value={`≈ ${formatTokenAmount(maxCollateral ?? '0')} ${activeCollateral.reserve.symbol}`}
           />
         )}
-        {activeCollateral && <InfoRow label={t('currentAllowance')} value={aTokenAllowanceDisplay} />}
+        {activeCollateral && (
+          <InfoRow
+            label={t('currentAllowance')}
+            value={
+              <span className='flex items-center gap-2'>
+                <span>{aTokenAllowanceDisplay}</span>
+                {isInfiniteAllowance && (
+                  <button
+                    type='button'
+                    onClick={revoke}
+                    disabled={isBusy}
+                    className='flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50'
+                    title={t('revokeAllowanceTitle')}
+                  >
+                    <ShieldOff size={10} />
+                    {status === 'revoking'
+                      ? t('signing')
+                      : status === 'confirming-revoke'
+                        ? t('confirming')
+                        : t('revokeAllowance')}
+                  </button>
+                )}
+              </span>
+            }
+          />
+        )}
         <InfoRow
           label={t('healthFactor')}
           value={

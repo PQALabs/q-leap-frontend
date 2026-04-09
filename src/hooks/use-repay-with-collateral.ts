@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { encodeAbiParameters, formatUnits, parseAbiParameters, parseUnits, zeroHash } from 'viem';
 import { usePublicClient, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
-import { erc20Abi, lendingPoolAbi } from '@/abi/generated';
+import { erc20Abi, lendingPoolAbi, useReadErc20Allowance, useReadErc20BalanceOf } from '@/abi/generated';
 import { uniswapV3RepayAdapterAbi } from '@/abi/uniswap-v3-repay-adapter-abi';
 import { getEvmMessage } from '@/lib/get-evm-message';
 import { useProtocolDataContext } from '@/providers/protocol-data-provider';
@@ -33,6 +33,8 @@ export type RepayWithCollateralStatus =
   | 'quoting'
   | 'approving'
   | 'confirming-approve'
+  | 'revoking'
+  | 'confirming-revoke'
   | 'executing'
   | 'confirming-exec'
   | 'error';
@@ -108,10 +110,12 @@ export function useRepayWithCollateral({
   const [isMultiHopPath, setIsMultiHopPath] = useState(false);
   const [approveTxHash, setApproveTxHash] = useState<`0x${string}` | undefined>();
   const [execTxHash, setExecTxHash] = useState<`0x${string}` | undefined>();
+  const [revokeTxHash, setRevokeTxHash] = useState<`0x${string}` | undefined>();
 
   // Track which tx hashes we've already handled
   const handledApproveTx = useRef<string | null>(null);
   const handledExecTx = useRef<string | null>(null);
+  const handledRevokeTx = useRef<string | null>(null);
   // Debounce timer ref
   const quoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Polling interval ref
@@ -168,31 +172,39 @@ export function useRepayWithCollateral({
 
   // ─── aToken Allowance ────────────────────────────────────────────────────────
 
-  const [aTokenAllowance, setATokenAllowance] = useState<bigint>(BigInt(0));
+  const { data: aTokenAllowanceData, refetch: fetchAllowance } = useReadErc20Allowance({
+    address: collateralATokenAddress,
+    args: userAddress && adapterAddress ? [userAddress, adapterAddress] : undefined,
+    query: {
+      enabled: !!(collateralATokenAddress && userAddress && adapterAddress),
+    },
+  });
 
-  const fetchAllowance = useCallback(async () => {
-    if (!publicClient || !collateralATokenAddress || !userAddress || !adapterAddress) return;
-    try {
-      const allowance = await publicClient.readContract({
-        address: collateralATokenAddress,
-        abi: erc20Abi,
-        functionName: 'allowance',
-        args: [userAddress, adapterAddress],
-      });
-      setATokenAllowance(allowance as bigint);
-    } catch {
-      // ignore
-    }
-  }, [publicClient, collateralATokenAddress, userAddress, adapterAddress]);
+  const aTokenAllowance = aTokenAllowanceData ?? BigInt(0);
 
-  useEffect(() => {
-    fetchAllowance();
-  }, [fetchAllowance]);
+  /**
+   * isInfiniteAllowance — true when the approved amount is astronomically large
+   * (> 1e15 tokens after decimal normalisation), indicating an unlimited approval.
+   * The UI uses this to offer a "Revoke" button so users can reset it to 0.
+   */
+  const isInfiniteAllowance = useMemo(() => {
+    if (aTokenAllowance === BigInt(0)) return false;
+    const formatted = Number(formatUnits(aTokenAllowance, collateralDecimals));
+    return formatted > 1e15;
+  }, [aTokenAllowance, collateralDecimals]);
 
   const needsApproval = useMemo(() => {
     if (!maxCollateralRaw) return false;
     return aTokenAllowance < maxCollateralRaw;
   }, [aTokenAllowance, maxCollateralRaw]);
+
+  // ─── Live Balance Hook (Called on Execute) ───────────────────────────────────
+
+  const { refetch: fetchLiveBalance } = useReadErc20BalanceOf({
+    address: collateralATokenAddress,
+    args: userAddress ? [userAddress] : undefined,
+    query: { enabled: false }, // Only refetch explicitly right before execute
+  });
 
   // ─── Quote ───────────────────────────────────────────────────────────────────
 
@@ -310,8 +322,10 @@ export function useRepayWithCollateral({
     setCollateralNeededRaw(null);
     setApproveTxHash(undefined);
     setExecTxHash(undefined);
+    setRevokeTxHash(undefined);
     handledApproveTx.current = null;
     handledExecTx.current = null;
+    handledRevokeTx.current = null;
   }, []);
 
   useEffect(() => {
@@ -336,6 +350,38 @@ export function useRepayWithCollateral({
       });
     }
   }, [isExecError, execTxHash, execError]);
+
+  // ─── Wait for Revoke Tx ──────────────────────────────────────────────────────
+
+  const {
+    isSuccess: isRevokeConfirmed,
+    isLoading: isRevokeConfirming,
+    isError: isRevokeError,
+  } = useWaitForTransactionReceipt({ hash: revokeTxHash });
+
+  useEffect(() => {
+    if (isRevokeConfirming) {
+      toast.loading('Confirming revoke on-chain...', { id: 'rwc-revoke' });
+    }
+  }, [isRevokeConfirming]);
+
+  useEffect(() => {
+    if (isRevokeConfirmed && revokeTxHash && handledRevokeTx.current !== revokeTxHash) {
+      handledRevokeTx.current = revokeTxHash;
+      setStatus('idle');
+      fetchAllowance();
+      toast.dismiss('rwc-revoke');
+      toast.success('Allowance revoked', { description: 'aToken approval has been reset to 0.' });
+    }
+  }, [isRevokeConfirmed, revokeTxHash, fetchAllowance]);
+
+  useEffect(() => {
+    if (isRevokeError && revokeTxHash) {
+      setStatus('error');
+      toast.dismiss('rwc-revoke');
+      toast.error('Revoke failed on-chain');
+    }
+  }, [isRevokeError, revokeTxHash]);
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
@@ -375,6 +421,33 @@ export function useRepayWithCollateral({
   }, [walletClient, collateralATokenAddress, adapterAddress, approvalAmount]);
 
   /**
+   * Revoke — set aToken allowance to 0.
+   * Shown when the current allowance is "infinite" (>1e15 tokens),
+   * letting users opt out of the unlimited approval.
+   */
+  const revoke = useCallback(async () => {
+    if (!walletClient || !collateralATokenAddress || !adapterAddress) return;
+
+    setStatus('revoking');
+    toast.loading('Waiting for revoke signature...', { id: 'rwc-revoke' });
+
+    try {
+      const hash = await walletClient.writeContract({
+        address: collateralATokenAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [adapterAddress, BigInt(0)],
+      });
+      setRevokeTxHash(hash);
+      setStatus('confirming-revoke');
+    } catch (e: any) {
+      setStatus('error');
+      toast.dismiss('rwc-revoke');
+      toast.error('Revoke rejected', { description: getEvmMessage(e) });
+    }
+  }, [walletClient, collateralATokenAddress, adapterAddress]);
+
+  /**
    * Execute the repay-with-collateral flow.
    *
    * Chooses between:
@@ -404,14 +477,9 @@ export function useRepayWithCollateral({
     // This prevents "SafeMath: subtraction overflow" on consecutive repays
     // where the UI's polling-based balance is stale (5s interval).
     try {
-      const liveBalance = (await publicClient.readContract({
-        address: collateralATokenAddress!,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [userAddress],
-      })) as bigint;
+      const { data: liveBalance } = await fetchLiveBalance();
 
-      if (liveBalance < maxCollateralRaw) {
+      if (liveBalance !== undefined && liveBalance < maxCollateralRaw) {
         toast.error('Insufficient collateral balance', {
           description:
             'Your aToken balance is lower than needed. Please reduce the repay amount or wait for balance to update.',
@@ -509,9 +577,12 @@ export function useRepayWithCollateral({
   const isBusy =
     status === 'approving' ||
     status === 'confirming-approve' ||
+    status === 'revoking' ||
+    status === 'confirming-revoke' ||
     status === 'executing' ||
     status === 'confirming-exec' ||
     isApproveConfirming ||
+    isRevokeConfirming ||
     isExecConfirming;
 
   /**
@@ -528,15 +599,18 @@ export function useRepayWithCollateral({
     maxCollateral, // quote + slippage (human-readable)
     needsApproval,
     needsFlashLoan,
+    isInfiniteAllowance,
     useEthPath,
     isQuoting,
     isRefreshing,
     isBusy,
     approve,
+    revoke,
     execute,
     reset,
     approveTxHash,
     execTxHash,
+    revokeTxHash,
     aTokenAllowance, // raw bigint allowance for display
   };
 }
