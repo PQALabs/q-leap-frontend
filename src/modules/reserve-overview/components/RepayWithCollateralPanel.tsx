@@ -73,7 +73,6 @@ export function RepayWithCollateralPanel({
   onSuccess,
 }: RepayWithCollateralPanelProps) {
   const [debtAmount, setDebtAmount] = useState('');
-  const [isMaxDebt, setIsMaxDebt] = useState(false);
   const [slippageBps, setSlippageBps] = useState(200); // default 2%
   const [selectedCollateral, setSelectedCollateral] = useState<UserReserveDataExtended | null>(null);
 
@@ -208,13 +207,11 @@ export function RepayWithCollateralPanel({
     debtDecimals: debtReserve.decimals,
     userAddress,
     debtAmountHuman: debtAmount,
-    isMaxDebt,
     rateMode: BigInt(2), // variable
     slippageBps,
     hfBeforeCollateralEffect,
     onSuccess: () => {
       setDebtAmount('');
-      setIsMaxDebt(false);
       // Force-refetch aToken balance immediately so the next repay cycle
       // uses the updated (post-repay) balance — not the stale polling value.
       refetchATokenBalance();
@@ -333,7 +330,6 @@ export function RepayWithCollateralPanel({
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleMax = useCallback(() => {
     setDebtAmount(truncateInputAmount(maxDebtToRepay));
-    setIsMaxDebt(true);
   }, [maxDebtToRepay]);
 
   // ── Guard: no collateral available ───────────────────────────────────────
@@ -398,7 +394,6 @@ export function RepayWithCollateralPanel({
         value={debtAmount}
         onChange={(v) => {
           setDebtAmount(v);
-          setIsMaxDebt(false);
         }}
         symbol={debtReserve.symbol}
         onMax={handleMax}
