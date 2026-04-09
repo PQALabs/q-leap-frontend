@@ -191,6 +191,7 @@ export function RepayWithCollateralPanel({
     needsApproval,
     needsFlashLoan,
     isInfiniteAllowance,
+    useEthPath,
     isQuoting,
     isRefreshing,
     isBusy,
@@ -329,8 +330,8 @@ export function RepayWithCollateralPanel({
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleMax = useCallback(() => {
-    setDebtAmount(truncateInputAmount(maxDebtToRepay));
-  }, [maxDebtToRepay]);
+    setDebtAmount(truncateInputAmount(maxDebtToRepay, undefined, debtReserve.decimals));
+  }, [maxDebtToRepay, debtReserve.decimals]);
 
   // ── Guard: no collateral available ───────────────────────────────────────
   if (availableCollaterals.length === 0) {
@@ -403,11 +404,16 @@ export function RepayWithCollateralPanel({
             ? Number(debtAmount) * Number(debtReserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
             : undefined
         }
-        validate={(v) => {
-          if (!v || Number(v) <= 0) return null;
-          if (Number(v) > maxDebtToRepay) return t('exceedsRemainingDebt');
-          return null;
-        }}
+        disabled={isBusy}
+        validate={
+          isBusy
+            ? undefined
+            : (v) => {
+                if (!v || Number(v) <= 0) return null;
+                if (Number(v) > maxDebtToRepay) return t('exceedsRemainingDebt');
+                return null;
+              }
+        }
       />
 
       {/* ── Quote Result ── */}
@@ -557,22 +563,6 @@ export function RepayWithCollateralPanel({
 
       {/* ── Info Summary Box ── */}
       <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
-        <InfoRow
-          className='items-baseline'
-          label={t('remainingDebt')}
-          value={
-            <div className='flex flex-col items-end gap-0.5'>
-              <span className='font-medium text-foreground text-sm'>{remainingDebtDisplay}</span>
-              <span className='text-[11px] text-muted-foreground'>{remainingDebtUsdDisplay}</span>
-            </div>
-          }
-        />
-        {collateralNeeded && activeCollateral && (
-          <InfoRow
-            label={t('collateralToSwap')}
-            value={`≈ ${formatTokenAmount(maxCollateral ?? '0')} ${activeCollateral.reserve.symbol}`}
-          />
-        )}
         {activeCollateral && (
           <InfoRow
             label={t('currentAllowance')}
@@ -600,6 +590,23 @@ export function RepayWithCollateralPanel({
           />
         )}
         <InfoRow
+          className='items-baseline'
+          label={t('remainingDebt')}
+          value={
+            <div className='flex flex-col items-end gap-0.5'>
+              <span className='font-medium text-foreground text-sm'>{remainingDebtDisplay}</span>
+              <span className='text-[11px] text-muted-foreground'>{remainingDebtUsdDisplay}</span>
+            </div>
+          }
+        />
+        {collateralNeeded && activeCollateral && (
+          <InfoRow
+            label={t('collateralToSwap')}
+            value={`≈ ${formatTokenAmount(maxCollateral ?? '0')} ${activeCollateral.reserve.symbol}`}
+          />
+        )}
+
+        <InfoRow
           label={t('healthFactor')}
           value={
             <div className='flex flex-col items-end gap-0.5'>
@@ -616,6 +623,12 @@ export function RepayWithCollateralPanel({
             </div>
           }
         />
+        {collateralNeeded && activeCollateral && !isQuoting && !quoteError && (
+          <InfoRow
+            label='Swap Route'
+            value={<span className='text-xs'>{useEthPath ? 'Multi-hop (via WQDAY)' : 'Direct Pool'}</span>}
+          />
+        )}
         <InfoRow
           label={t('swapMethod')}
           value={

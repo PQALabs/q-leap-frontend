@@ -355,11 +355,14 @@ export function useRepayWithCollateral({
       toast.success('Repay with collateral confirmed!', {
         description: `Repaid ${debtAmountHuman} using your deposited collateral.`,
       });
+      // Refetch allowance BEFORE reset so the next repay cycle sees the actual on-chain value
+      // (the adapter consumed most/all of the allowance during the swap)
+      fetchAllowance();
       onSuccess?.();
       // Reset all stale state so user can immediately start another repay cycle
       reset();
     }
-  }, [isExecConfirmed, execTxHash, onSuccess, debtAmountHuman, reset]);
+  }, [isExecConfirmed, execTxHash, onSuccess, debtAmountHuman, reset, fetchAllowance]);
 
   useEffect(() => {
     if (isExecError && execTxHash) {

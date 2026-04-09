@@ -359,9 +359,9 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     [erc20Borrow]
   );
   const handleBorrowMax = useCallback(() => {
-    setBorrowAmount(truncateInputAmount(maxBorrowAmount));
+    setBorrowAmount(truncateInputAmount(maxBorrowAmount, undefined, reserve.decimals));
     setIsMaxBorrowSelected(true);
-  }, [maxBorrowAmount]);
+  }, [maxBorrowAmount, reserve.decimals]);
   const validateBorrowAmount = useCallback(
     (v: string) => {
       if (!v || Number(v) <= 0) return null;
@@ -379,8 +379,10 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   const handleRepayMax = useCallback(() => {
     // Max repay = min(wallet balance, debt)
     const maxRepay = Math.min(Number(repayWalletBalance), borrowedBalance);
-    // isRepayMax = user intends to repay ALL debt (wallet can cover it)
-    const wantsFullRepay = Number(repayWalletBalance) >= borrowedBalance;
+    // isRepayMax = user intends to repay ALL debt (wallet can cover it).
+    // To safely repay ALL debt, the wallet must have enough to cover the debt + accrued interest during execution.
+    // We require the wallet to have comfortably more than the exact debt (~0.5% buffer).
+    const wantsFullRepay = Number(repayWalletBalance) > borrowedBalance * 1.005;
     let repayAmt: number;
     if (isRepayNative) {
       // For native (QDAY), reserve a small gas buffer ONLY when wallet covers debt.
@@ -399,11 +401,11 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     } else {
       repayAmt = maxRepay;
     }
-    setRepayAmount(truncateInputAmount(repayAmt));
+    setRepayAmount(truncateInputAmount(repayAmt, undefined, decimals));
     // Set isRepayMax=true when user wants to clear the full debt so the
     // contract receives type(uint256).max and handles interest accrued since fetch.
     setIsRepayMax(wantsFullRepay);
-  }, [repayWalletBalance, borrowedBalance, isRepayNative]);
+  }, [repayWalletBalance, borrowedBalance, isRepayNative, decimals]);
 
   const validateRepayAmount = useCallback(
     (v: string) => {
@@ -585,6 +587,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
             onMax={handleBorrowMax}
             label={t('amount')}
             usdValue={borrowUsdValue}
+            disabled={isBorrowBusy}
             validate={isBorrowBusy ? undefined : validateBorrowAmount}
           />
           <div className='ml-auto flex flex-col items-end'>
@@ -803,6 +806,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
                 onMax={handleRepayMax}
                 label={t('repayAmount')}
                 usdValue={repayUsdValue}
+                disabled={isRepayBusy}
                 validate={isRepayBusy ? undefined : validateRepayAmount}
               />
               <div className='ml-auto flex flex-col items-end'>

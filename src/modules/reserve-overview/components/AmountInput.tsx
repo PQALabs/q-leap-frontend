@@ -32,6 +32,8 @@ interface AmountInputProps {
    * highest-priority error.
    */
   validate?: (value: string) => string | null | undefined;
+  /** Whether the input is disabled (e.g. during transaction) */
+  disabled?: boolean;
 }
 
 export function AmountInput({
@@ -43,9 +45,16 @@ export function AmountInput({
   usdValue,
   maxDecimals = MAX_INPUT_DECIMALS,
   validate,
+  disabled,
 }: AmountInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const cursorRef = useRef<number | null>(null);
+
+  // Effective maxDecimals: when a dust value has more decimals than the default
+  // (e.g. MAX auto-expanded from 6 → 18 for a non-zero dust amount), we honour
+  // the current value's precision so it isn't clipped on the next re-render.
+  const currentDecimals = value.includes('.') ? (value.split('.')[1]?.length ?? 0) : 0;
+  const effectiveMaxDecimals = Math.max(maxDecimals, currentDecimals);
 
   const errorMessage = validate?.(value) ?? null;
   const hasError = !!errorMessage;
@@ -100,7 +109,7 @@ export function AmountInput({
               const [int, dec] = raw.split('.');
               // Reject if more than one dot (shouldn't happen, but guard anyway)
               if (raw.split('.').length > 2) return;
-              limited = `${int}.${(dec ?? '').substring(0, maxDecimals)}`;
+              limited = `${int}.${(dec ?? '').substring(0, effectiveMaxDecimals)}`;
             } else {
               limited = raw;
             }
@@ -116,7 +125,8 @@ export function AmountInput({
             onChange(limited);
           }}
           placeholder='0.00'
-          className='min-w-0 flex-1 bg-transparent font-bold text-2xl text-foreground outline-none placeholder:text-muted-foreground/40'
+          disabled={disabled}
+          className={`min-w-0 flex-1 bg-transparent font-bold text-2xl text-foreground outline-none placeholder:text-muted-foreground/40 ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
         />
         <span className='shrink-0 font-medium text-muted-foreground text-sm'>{symbol}</span>
       </div>

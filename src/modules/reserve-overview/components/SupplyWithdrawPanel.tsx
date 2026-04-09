@@ -397,9 +397,9 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             onMax={() => {
               if (isSupplyNative) {
                 const maxNative = Math.max(Number(walletBalance) - 0.001, 0);
-                setSupplyAmount(truncateInputAmount(maxNative));
+                setSupplyAmount(truncateInputAmount(maxNative, undefined, decimals));
               } else {
-                setSupplyAmount(truncateInputAmount(walletBalance));
+                setSupplyAmount(truncateInputAmount(walletBalance, undefined, decimals));
               }
             }}
             label={t('amount')}
@@ -408,6 +408,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
                 ? Number(supplyAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
+            disabled={isSupplyBusy}
             validate={
               isSupplyBusy
                 ? undefined
@@ -612,7 +613,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             }}
             symbol={activeWithdrawSymbol}
             onMax={() => {
-              setWithdrawAmount(truncateInputAmount(maxWithdrawAmount));
+              setWithdrawAmount(truncateInputAmount(maxWithdrawAmount, undefined, decimals));
               setIsMaxWithdrawSelected(true);
               // Only use MAX_UINT256 if user has no borrows (safe to withdraw all including interest)
               const hasBorrows = user && Number(user.totalBorrowsMarketReferenceCurrency) > 0;
@@ -624,6 +625,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
                 ? Number(withdrawAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
+            disabled={isWithdrawBusy}
             validate={
               isWithdrawBusy
                 ? undefined
