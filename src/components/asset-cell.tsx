@@ -14,6 +14,7 @@ import { TokenLogo } from './token-logo';
 interface AssetCellProps {
   /** On-chain token symbol (e.g. "WABEL") */
   symbol: string;
+  name: string;
   /** Full contract address */
   underlyingAsset: string;
   /** Logo / fallback circle diameter in px (default 28) */
@@ -24,14 +25,21 @@ interface AssetCellProps {
   href?: string;
 }
 
-export function AssetCell({ symbol, underlyingAsset, size = 28, copyTitle = 'Copy address', href }: AssetCellProps) {
+export function AssetCell({
+  symbol,
+  underlyingAsset,
+  size = 28,
+  copyTitle = 'Copy address',
+  href,
+  name,
+}: AssetCellProps) {
   const content = (
     <div className='flex items-center gap-2'>
       <TokenLogo symbol={symbol} size={size} />
       <div>
         <div className='font-semibold text-foreground'>{getDisplaySymbol(symbol)}</div>
         <div className='flex items-center gap-1 text-muted-foreground text-xs'>
-          {getDisplayName(symbol)} • {underlyingAsset.slice(0, 6)}…{underlyingAsset.slice(-4)}
+          {name} • {underlyingAsset.slice(0, 6)}…{underlyingAsset.slice(-4)}
           <CopyAddressButton address={underlyingAsset} title={copyTitle} />
         </div>
       </div>

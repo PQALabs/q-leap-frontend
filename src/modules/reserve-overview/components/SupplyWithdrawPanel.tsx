@@ -35,6 +35,7 @@ import { useSupplyNative } from '@/hooks/use-supply-native';
 import { useWithdraw } from '@/hooks/use-withdraw';
 import { useWithdrawNative } from '@/hooks/use-withdraw-native';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
+import { truncateInputAmount } from '@/math-utils';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
 import { formatTokenAmount } from '@/utils/format';
@@ -394,12 +395,11 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             onChange={setSupplyAmount}
             symbol={activeSupplySymbol}
             onMax={() => {
-              // Deduct gas buffer for native token
               if (isSupplyNative) {
                 const maxNative = Math.max(Number(walletBalance) - 0.001, 0);
-                setSupplyAmount(maxNative.toString());
+                setSupplyAmount(truncateInputAmount(maxNative));
               } else {
-                setSupplyAmount(walletBalance);
+                setSupplyAmount(truncateInputAmount(walletBalance));
               }
             }}
             label={t('amount')}
@@ -408,11 +408,15 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
                 ? Number(supplyAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
-            validate={(v) => {
-              if (!v || Number(v) <= 0) return null;
-              if (Number(v) > Number(walletBalance)) return t('insufficientBalance');
-              return null;
-            }}
+            validate={
+              isSupplyBusy
+                ? undefined
+                : (v) => {
+                    if (!v || Number(v) <= 0) return null;
+                    if (Number(v) > Number(walletBalance)) return t('insufficientBalance');
+                    return null;
+                  }
+            }
           />
           <div className='ml-auto flex flex-col items-end'>
             <span className='flex items-center gap-1 text-muted-foreground text-xs'>
@@ -608,9 +612,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             }}
             symbol={activeWithdrawSymbol}
             onMax={() => {
-              // Use toFixed(18) to avoid scientific notation strings (e.g. "1.2e-10")
-              // that viem's parseEther cannot parse.
-              setWithdrawAmount(maxWithdrawAmount.toFixed(18).replace(/\.?0+$/, '') || '0');
+              setWithdrawAmount(truncateInputAmount(maxWithdrawAmount));
               setIsMaxWithdrawSelected(true);
               // Only use MAX_UINT256 if user has no borrows (safe to withdraw all including interest)
               const hasBorrows = user && Number(user.totalBorrowsMarketReferenceCurrency) > 0;
@@ -622,11 +624,15 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
                 ? Number(withdrawAmount) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
                 : undefined
             }
-            validate={(v) => {
-              if (!v || Number(v) <= 0) return null;
-              if (!isMaxWithdrawSelected && Number(v) > maxWithdrawAmount) return t('exceedsMaxWithdraw');
-              return null;
-            }}
+            validate={
+              isWithdrawBusy
+                ? undefined
+                : (v) => {
+                    if (!v || Number(v) <= 0) return null;
+                    if (!isMaxWithdrawSelected && Number(v) > maxWithdrawAmount) return t('exceedsMaxWithdraw');
+                    return null;
+                  }
+            }
           />
           <span className='ml-auto text-muted-foreground text-xs'>
             <Landmark size={14} className='inline' /> {t('suppliedAmount')}:{' '}

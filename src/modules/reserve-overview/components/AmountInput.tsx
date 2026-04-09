@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { MAX_INPUT_DECIMALS } from '@/utils/format';
 
 /** Add thousand separators to a numeric string (keeps decimals intact) */
 function formatWithCommas(v: string): string {
@@ -23,6 +24,7 @@ interface AmountInputProps {
   label: string;
   /** Optional USD equivalent to display below the amount */
   usdValue?: number;
+  maxDecimals?: number;
   /**
    * Validation callback — receives the current value and returns an error
    * message string if invalid, or null/undefined if valid.
@@ -32,7 +34,16 @@ interface AmountInputProps {
   validate?: (value: string) => string | null | undefined;
 }
 
-export function AmountInput({ value, onChange, symbol, onMax, label, usdValue, validate }: AmountInputProps) {
+export function AmountInput({
+  value,
+  onChange,
+  symbol,
+  onMax,
+  label,
+  usdValue,
+  maxDecimals = MAX_INPUT_DECIMALS,
+  validate,
+}: AmountInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const cursorRef = useRef<number | null>(null);
 
@@ -72,21 +83,37 @@ export function AmountInput({ value, onChange, symbol, onMax, label, usdValue, v
           inputMode='decimal'
           value={displayValue}
           onKeyDown={(e) => {
-            if (e.key === 'e' || e.key === 'E') e.preventDefault();
+            // R4.3 — Block scientific notation and sign keys that break parseUnits
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
           }}
           onChange={(e) => {
             const cursorPos = e.target.selectionStart ?? 0;
             const oldFormatted = e.target.value;
             const raw = stripCommas(oldFormatted);
-            // Allow empty, or valid decimal number with up to 6 decimal places
-            if (raw === '' || /^\d*\.?\d{0,18}$/.test(raw)) {
-              // Calculate cursor offset from commas before cursor in old vs new formatted
-              const commasBefore = (oldFormatted.slice(0, cursorPos).match(/,/g) || []).length;
-              const newFormatted = formatWithCommas(raw);
-              const newCommasBefore = (newFormatted.slice(0, cursorPos).match(/,/g) || []).length;
-              cursorRef.current = cursorPos + (newCommasBefore - commasBefore);
-              onChange(raw);
+
+            // R4.2 — Use string split to enforce decimal limit, NOT parseFloat/regex.
+            // This avoids float artifacts like 0.00001000000001 from number processing.
+            let limited: string;
+            if (raw.includes('.')) {
+              const [int, dec] = raw.split('.');
+              // Reject if more than one dot (shouldn't happen, but guard anyway)
+              if (raw.split('.').length > 2) return;
+              limited = `${int}.${(dec ?? '').substring(0, maxDecimals)}`;
+            } else {
+              limited = raw;
             }
+
+            // Only digits and at most one dot allowed
+            if (limited !== '' && !/^\d*\.?\d*$/.test(limited)) return;
+
+            // Calculate cursor offset from commas before cursor in old vs new formatted
+            const commasBefore = (oldFormatted.slice(0, cursorPos).match(/,/g) || []).length;
+            const newFormatted = formatWithCommas(limited);
+            const newCommasBefore = (newFormatted.slice(0, cursorPos).match(/,/g) || []).length;
+            cursorRef.current = cursorPos + (newCommasBefore - commasBefore);
+            onChange(limited);
           }}
           placeholder='0.00'
           className='min-w-0 flex-1 bg-transparent font-bold text-2xl text-foreground outline-none placeholder:text-muted-foreground/40'

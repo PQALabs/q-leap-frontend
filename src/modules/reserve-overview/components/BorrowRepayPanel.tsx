@@ -35,6 +35,7 @@ import { useBorrowNative } from '@/hooks/use-borrow-native';
 import { useRepay } from '@/hooks/use-repay';
 import { useRepayNative } from '@/hooks/use-repay-native';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
+import { truncateInputAmount, valueToBigNumber } from '@/math-utils';
 import { useProtocolDataContext } from '@/providers/protocol-data-provider';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
@@ -250,25 +251,31 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   const maxBorrowAmount = useMemo(() => {
     if (!user) return 0;
 
+    // Use BigNumber throughout to minimise float precision loss.
+    // JS Number has only ~15–17 significant digits; amounts this close to the
+    // collateral ceiling need the extra precision to avoid threshold errors.
+
     // Step 1: max borrow based on collateral
-    const availBorrowsMRC = Number(user.availableBorrowsMarketReferenceCurrency);
-    const priceInMRC = Number(reserve.priceInMarketReferenceCurrency);
-    const maxUserAmountToBorrow = availBorrowsMRC / priceInMRC;
+    const availBorrowsMRC = valueToBigNumber(user.availableBorrowsMarketReferenceCurrency);
+    const priceInMRC = valueToBigNumber(reserve.priceInMarketReferenceCurrency);
+
+    if (priceInMRC.isZero()) return 0;
+    const maxUserAmountToBorrow = availBorrowsMRC.dividedBy(priceInMRC);
 
     // Step 2: cap by pool liquidity
-    const poolLiquidity = Number(reserve.availableLiquidity);
-    let maxAmount = Math.max(Math.min(poolLiquidity, maxUserAmountToBorrow), 0);
+    const poolLiquidity = valueToBigNumber(reserve.availableLiquidity);
+    const isCollateralLimited = maxUserAmountToBorrow.lte(poolLiquidity);
+    // min(poolLiquidity, maxUserAmountToBorrow), clamped to 0
+    const cappedByLiquidity = maxUserAmountToBorrow.lt(poolLiquidity) ? maxUserAmountToBorrow : poolLiquidity;
+    const rawMax = cappedByLiquidity.lt(0) ? valueToBigNumber(0) : cappedByLiquidity;
 
-    // Step 3: safety buffer if user already has borrows and limit is from collateral
-    if (
-      maxAmount > 0 &&
-      Number(user.totalBorrowsMarketReferenceCurrency) > 0 &&
-      maxUserAmountToBorrow < poolLiquidity * 1.01
-    ) {
-      maxAmount = maxAmount * 0.99;
-    }
+    // Step 3: apply 99% safety buffer when collateral is the bottleneck.
+    // The contract uses ray/wad math (27-digit precision); even with BigNumber
+    // we can have tiny rounding differences vs on-chain, plus interest accrues
+    // between UI render and block inclusion. The buffer covers both.
+    const maxAmount = rawMax.isGreaterThan(0) && isCollateralLimited ? rawMax.multipliedBy('0.99') : rawMax;
 
-    return maxAmount;
+    return maxAmount.toNumber();
   }, [user, reserve]);
 
   // ── Projected HF after borrow ──
@@ -296,9 +303,13 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
       error = t('insufficientLiquidity', { symbol: reserve.symbol });
     }
 
-    if (user && Number(user.totalBorrowsMarketReferenceCurrency) > 0 && projectedBorrowHF) {
+    if (user && projectedBorrowHF) {
       const hfNum = Number(projectedBorrowHF);
-      if (!Number.isNaN(hfNum) && projectedBorrowHF !== '∞' && hfNum < 1) {
+      // Block at 1.01 — this matches validateBorrow's on-chain threshold.
+      // The frontend's floating-point HF can be slightly above 1.0 while the
+      // contract (ray/wad math) actually sees it drop below 1, causing
+      // revert with error 11. Rejecting below 1.01 gives a safe margin.
+      if (!Number.isNaN(hfNum) && projectedBorrowHF !== '∞' && hfNum < 1.01) {
         error = t('hfBelowOne');
       }
     }
@@ -348,7 +359,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     [erc20Borrow]
   );
   const handleBorrowMax = useCallback(() => {
-    setBorrowAmount(maxBorrowAmount.toString());
+    setBorrowAmount(truncateInputAmount(maxBorrowAmount));
     setIsMaxBorrowSelected(true);
   }, [maxBorrowAmount]);
   const validateBorrowAmount = useCallback(
@@ -388,7 +399,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     } else {
       repayAmt = maxRepay;
     }
-    setRepayAmount(repayAmt.toString());
+    setRepayAmount(truncateInputAmount(repayAmt));
     // Set isRepayMax=true when user wants to clear the full debt so the
     // contract receives type(uint256).max and handles interest accrued since fetch.
     setIsRepayMax(wantsFullRepay);
@@ -572,7 +583,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
             onMax={handleBorrowMax}
             label={t('amount')}
             usdValue={borrowUsdValue}
-            validate={validateBorrowAmount}
+            validate={isBorrowBusy ? undefined : validateBorrowAmount}
           />
           <div className='ml-auto flex flex-col items-end'>
             <span className='flex items-center gap-1 text-muted-foreground text-xs'>
@@ -790,7 +801,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
                 onMax={handleRepayMax}
                 label={t('repayAmount')}
                 usdValue={repayUsdValue}
-                validate={validateRepayAmount}
+                validate={isRepayBusy ? undefined : validateRepayAmount}
               />
               <div className='ml-auto flex flex-col items-end'>
                 <span className='flex items-center gap-1 text-muted-foreground text-xs'>

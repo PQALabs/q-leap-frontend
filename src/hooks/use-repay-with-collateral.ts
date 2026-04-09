@@ -64,8 +64,9 @@ export interface UseRepayWithCollateralOptions {
   onSuccess?: () => void;
 }
 
-// ─── Max uint256 (compatible with tsconfig below ES2020) ─────────────────────
-const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
+// ─── Approval buffer: 1% on top of maxCollateral to cover minor price drift ──
+// between the time of quote and the time execute() is called.
+const APPROVAL_BUFFER_BPS = 100; // 1%
 
 // ─── Empty permit (no EIP-2612 permit supported in first version) ─────────────
 
@@ -339,11 +340,20 @@ export function useRepayWithCollateral({
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
   /**
-   * Approve aToken to the adapter (MAX_UINT256).
-   * The adapter pulls aTokens from the user wallet to do collateral swaps.
+   * Approve aToken to the adapter.
+   *
+   * We approve maxCollateralRaw + 1% buffer instead of MAX_UINT256.
+   * maxCollateralRaw already includes the slippage buffer (default 2%),
+   * so the extra 1% only covers minor price drift between quote and execute.
+   * The contract will spend at most maxCollateralRaw — the rest stays as allowance.
    */
+  const approvalAmount = useMemo(() => {
+    if (!maxCollateralRaw) return null;
+    return (maxCollateralRaw * BigInt(10000 + APPROVAL_BUFFER_BPS)) / BigInt(10000);
+  }, [maxCollateralRaw]);
+
   const approve = useCallback(async () => {
-    if (!walletClient || !collateralATokenAddress || !adapterAddress) return;
+    if (!walletClient || !collateralATokenAddress || !adapterAddress || !approvalAmount) return;
 
     setStatus('approving');
     toast.loading('Waiting for aToken approval signature...', { id: 'rwc-approve' });
@@ -353,7 +363,7 @@ export function useRepayWithCollateral({
         address: collateralATokenAddress,
         abi: erc20Abi,
         functionName: 'approve',
-        args: [adapterAddress, MAX_UINT256],
+        args: [adapterAddress, approvalAmount],
       });
       setApproveTxHash(hash);
       setStatus('confirming-approve');
@@ -362,7 +372,7 @@ export function useRepayWithCollateral({
       toast.dismiss('rwc-approve');
       toast.error('Approval rejected', { description: getEvmMessage(e) });
     }
-  }, [walletClient, collateralATokenAddress, adapterAddress]);
+  }, [walletClient, collateralATokenAddress, adapterAddress, approvalAmount]);
 
   /**
    * Execute the repay-with-collateral flow.
@@ -504,6 +514,13 @@ export function useRepayWithCollateral({
     isApproveConfirming ||
     isExecConfirming;
 
+  /**
+   * isRefreshing — true when a quote is in-flight AND we already have a prior
+   * result (collateralNeededRaw != null). The UI should keep showing the stale
+   * value instead of flashing a spinner on every 10-second poll.
+   */
+  const isRefreshing = isQuoting && collateralNeededRaw !== null;
+
   return {
     status,
     quoteError,
@@ -513,6 +530,7 @@ export function useRepayWithCollateral({
     needsFlashLoan,
     useEthPath,
     isQuoting,
+    isRefreshing,
     isBusy,
     approve,
     execute,

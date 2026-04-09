@@ -17,6 +17,7 @@ import { AssetCell } from '@/components/asset-cell';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { UsdValue } from '@/components/usd-value';
+import { getDisplayName } from '@/config/token-display';
 import { cn } from '@/lib/utils';
 import { formatApy } from '@/utils/format';
 import { CoreAssetsMobile } from './CoreAssetsMobile';
@@ -80,10 +81,11 @@ function buildColumns(t: (key: string) => string): ColumnDef<CoreAsset>[] {
       header: t('asset'),
       enableSorting: false,
       cell: ({ row }) => {
-        const { symbol, underlyingAsset } = row.original;
+        const { symbol, underlyingAsset, name } = row.original;
         return (
           <AssetCell
             symbol={symbol}
+            name={name}
             underlyingAsset={underlyingAsset}
             size={36}
             copyTitle={t('copyAddress')}
@@ -195,7 +197,11 @@ export function CoreAssets({ assets }: CoreAssetsProps) {
   const columns = useMemo(() => buildColumns(t), [t]);
 
   const filteredData = useMemo(
-    () => (stablecoinsOnly ? assets?.filter((a) => a.isStablecoin) : assets),
+    () =>
+      (stablecoinsOnly ? assets?.filter((a) => a.isStablecoin) : assets)?.map((a) => ({
+        ...a,
+        name: getDisplayName(a.symbol),
+      })),
     [assets, stablecoinsOnly]
   );
 

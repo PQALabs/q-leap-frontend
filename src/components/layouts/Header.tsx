@@ -3,6 +3,7 @@
 import { Check, Copy, LayoutDashboard, LogOut, Menu, PlusCircle, Wallet } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ const navItems: NavItem[] = [];
 
 export function Header() {
   const t = useTranslations('header');
+  const pathname = usePathname();
   const setTargetInView = useIntersectionStore.use.setTargetInView();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { copied, copy } = useCopy();
@@ -53,6 +55,13 @@ export function Header() {
     toast.success(t('disconnectSuccess'));
   };
 
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname === '/' || pathname.match(/^\/[a-z]{2}\/?$/)) {
+      e.preventDefault();
+      window.location.reload();
+    }
+  };
+
   return (
     <>
       <header className='sticky top-0 z-50 w-full border-border border-b bg-header-background backdrop-blur-md'>
@@ -61,6 +70,7 @@ export function Header() {
           <div className='flex items-center gap-3'>
             <Link
               href='/'
+              onClick={handleLogoClick}
               className='flex items-center gap-2 font-bold text-foreground text-lg tracking-wide transition-opacity hover:opacity-80'
             >
               {/* Light theme logo */}

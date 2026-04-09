@@ -5,66 +5,123 @@ export function formatApy(value: number): string {
   return `${value.toFixed(2)}%`;
 }
 
+// ─── Internal truncation helper ─────────────────────────────────────────────
+
+/** Truncate (floor) `num` to `decimals` decimal places without rounding up. */
+function truncate(num: number, decimals: number): number {
+  const factor = 10 ** decimals;
+  return Math.trunc(num * factor) / factor;
+}
+
+// ─── R1: Token Amount Formatting ────────────────────────────────────────────
+
+/**
+ * Format a token balance / amount for display.
+ *
+ * Rules (per DeFi UI Formatting Guidelines R1):
+ *   - ALWAYS TRUNCATE — never round up (e.g. 1.99999 → "1.99999", not "2")
+ *   - Standard mode  : max 5 decimals, trailing zeros stripped
+ *   - Dust mode      : values < 10^-5 get 3–10 adaptive decimals so they don't
+ *                      collapse to "0"
+ *   - Near-zero      : values > 0 but below display threshold → "< 0.00001"
+ *
+ * @param value     — numeric value (number or string)
+ * @param maxDigits — max fraction digits for standard mode (default 5 per R1.1)
+ */
+export function formatTokenAmount(value: number | string, maxDigits = 5): string {
+  const num = Number(value);
+  if (Number.isNaN(num) || num === 0) return '0';
+
+  const abs = Math.abs(num);
+  const NEAR_ZERO_THRESHOLD = 10 ** -maxDigits; // e.g. 0.00001 at maxDigits=5
+
+  // R1.3 — Near-zero prefix: value is > 0 but too small to display
+  if (abs > 0 && abs < NEAR_ZERO_THRESHOLD) {
+    return `< ${NEAR_ZERO_THRESHOLD.toFixed(maxDigits)}`;
+  }
+
+  // R1.2 — Dust / small amount: widen decimals up to 10 to reveal non-zero digits
+  if (abs < NEAR_ZERO_THRESHOLD * 1000) {
+    // Find minimum decimals needed to show at least 3 significant digits
+    const dustDecimals = Math.min(Math.max(-Math.floor(Math.log10(abs)) + 2, 3), 10);
+    const truncated = truncate(num, dustDecimals);
+    return truncated.toLocaleString(undefined, { maximumFractionDigits: dustDecimals });
+  }
+
+  // R1.1 — Standard: truncate to maxDigits, strip trailing zeros via maximumFractionDigits
+  const truncated = truncate(num, maxDigits);
+  return truncated.toLocaleString(undefined, { maximumFractionDigits: maxDigits });
+}
+
+// ─── R2: Compact (Large Number) Formatting ──────────────────────────────────
+
 /**
  * Format a USD value with `$` prefix.
- * Truncates to 2 decimals (no rounding). Uses compact notation for large values.
+ * Uses compact notation (K/M/B/T) for large numbers.
  *
- * Examples: $0.00, $12.34, $1,234.56, $1.23M, $4.56B
+ * Compact thresholds per R2:
+ *   >= 10T  →  T (Trillion)
+ *   >= 10B  →  B (Billion)   ← R2 activation threshold
+ *   >= 10M  →  M (Million)
+ *   >= 10K  →  K (Thousand)
+ *
+ * Examples: $0.00, $12.34, $1,234.56, $12.50B
  */
 export function formatUsd(val: number | string): string {
   const num = Number(val);
   if (Number.isNaN(num) || num === 0) return '$0.00';
-  // Show dust amounts (> 0 but < $0.01) as "<$0.01" instead of "$0.00"
+
+  // R1.3 — near-zero USD
   if (num > 0 && num < 0.01) return '<$0.01';
   if (num < 0 && num > -0.01) return '>-$0.01';
-  // Truncate to 2 decimals (no rounding) — e.g. 1234.567 → 1234.56
-  const truncated = Math.trunc(num * 100) / 100;
-  if (Math.abs(num) >= 1e9) return `$${(Math.trunc((num / 1e9) * 100) / 100).toFixed(2)}B`;
-  if (Math.abs(num) >= 1e6) return `$${(Math.trunc((num / 1e6) * 100) / 100).toFixed(2)}M`;
-  if (Math.abs(num) >= 1e3)
-    return `$${truncated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  return `$${truncated.toFixed(2)}`;
+
+  const abs = Math.abs(num);
+
+  // R2 — Compact notation (threshold: >= 10B per guidelines)
+  if (abs >= 1e13) return `$${(truncate(num / 1e12, 2)).toFixed(2)}T`;
+  if (abs >= 1e10) return `$${(truncate(num / 1e9, 2)).toFixed(2)}B`;
+  if (abs >= 1e7) return `$${(truncate(num / 1e6, 2)).toFixed(2)}M`;
+  if (abs >= 1e4) return `$${(truncate(num / 1e3, 2)).toFixed(2)}K`;
+
+  // R3 — Standard USD: 2 fixed decimals, truncated
+  const t = truncate(num, 2);
+  if (abs >= 1e3) return `$${t.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `$${t.toFixed(2)}`;
 }
 
-/**
- * Format a token amount with locale-aware thousand separators.
- *
- * @param value   — numeric value (number or string)
- * @param maxDigits — maximum fraction digits (default 4)
- *
- * Examples: "1,234.5678", "0.0012"
- */
-export function formatTokenAmount(value: number | string, maxDigits = 4): string {
-  return Number(value).toLocaleString(undefined, { maximumFractionDigits: maxDigits });
-}
+// ─── R3: Token Price in USD ──────────────────────────────────────────────────
 
 /**
- * Format a token price in USD with dynamic decimal precision.
- * Adapts decimals based on magnitude so small prices (e.g. QDAY $0.00258)
- * remain readable instead of showing $0.00.
+ * Format a token price in USD with dynamic decimal precision per R3:
  *
- * | Price range   | Decimals | Example              |
- * |---------------|----------|----------------------|
- * | >= $1         | 2        | $1,234.56            |
- * | $0.01 – $1    | 4        | $0.2086 (WABEL)      |
- * | < $0.01       | 6        | $0.002580 (QDAY)     |
- * | 0             | —        | $0.00                |
+ * | Price range   | Decimals | Example               |
+ * |---------------|----------|-----------------------|
+ * | >= $1         | 2        | $1,234.56             |
+ * | $0.01 – $1    | 4        | $0.2086               |
+ * | < $0.01       | 6        | $0.002580             |
+ * | 0             | —        | $0.00                 |
  */
 export function formatTokenPrice(val: number | string): string {
   const num = Number(val);
   if (Number.isNaN(num) || num === 0) return '$0.00';
 
   const abs = Math.abs(num);
-  let decimals: number;
-  if (abs >= 1) decimals = 2;
-  else if (abs >= 0.01) decimals = 4;
-  else decimals = 6;
+  // R3 decimal tiers
+  const decimals = abs >= 1 ? 2 : abs >= 0.01 ? 4 : 6;
+  const t = truncate(num, decimals);
 
-  const truncFactor = 10 ** decimals;
-  const truncated = Math.trunc(num * truncFactor) / truncFactor;
+  // Compact for very large prices (e.g. BTC)
+  if (abs >= 1e9) return `$${truncate(num / 1e9, 2).toFixed(2)}B`;
+  if (abs >= 1e6) return `$${truncate(num / 1e6, 2).toFixed(2)}M`;
 
-  if (abs >= 1e9) return `$${(Math.trunc((num / 1e9) * 100) / 100).toFixed(2)}B`;
-  if (abs >= 1e6) return `$${(Math.trunc((num / 1e6) * 100) / 100).toFixed(2)}M`;
-
-  return `$${truncated.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+  return `$${t.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 }
+
+// ─── R4: Amount Input Constants ──────────────────────────────────────────────
+
+/**
+ * Maximum decimal places allowed in amount inputs across all panels (R4.1).
+ * Single source of truth — changing this value propagates to AmountInput's
+ * default maxDecimals prop AND all MAX-button handlers via truncateInputAmount().
+ */
+export const MAX_INPUT_DECIMALS = 6;

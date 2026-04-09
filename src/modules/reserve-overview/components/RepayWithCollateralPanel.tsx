@@ -35,7 +35,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import { useRepayWithCollateral } from '@/hooks/use-repay-with-collateral';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
-import { calculateHealthFactorFromBalancesBigUnits, valueToBigNumber } from '@/math-utils';
+import { calculateHealthFactorFromBalancesBigUnits, truncateInputAmount, valueToBigNumber } from '@/math-utils';
 import type { ComputedReserveData, UserReserveDataExtended, UserSummary } from '@/stores/use-pool-data-store';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
 import { formatTokenAmount } from '@/utils/format';
@@ -192,6 +192,7 @@ export function RepayWithCollateralPanel({
     needsApproval,
     needsFlashLoan,
     isQuoting,
+    isRefreshing,
     isBusy,
     approve,
     execute,
@@ -329,7 +330,7 @@ export function RepayWithCollateralPanel({
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleMax = useCallback(() => {
-    setDebtAmount(maxDebtToRepay.toString());
+    setDebtAmount(truncateInputAmount(maxDebtToRepay));
     setIsMaxDebt(true);
   }, [maxDebtToRepay]);
 
@@ -428,12 +429,13 @@ export function RepayWithCollateralPanel({
             )}
           </div>
 
-          {isQuoting ? (
+          {/* Show spinner only on first quote (no prior result yet) */}
+          {isQuoting && !isRefreshing ? (
             <div className='flex items-center gap-2 text-muted-foreground text-sm'>
               <Loader2 size={14} className='animate-spin' />
               {t('fetchingQuote')}
             </div>
-          ) : quoteError ? (
+          ) : quoteError && !isRefreshing ? (
             <p className='text-red-500 text-xs'>{quoteError}</p>
           ) : collateralNeeded && maxCollateral ? (
             <div className='flex flex-col gap-1'>
