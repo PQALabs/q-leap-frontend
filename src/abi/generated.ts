@@ -1102,6 +1102,129 @@ export const uiPoolDataProviderV2Abi = [
 ] as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// uniswap-v3-repay-adapter
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const uniswapV3RepayAdapterAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'ADDRESSES_PROVIDER',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'LENDING_POOL',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'ORACLE',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'WETH_ADDRESS',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UNISWAP_V3_ROUTER',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UNISWAP_V3_QUOTER',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MAX_SLIPPAGE_PERCENT',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'FLASHLOAN_PREMIUM_TOTAL',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'amountOut', internalType: 'uint256', type: 'uint256' },
+      { name: 'reserveIn', internalType: 'address', type: 'address' },
+      { name: 'reserveOut', internalType: 'address', type: 'address' },
+    ],
+    name: 'getAmountsIn',
+    outputs: [
+      { name: 'amountIn', internalType: 'uint256', type: 'uint256' },
+      { name: 'relativePrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'amountInUsd', internalType: 'uint256', type: 'uint256' },
+      { name: 'amountOutUsd', internalType: 'uint256', type: 'uint256' },
+      { name: 'path', internalType: 'address[]', type: 'address[]' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'amountIn', internalType: 'uint256', type: 'uint256' },
+      { name: 'reserveIn', internalType: 'address', type: 'address' },
+      { name: 'reserveOut', internalType: 'address', type: 'address' },
+    ],
+    name: 'getAmountsOut',
+    outputs: [
+      { name: 'amountOut', internalType: 'uint256', type: 'uint256' },
+      { name: 'relativePrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'amountInUsd', internalType: 'uint256', type: 'uint256' },
+      { name: 'amountOutUsd', internalType: 'uint256', type: 'uint256' },
+      { name: 'path', internalType: 'address[]', type: 'address[]' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'collateralAsset', internalType: 'address', type: 'address' },
+      { name: 'debtAsset', internalType: 'address', type: 'address' },
+      { name: 'collateralAmount', internalType: 'uint256', type: 'uint256' },
+      { name: 'debtRepayAmount', internalType: 'uint256', type: 'uint256' },
+      { name: 'debtRateMode', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'permitSignature',
+        internalType: 'struct PermitSignature',
+        type: 'tuple',
+        components: [
+          { name: 'amount', internalType: 'uint256', type: 'uint256' },
+          { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+          { name: 'v', internalType: 'uint8', type: 'uint8' },
+          { name: 'r', internalType: 'bytes32', type: 'bytes32' },
+          { name: 's', internalType: 'bytes32', type: 'bytes32' },
+        ],
+      },
+      { name: 'useEthPath', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'swapAndRepay',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // weth-gateway
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1822,6 +1945,135 @@ export const useReadUiPoolDataProviderV2NetworkBaseTokenPriceInUsdProxyAggregato
     functionName: 'networkBaseTokenPriceInUsdProxyAggregator',
   }
 );
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__
+ */
+export const useReadUniswapV3RepayAdapter = /*#__PURE__*/ createUseReadContract({ abi: uniswapV3RepayAdapterAbi });
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"ADDRESSES_PROVIDER"`
+ */
+export const useReadUniswapV3RepayAdapterAddressesProvider = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'ADDRESSES_PROVIDER',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"LENDING_POOL"`
+ */
+export const useReadUniswapV3RepayAdapterLendingPool = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'LENDING_POOL',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"ORACLE"`
+ */
+export const useReadUniswapV3RepayAdapterOracle = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'ORACLE',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"WETH_ADDRESS"`
+ */
+export const useReadUniswapV3RepayAdapterWethAddress = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'WETH_ADDRESS',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"UNISWAP_V3_ROUTER"`
+ */
+export const useReadUniswapV3RepayAdapterUniswapV3Router = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'UNISWAP_V3_ROUTER',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"UNISWAP_V3_QUOTER"`
+ */
+export const useReadUniswapV3RepayAdapterUniswapV3Quoter = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'UNISWAP_V3_QUOTER',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"MAX_SLIPPAGE_PERCENT"`
+ */
+export const useReadUniswapV3RepayAdapterMaxSlippagePercent = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'MAX_SLIPPAGE_PERCENT',
+});
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"FLASHLOAN_PREMIUM_TOTAL"`
+ */
+export const useReadUniswapV3RepayAdapterFlashloanPremiumTotal = /*#__PURE__*/ createUseReadContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'FLASHLOAN_PREMIUM_TOTAL',
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__
+ */
+export const useWriteUniswapV3RepayAdapter = /*#__PURE__*/ createUseWriteContract({ abi: uniswapV3RepayAdapterAbi });
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"getAmountsIn"`
+ */
+export const useWriteUniswapV3RepayAdapterGetAmountsIn = /*#__PURE__*/ createUseWriteContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'getAmountsIn',
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"getAmountsOut"`
+ */
+export const useWriteUniswapV3RepayAdapterGetAmountsOut = /*#__PURE__*/ createUseWriteContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'getAmountsOut',
+});
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"swapAndRepay"`
+ */
+export const useWriteUniswapV3RepayAdapterSwapAndRepay = /*#__PURE__*/ createUseWriteContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'swapAndRepay',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__
+ */
+export const useSimulateUniswapV3RepayAdapter = /*#__PURE__*/ createUseSimulateContract({
+  abi: uniswapV3RepayAdapterAbi,
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"getAmountsIn"`
+ */
+export const useSimulateUniswapV3RepayAdapterGetAmountsIn = /*#__PURE__*/ createUseSimulateContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'getAmountsIn',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"getAmountsOut"`
+ */
+export const useSimulateUniswapV3RepayAdapterGetAmountsOut = /*#__PURE__*/ createUseSimulateContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'getAmountsOut',
+});
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link uniswapV3RepayAdapterAbi}__ and `functionName` set to `"swapAndRepay"`
+ */
+export const useSimulateUniswapV3RepayAdapterSwapAndRepay = /*#__PURE__*/ createUseSimulateContract({
+  abi: uniswapV3RepayAdapterAbi,
+  functionName: 'swapAndRepay',
+});
 
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link wethGatewayAbi}__

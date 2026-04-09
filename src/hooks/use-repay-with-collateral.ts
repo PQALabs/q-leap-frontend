@@ -21,7 +21,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { encodeAbiParameters, formatUnits, parseAbiParameters, parseUnits, zeroHash } from 'viem';
 import { usePublicClient, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
-import { erc20Abi, lendingPoolAbi, useReadErc20Allowance, useReadErc20BalanceOf } from '@/abi/generated';
+import {
+  useReadErc20Allowance,
+  useReadErc20BalanceOf,
+  useReadLendingPoolFlashloanPremiumTotal,
+  useWriteErc20Approve,
+  useWriteLendingPoolFlashLoan,
+  useWriteUniswapV3RepayAdapterSwapAndRepay,
+} from '@/abi/generated';
 import { uniswapV3RepayAdapterAbi } from '@/abi/uniswap-v3-repay-adapter-abi';
 import { getEvmMessage } from '@/lib/get-evm-message';
 import { useProtocolDataContext } from '@/providers/protocol-data-provider';
@@ -54,8 +61,6 @@ export interface UseRepayWithCollateralOptions {
   userAddress: `0x${string}` | undefined;
   /** Human-readable amount of DEBT to repay */
   debtAmountHuman: string;
-  /** Whether to repay maximum debt (uses current on-chain balance) */
-  isMaxDebt?: boolean;
   /** Debt rate mode: 1 = stable, 2 = variable (default) */
   rateMode?: bigint;
   /** Slippage in basis points, e.g. 200 = 2% (default) */
@@ -90,7 +95,6 @@ export function useRepayWithCollateral({
   debtDecimals,
   userAddress,
   debtAmountHuman,
-  isMaxDebt = false,
   rateMode = BigInt(2),
   slippageBps = 200,
   hfBeforeCollateralEffect,
@@ -102,6 +106,15 @@ export function useRepayWithCollateral({
 
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
+
+  // ─── Wagmi Generated Write Hooks ──────────────────────────────────────────────
+  const { mutateAsync: writeApproveAsync } = useWriteErc20Approve();
+  const { mutateAsync: writeFlashLoanAsync } = useWriteLendingPoolFlashLoan();
+  const { mutateAsync: writeSwapAndRepayAsync } = useWriteUniswapV3RepayAdapterSwapAndRepay();
+
+  const { data: flashLoanPremiumBps = BigInt(9) } = useReadLendingPoolFlashloanPremiumTotal({
+    address: lendingPoolAddress,
+  });
 
   // ─── State ──────────────────────────────────────────────────────────────────
   const [status, setStatus] = useState<RepayWithCollateralStatus>('idle');
@@ -215,6 +228,13 @@ export function useRepayWithCollateral({
       return;
     }
 
+    let amountOutToQuote = debtAmountRaw;
+
+    if (needsFlashLoan) {
+      const premiumRaw = (debtAmountRaw * flashLoanPremiumBps) / BigInt(10000);
+      amountOutToQuote = debtAmountRaw + premiumRaw;
+    }
+
     setStatus('quoting');
     setQuoteError(null);
 
@@ -224,7 +244,7 @@ export function useRepayWithCollateral({
         address: adapterAddress,
         abi: uniswapV3RepayAdapterAbi,
         functionName: 'getAmountsIn',
-        args: [debtAmountRaw, collateralAsset, debtAsset],
+        args: [amountOutToQuote, collateralAsset, debtAsset],
       });
 
       // result.result = [amountIn, relPrice, inUsd, outUsd, path]
@@ -246,7 +266,7 @@ export function useRepayWithCollateral({
       setQuoteError(e?.shortMessage || e?.message?.slice(0, 120) || 'Quote failed');
       setStatus('idle');
     }
-  }, [publicClient, adapterAddress, collateralAsset, debtAsset, debtAmountRaw]);
+  }, [publicClient, adapterAddress, collateralAsset, debtAsset, debtAmountRaw, needsFlashLoan, flashLoanPremiumBps]);
 
   // Debounce + trigger quote on amount/asset change
   useEffect(() => {
@@ -405,10 +425,8 @@ export function useRepayWithCollateral({
     toast.loading('Waiting for aToken approval signature...', { id: 'rwc-approve' });
 
     try {
-      const hash = await walletClient.writeContract({
+      const hash = await writeApproveAsync({
         address: collateralATokenAddress,
-        abi: erc20Abi,
-        functionName: 'approve',
         args: [adapterAddress, approvalAmount],
       });
       setApproveTxHash(hash);
@@ -432,10 +450,8 @@ export function useRepayWithCollateral({
     toast.loading('Waiting for revoke signature...', { id: 'rwc-revoke' });
 
     try {
-      const hash = await walletClient.writeContract({
+      const hash = await writeApproveAsync({
         address: collateralATokenAddress,
-        abi: erc20Abi,
-        functionName: 'approve',
         args: [adapterAddress, BigInt(0)],
       });
       setRevokeTxHash(hash);
@@ -516,10 +532,8 @@ export function useRepayWithCollateral({
           ]
         );
 
-        hash = await walletClient.writeContract({
+        hash = await writeFlashLoanAsync({
           address: lendingPoolAddress,
-          abi: lendingPoolAbi,
-          functionName: 'flashLoan',
           args: [
             adapterAddress, // receiverAddress
             [debtAsset], // assets
@@ -532,10 +546,8 @@ export function useRepayWithCollateral({
         });
       } else {
         // ── Direct Mode ─────────────────────────────────────────────────────
-        hash = await walletClient.writeContract({
+        hash = await writeSwapAndRepayAsync({
           address: adapterAddress,
-          abi: uniswapV3RepayAdapterAbi,
-          functionName: 'swapAndRepay',
           args: [
             collateralAsset, // collateralAsset
             debtAsset, // debtAsset
@@ -569,6 +581,8 @@ export function useRepayWithCollateral({
     useEthPath,
     needsFlashLoan,
     lendingPoolAddress,
+    writeFlashLoanAsync,
+    writeSwapAndRepayAsync,
   ]);
 
   // ─── Derived combined status ─────────────────────────────────────────────────

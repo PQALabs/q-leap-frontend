@@ -749,7 +749,11 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
                     <span>{formatTokenAmount(suppliedBalance)}</span>
                     <span className='text-muted-foreground'>→</span>
                     <span className='font-semibold'>
-                      {formatTokenAmount(Math.max(suppliedBalance - Number(withdrawAmount), 0))}
+                      {formatTokenAmount(
+                        isMaxWithdrawSelected && maxWithdrawAmount >= suppliedBalance
+                          ? 0
+                          : Math.max(suppliedBalance - Number(withdrawAmount), 0)
+                      )}
                     </span>
                     <span className='text-muted-foreground'>{reserve.symbol}</span>
                   </span>

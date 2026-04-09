@@ -457,11 +457,11 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   const remainingDebtAfterRepayUsd = useMemo(() => {
     if (!repayAmount || Number(repayAmount) <= 0) return null;
     return (
-      Math.max(borrowedBalance - Number(repayAmount), 0) *
+      (isRepayMax ? 0 : Math.max(borrowedBalance - Number(repayAmount), 0)) *
       Number(reserve.priceInMarketReferenceCurrency) *
       Number(marketRefPriceInUsd)
     ).toFixed(2);
-  }, [repayAmount, borrowedBalance, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd]);
+  }, [repayAmount, borrowedBalance, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd, isRepayMax]);
 
   const newBorrowHf = useMemo(
     () =>
@@ -506,13 +506,15 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
         <span className='flex items-center gap-1'>
           <span>{formatTokenAmount(borrowedBalance)}</span>
           <span className='text-muted-foreground'>→</span>
-          <span className='font-semibold'>{formatTokenAmount(Math.max(borrowedBalance - Number(repayAmount), 0))}</span>
+          <span className='font-semibold'>
+            {formatTokenAmount(isRepayMax ? 0 : Math.max(borrowedBalance - Number(repayAmount), 0))}
+          </span>
           <span className='text-muted-foreground'>{reserve.symbol}</span>
         </span>
       );
     }
     return `${formatTokenAmount(borrowedBalance)} ${reserve.symbol}`;
-  }, [repayAmount, borrowedBalance, reserve.symbol]);
+  }, [repayAmount, borrowedBalance, reserve.symbol, isRepayMax]);
 
   const remainingDebtUsdDisplay = useMemo(() => {
     if (!repayAmount || Number(repayAmount) <= 0) {
