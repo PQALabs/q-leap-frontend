@@ -642,7 +642,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             {reserve.symbol}
           </span>
 
-          {withdrawBlockingError && (
+          {!isWithdrawBusy && withdrawBlockingError && (
             <Alert variant='destructive'>
               <TriangleAlert className='size-4' />
               <AlertDescription className='text-xs'>{withdrawBlockingError}</AlertDescription>

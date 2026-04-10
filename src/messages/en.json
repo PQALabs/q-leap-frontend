@@ -230,7 +230,7 @@
         "flashLoan": "Flash Loan",
         "fetchingQuote": "Fetching V3 quote...",
         "exactQuote": "Exact V3 quote: {quote} + {slippage}% slippage = {total}",
-        "quoteInfo": "Quoted via Uniswap V3 · {slippage}% max slippage",
+        "quoteInfo": "Quoted via Uniswap V3",
         "flashLoanRequired": " · Atomic flash loan required",
         "maxSlippage": "Max slippage:",
         "flashLoanWarning": "A flash loan will be used to atomically repay your debt and pull collateral, preventing a dangerous Health Factor drop during the transaction.",

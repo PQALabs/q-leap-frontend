@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { EM_DASH } from '@/constants/common';
 import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import { useRepayWithCollateral } from '@/hooks/use-repay-with-collateral';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
@@ -416,10 +417,34 @@ export function RepayWithCollateralPanel({
         }
       />
 
-      {/* ── Quote Result ── */}
+      {/* ── Quote Result & Swap Details ── */}
       {debtAmount && Number(debtAmount) > 0 && (
-        <div className='rounded-xs border border-border bg-muted/20 p-3'>
-          <div className='mb-2 flex items-center justify-between'>
+        <div className='flex flex-col gap-3 rounded-xs border border-border bg-muted/20 p-3'>
+          {/* 1. Swap Configuration: Slippage */}
+          <div className='flex items-center justify-between'>
+            <span className='text-muted-foreground text-xs'>{t('maxSlippage')}</span>
+            <div className='flex gap-1'>
+              {SLIPPAGE_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  type='button'
+                  onClick={() => setSlippageBps(preset.value)}
+                  className={`cursor-pointer rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                    slippageBps === preset.value
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className='h-px bg-border/50' />
+
+          {/* 2. Output: Quote Result */}
+          <div className='flex items-center justify-between'>
             <span className='flex items-center gap-1.5 text-muted-foreground text-xs'>
               <RefreshCw size={11} className={isQuoting ? 'animate-spin' : ''} />
               {t('collateralRequired')}
@@ -432,7 +457,7 @@ export function RepayWithCollateralPanel({
             )}
           </div>
 
-          {/* Show spinner only on first quote (no prior result yet) */}
+          {/* Quote Value / Loading State */}
           {isQuoting && !isRefreshing ? (
             <div className='flex items-center gap-2 text-muted-foreground text-sm'>
               <Loader2 size={14} className='animate-spin' />
@@ -465,29 +490,32 @@ export function RepayWithCollateralPanel({
               </p>
             </div>
           ) : null}
+
+          {/* 3. Swap Configuration Details (only show when quote is successful) */}
+          {collateralNeeded && activeCollateral && !quoteError && (
+            <>
+              <div className='my-1 h-px bg-border/50' />
+              <div className='flex flex-col gap-2'>
+                <div className='flex items-center justify-between'>
+                  <span className='text-muted-foreground text-xs'>Swap route / method</span>
+                  <div className='flex items-center gap-1 text-xs'>
+                    <span>{useEthPath ? 'Multi-hop' : 'Direct Pool'}</span>
+                    <span className='text-muted-foreground'>•</span>
+                    {needsFlashLoan ? (
+                      <span className='flex items-center gap-1'>
+                        <Zap size={11} className='text-amber-500' />
+                        {t('flashSwap')}
+                      </span>
+                    ) : (
+                      <span>{t('directSwap')}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
-
-      {/* ── Slippage Selector ── */}
-      <div className='flex items-center gap-1.5'>
-        <span className='shrink-0 text-muted-foreground text-xs'>{t('maxSlippage')}</span>
-        <div className='flex gap-1'>
-          {SLIPPAGE_PRESETS.map((preset) => (
-            <button
-              key={preset.value}
-              type='button'
-              onClick={() => setSlippageBps(preset.value)}
-              className={`rounded px-2 py-0.5 text-xs transition-colors ${
-                slippageBps === preset.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/70'
-              }`}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* ── Blocking Error ── */}
       {blockingError && (
@@ -561,7 +589,7 @@ export function RepayWithCollateralPanel({
         </Button>
       </div>
 
-      {/* ── Info Summary Box ── */}
+      {/* ── Transaction Overview ── */}
       <div className='flex flex-col gap-2 rounded-xs border border-border p-3'>
         {activeCollateral && (
           <InfoRow
@@ -599,13 +627,6 @@ export function RepayWithCollateralPanel({
             </div>
           }
         />
-        {collateralNeeded && activeCollateral && (
-          <InfoRow
-            label={t('collateralToSwap')}
-            value={`≈ ${formatTokenAmount(maxCollateral ?? '0')} ${activeCollateral.reserve.symbol}`}
-          />
-        )}
-
         <InfoRow
           label={t('healthFactor')}
           value={
@@ -621,27 +642,6 @@ export function RepayWithCollateralPanel({
               />
               <span className='text-[11px] text-muted-foreground'>{t('liquidationAtOne')}</span>
             </div>
-          }
-        />
-        {collateralNeeded && activeCollateral && !isQuoting && !quoteError && (
-          <InfoRow
-            label='Swap Route'
-            value={<span className='text-xs'>{useEthPath ? 'Multi-hop (via WQDAY)' : 'Direct Pool'}</span>}
-          />
-        )}
-        <InfoRow
-          label={t('swapMethod')}
-          value={
-            <span className='flex items-center gap-1 text-xs'>
-              {needsFlashLoan ? (
-                <>
-                  <Zap size={11} className='text-amber-500' />
-                  {t('flashSwap')}
-                </>
-              ) : (
-                t('directSwap')
-              )}
-            </span>
           }
         />
       </div>
