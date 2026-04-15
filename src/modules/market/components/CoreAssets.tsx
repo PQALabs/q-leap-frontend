@@ -44,7 +44,7 @@ export interface CoreAsset {
 // Sort icon
 // ---------------------------------------------------------------------------
 function SortIndicator({ sorted }: { sorted: false | 'asc' | 'desc' }) {
-  if (!sorted) return <ArrowUpDown size={12} className='text-muted-foreground/50' />;
+  if (!sorted) return <ArrowUpDown size={12} className='text-muted-foreground/70' />;
   if (sorted === 'asc') return <ChevronUp size={12} className='text-foreground' />;
   return <ChevronDown size={12} className='text-foreground' />;
 }

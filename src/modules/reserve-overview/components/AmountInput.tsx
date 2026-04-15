@@ -126,12 +126,12 @@ export function AmountInput({
           }}
           placeholder='0.00'
           disabled={disabled}
-          className={`min-w-0 flex-1 bg-transparent font-bold text-2xl text-foreground outline-none placeholder:text-muted-foreground/40 ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+          className={`min-w-0 flex-1 bg-transparent font-bold text-2xl text-foreground outline-none placeholder:text-muted-foreground/60 ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
         />
         <span className='shrink-0 font-medium text-muted-foreground text-sm'>{symbol}</span>
       </div>
       {usdValue != null && usdValue > 0 && (
-        <p className='mt-1 text-[11px] text-muted-foreground/70'>
+        <p className='mt-1 text-[11px] text-muted-foreground/90'>
           ≈ ${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       )}

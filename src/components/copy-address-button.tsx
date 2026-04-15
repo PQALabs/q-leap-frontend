@@ -26,7 +26,7 @@ export function CopyAddressButton({ address, title }: CopyAddressButtonProps) {
     <button
       type='button'
       onClick={handleCopy}
-      className='inline-flex cursor-pointer items-center text-muted-foreground/60 transition-colors hover:text-foreground'
+      className='inline-flex cursor-pointer items-center text-muted-foreground/90 transition-colors hover:text-foreground'
       title={title}
     >
       {copied ? <Check size={12} className='text-success' /> : <Copy size={12} />}

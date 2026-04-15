@@ -432,7 +432,7 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
               </Tooltip>
             </span>
             {address && (
-              <span className='text-[11px] text-muted-foreground/60'>
+              <span className='text-[11px] text-muted-foreground/90'>
                 $
                 {(
                   Number(walletBalance) *

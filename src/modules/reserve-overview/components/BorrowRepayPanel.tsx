@@ -602,7 +602,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
                 </TooltipContent>
               </Tooltip>
             </span>
-            <span className='text-[11px] text-muted-foreground/60'>${maxBorrowUsd}</span>
+            <span className='text-[11px] text-muted-foreground/90'>${maxBorrowUsd}</span>
           </div>
 
           {(!reserve.isActive || reserve.isFrozen || !reserve.borrowingEnabled) && (
