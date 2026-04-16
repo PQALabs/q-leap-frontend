@@ -38,7 +38,7 @@ import { computeNewHealthFactor } from '@/lib/compute-health-factor';
 import { truncateInputAmount } from '@/math-utils';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
-import { formatTokenAmount } from '@/utils/format';
+import { formatTokenAmount, formatUsdFull } from '@/utils/format';
 import { AmountInput } from './AmountInput';
 import { HealthFactorDisplay, InfoRow, TokenIcon } from './ReserveActionHelpers';
 import { SupplySuccessDialog } from './SupplySuccessDialog';
@@ -433,12 +433,9 @@ export function SupplyWithdrawPanel({ reserve, user, marketRefPriceInUsd }: Supp
             </span>
             {address && (
               <span className='text-[11px] text-muted-foreground/90'>
-                $
-                {(
-                  Number(walletBalance) *
-                  Number(reserve.priceInMarketReferenceCurrency) *
-                  Number(marketRefPriceInUsd)
-                ).toFixed(2)}
+                {formatUsdFull(
+                  Number(walletBalance) * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)
+                )}
               </span>
             )}
           </div>

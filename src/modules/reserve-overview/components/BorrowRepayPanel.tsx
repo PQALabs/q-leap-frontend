@@ -39,7 +39,7 @@ import { truncateInputAmount, valueToBigNumber } from '@/math-utils';
 import { useProtocolDataContext } from '@/providers/protocol-data-provider';
 import type { ComputedReserveData, UserSummary } from '@/stores/use-pool-data-store';
 import { usePoolDataStore } from '@/stores/use-pool-data-store';
-import { formatTokenAmount } from '@/utils/format';
+import { formatTokenAmount, formatUsdFull } from '@/utils/format';
 import { AmountInput } from './AmountInput';
 import { BorrowSuccessDialog } from './BorrowSuccessDialog';
 import { RepaySuccessDialog } from './RepaySuccessDialog';
@@ -482,7 +482,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
   );
 
   const maxBorrowUsd = useMemo(
-    () => (maxBorrowAmount * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)).toFixed(2),
+    () => formatUsdFull(maxBorrowAmount * Number(reserve.priceInMarketReferenceCurrency) * Number(marketRefPriceInUsd)),
     [maxBorrowAmount, reserve.priceInMarketReferenceCurrency, marketRefPriceInUsd]
   );
 
@@ -602,7 +602,7 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
                 </TooltipContent>
               </Tooltip>
             </span>
-            <span className='text-[11px] text-muted-foreground/90'>${maxBorrowUsd}</span>
+            <span className='text-[11px] text-muted-foreground/90'>{maxBorrowUsd}</span>
           </div>
 
           {(!reserve.isActive || reserve.isFrozen || !reserve.borrowingEnabled) && (

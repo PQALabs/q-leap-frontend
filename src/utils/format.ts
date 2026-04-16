@@ -89,6 +89,26 @@ export function formatUsd(val: number | string): string {
   return `$${t.toFixed(2)}`;
 }
 
+// ─── R2b: Full USD Formatting (No Compact Notation) ─────────────────────────
+
+/**
+ * Format a USD value with `$` prefix WITHOUT compact notation.
+ * Always displays the full number with thousand separators.
+ *
+ * Examples: $0.00, $12.34, $1,234.56, $12,345,678.90
+ */
+export function formatUsdFull(val: number | string): string {
+  const num = Number(val);
+  if (Number.isNaN(num) || num === 0) return '$0.00';
+
+  // Near-zero handling (consistent with formatUsd)
+  if (num > 0 && num < 0.01) return '<$0.01';
+  if (num < 0 && num > -0.01) return '>-$0.01';
+
+  const t = truncate(num, 2);
+  return `$${t.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 // ─── R3: Token Price in USD ──────────────────────────────────────────────────
 
 /**
