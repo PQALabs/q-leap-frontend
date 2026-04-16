@@ -60,9 +60,9 @@ export function formatTokenAmount(value: number | string, maxDigits = 5): string
  * Uses compact notation (K/M/B/T) for large numbers.
  *
  * Compact thresholds per R2:
- *   >= 10T  →  T (Trillion)
- *   >= 10B  →  B (Billion)   ← R2 activation threshold
- *   >= 10M  →  M (Million)
+ *   >= 1T   →  T (Trillion)
+ *   >= 1B   →  B (Billion)
+ *   >= 1M   →  M (Million)
  *   >= 10K  →  K (Thousand)
  *
  * Examples: $0.00, $12.34, $1,234.56, $12.50B
@@ -77,10 +77,10 @@ export function formatUsd(val: number | string): string {
 
   const abs = Math.abs(num);
 
-  // R2 — Compact notation (threshold: >= 10B per guidelines)
-  if (abs >= 1e13) return `$${(truncate(num / 1e12, 2)).toFixed(2)}T`;
-  if (abs >= 1e10) return `$${(truncate(num / 1e9, 2)).toFixed(2)}B`;
-  if (abs >= 1e7) return `$${(truncate(num / 1e6, 2)).toFixed(2)}M`;
+  // R2 — Compact notation
+  if (abs >= 1e12) return `$${(truncate(num / 1e12, 2)).toFixed(2)}T`;
+  if (abs >= 1e9) return `$${(truncate(num / 1e9, 2)).toFixed(2)}B`;
+  if (abs >= 1e6) return `$${(truncate(num / 1e6, 2)).toFixed(2)}M`;
   if (abs >= 1e4) return `$${(truncate(num / 1e3, 2)).toFixed(2)}K`;
 
   // R3 — Standard USD: 2 fixed decimals, truncated
