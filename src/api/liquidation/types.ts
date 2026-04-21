@@ -37,3 +37,20 @@ export interface ILiquidationPosition {
 }
 
 export type ILiquidationPositionsResponse = TListResponse<ILiquidationPosition>;
+
+export interface IPreviewLiquidationRequest {
+  userAddress: string;
+  debtAsset: string;
+  collateralAsset: string;
+  repayAmount: string;
+}
+
+export interface IPreviewLiquidationResponse {
+  collateralReceived: string;
+  collateralReceivedUsd: string;
+  debtRepaidUsd: string;
+  bonusPct: number;
+  profitUsd: string;
+  isCollateralSufficient: boolean;
+  actualRepayAmount: string;
+}

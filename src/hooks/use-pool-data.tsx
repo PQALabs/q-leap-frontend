@@ -68,6 +68,7 @@ export function usePoolData(
   let reserves: ReservesDataHumanized | undefined = undefined;
   if (reservesDataRaw) {
     const [rawReserves, rawBaseCurrency] = reservesDataRaw;
+    console.log('🚀 ~ usePoolData ~ rawBaseCurrency:', rawBaseCurrency);
 
     const reservesData: ReserveDataHumanized[] = rawReserves.map((r) => ({
       id: `${lendingPoolAddressProvider}-${r.underlyingAsset}`.toLowerCase(),
@@ -112,6 +113,7 @@ export function usePoolData(
       networkBaseTokenPriceInUsd: rawBaseCurrency.networkBaseTokenPriceInUsd.toString(),
       networkBaseTokenPriceDecimals: rawBaseCurrency.networkBaseTokenPriceDecimals,
     };
+    console.log('🚀 ~ usePoolData ~ baseCurrencyData:', baseCurrencyData);
 
     // We get unit instead of decimals in V2. Let's calculate decimals based on unit.
     baseCurrencyData.marketReferenceCurrencyDecimals =

@@ -373,6 +373,16 @@
         "copyAddress": "Copy address",
         "cannotUseAsCollateral": "This asset cannot be used as collateral",
         "cannotDisableHf": "Cannot disable — health factor would drop below 1.0"
+      },
+      "LiquidationDialog": {
+        "title": "Liquidate Position",
+        "description": "Liquidate position from user {address}",
+        "selectCollateral": "Select collateral token to receive",
+        "balance": "Balance",
+        "selectWarning": "Please select a collateral token to proceed with liquidation",
+        "cancel": "Cancel",
+        "processing": "Processing...",
+        "confirm": "Liquidate with {token}"
       }
     },
     "price": {
