@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useConnection } from 'wagmi';
 import type { ILiquidationPosition } from '@/api/liquidation/types';
 import { TokenLogo } from '@/components/token-logo';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { LiquidationDialog } from './LiquidationDialog';
 
 export function LiquidationRow({ position, isLast }: { position: ILiquidationPosition; isLast: boolean }) {
   const [showDialog, setShowDialog] = useState(false);
+  const { isConnected } = useConnection();
   const shortAddress = `${position.userAddress.slice(0, 6)}...${position.userAddress.slice(-4)}`;
 
   // Pick the primary collateral (highest balance in USD)
@@ -23,7 +25,9 @@ export function LiquidationRow({ position, isLast }: { position: ILiquidationPos
   }, [position.collaterals]);
 
   const handleOpenDialog = () => {
-    setShowDialog(true);
+    if (isConnected) {
+      setShowDialog(true);
+    }
   };
 
   const handleCloseDialog = () => {
@@ -80,6 +84,7 @@ export function LiquidationRow({ position, isLast }: { position: ILiquidationPos
           <Button
             size='sm'
             onClick={handleOpenDialog}
+            disabled={!isConnected}
             className='min-w-[90px] bg-foreground text-background hover:bg-foreground/80 dark:bg-foreground dark:text-background'
           >
             Liquidate

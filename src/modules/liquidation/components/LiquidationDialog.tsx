@@ -68,7 +68,7 @@ export function LiquidationDialog({ open, onClose, position }: LiquidationDialog
         });
 
         if (res) {
-          setPreviewData(res);
+          setPreviewData(res.data);
         }
       } catch (error) {
         console.error('Failed to preview liquidation:', error);
@@ -83,6 +83,7 @@ export function LiquidationDialog({ open, onClose, position }: LiquidationDialog
 
   // Fallback to local estimation if preview API fails or is loading first time
   const currentRepayNum = Number(repayAmount) || 0;
+  const isInsufficientBalance = currentRepayNum > Number(walletBalance);
   const maxRepayAmountNum = Number(formattedMaxRepay) || 1;
   const debtPriceUsd = maxLiquidationUsd / maxRepayAmountNum;
   const formattedCollateralToken = formatUnits(
@@ -222,6 +223,12 @@ export function LiquidationDialog({ open, onClose, position }: LiquidationDialog
                 {position.debtAsset.symbol}
               </span>
             </div>
+            {isInsufficientBalance && (
+              <div className='flex items-center gap-1.5 px-1 pt-0.5 font-medium text-[11px] text-destructive'>
+                <AlertTriangle className='h-3 w-3' />
+                <span>Insufficient {position.debtAsset.symbol} balance in your wallet</span>
+              </div>
+            )}
           </div>
 
           {/* Collateral to Receive */}
@@ -322,7 +329,7 @@ export function LiquidationDialog({ open, onClose, position }: LiquidationDialog
             </Button>
             <Button
               onClick={handleAction}
-              disabled={isBusy || currentRepayNum <= 0 || !liquidatorAddress}
+              disabled={isBusy || currentRepayNum <= 0 || !liquidatorAddress || isInsufficientBalance}
               className='border-none bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:bg-emerald-600/50'
             >
               {isBusy ? (
