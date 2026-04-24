@@ -1,0 +1,141 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { MAX_INPUT_DECIMALS } from '@/utils/format';
+
+/** Add thousand separators to a numeric string (keeps decimals intact) */
+function formatWithCommas(v: string): string {
+  if (!v) return v;
+  const [int, dec] = v.split('.');
+  const formatted = int!.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return dec !== undefined ? `${formatted}.${dec}` : formatted;
+}
+
+/** Strip commas from a formatted string */
+function stripCommas(v: string): string {
+  return v.replace(/,/g, '');
+}
+
+interface AmountInputProps {
+  value: string;
+  onChange: (v: string) => void;
+  symbol: string;
+  onMax?: () => void;
+  label: string;
+  /** Optional USD equivalent to display below the amount */
+  usdValue?: number;
+  maxDecimals?: number;
+  /**
+   * Validation callback — receives the current value and returns an error
+   * message string if invalid, or null/undefined if valid.
+   * The parent controls validation priority by returning only the
+   * highest-priority error.
+   */
+  validate?: (value: string) => string | null | undefined;
+  /** Whether the input is disabled (e.g. during transaction) */
+  disabled?: boolean;
+}
+
+export function AmountInput({
+  value,
+  onChange,
+  symbol,
+  onMax,
+  label,
+  usdValue,
+  maxDecimals = MAX_INPUT_DECIMALS,
+  validate,
+  disabled,
+}: AmountInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const cursorRef = useRef<number | null>(null);
+
+  // Effective maxDecimals: when a dust value has more decimals than the default
+  // (e.g. MAX auto-expanded from 6 → 18 for a non-zero dust amount), we honour
+  // the current value's precision so it isn't clipped on the next re-render.
+  const currentDecimals = value.includes('.') ? (value.split('.')[1]?.length ?? 0) : 0;
+  const effectiveMaxDecimals = Math.max(maxDecimals, currentDecimals);
+
+  const errorMessage = validate?.(value) ?? null;
+  const hasError = !!errorMessage;
+
+  const displayValue = formatWithCommas(value);
+
+  // Restore cursor position after React re-renders with formatted value
+  useEffect(() => {
+    if (cursorRef.current !== null && inputRef.current) {
+      inputRef.current.setSelectionRange(cursorRef.current, cursorRef.current);
+      cursorRef.current = null;
+    }
+  }, [displayValue]);
+
+  return (
+    <div
+      className={`rounded-xs border p-3 ${hasError ? 'border-red-500 bg-red-50/50 dark:bg-red-950/20' : 'border-border bg-muted/30'}`}
+    >
+      <div className='mb-1 flex items-center justify-between'>
+        <span className='font-semibold text-muted-foreground text-xs uppercase tracking-wider'>{label}</span>
+        {onMax && (
+          <button
+            type='button'
+            onClick={onMax}
+            className='cursor-pointer font-semibold text-primary text-xs hover:underline'
+          >
+            MAX
+          </button>
+        )}
+      </div>
+      <div className='flex items-center gap-2 overflow-hidden'>
+        <input
+          ref={inputRef}
+          type='text'
+          inputMode='decimal'
+          value={displayValue}
+          onKeyDown={(e) => {
+            // R4.3 — Block scientific notation and sign keys that break parseUnits
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
+          onChange={(e) => {
+            const cursorPos = e.target.selectionStart ?? 0;
+            const oldFormatted = e.target.value;
+            const raw = stripCommas(oldFormatted);
+
+            // R4.2 — Use string split to enforce decimal limit, NOT parseFloat/regex.
+            // This avoids float artifacts like 0.00001000000001 from number processing.
+            let limited: string;
+            if (raw.includes('.')) {
+              const [int, dec] = raw.split('.');
+              // Reject if more than one dot (shouldn't happen, but guard anyway)
+              if (raw.split('.').length > 2) return;
+              limited = `${int}.${(dec ?? '').substring(0, effectiveMaxDecimals)}`;
+            } else {
+              limited = raw;
+            }
+
+            // Only digits and at most one dot allowed
+            if (limited !== '' && !/^\d*\.?\d*$/.test(limited)) return;
+
+            // Calculate cursor offset from commas before cursor in old vs new formatted
+            const commasBefore = (oldFormatted.slice(0, cursorPos).match(/,/g) || []).length;
+            const newFormatted = formatWithCommas(limited);
+            const newCommasBefore = (newFormatted.slice(0, cursorPos).match(/,/g) || []).length;
+            cursorRef.current = cursorPos + (newCommasBefore - commasBefore);
+            onChange(limited);
+          }}
+          placeholder='0.00'
+          disabled={disabled}
+          className={`min-w-0 flex-1 bg-transparent font-bold text-2xl text-foreground outline-none placeholder:text-muted-foreground/60 ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+        />
+        <span className='shrink-0 font-medium text-muted-foreground text-sm'>{symbol}</span>
+      </div>
+      {usdValue != null && usdValue > 0 && (
+        <p className='mt-1 text-[11px] text-muted-foreground/90'>
+          ≈ ${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+      )}
+      {hasError && <p className='mt-1 font-medium text-red-500 text-xs'>{errorMessage}</p>}
+    </div>
+  );
+}

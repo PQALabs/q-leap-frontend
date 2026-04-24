@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import '../globals.css';
+import { Toaster } from '@/components/ui/sonner';
+import { env } from '@/config/env';
 import { routing } from '@/i18n/routing';
 import Providers from '../providers';
 
@@ -18,8 +20,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NextJS 16 - Boilerplate',
-  description: 'NextJS 16 - Boilerplate',
+  title: { default: env.APP_NAME, template: `%s | ${env.APP_NAME}` },
+  description: 'Decentralized lending protocol on QDay Network',
+  applicationName: env.APP_NAME,
+  metadataBase: new URL(env.APP_URL),
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+  },
 };
 
 export function generateStaticParams() {
@@ -45,9 +53,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          <Providers>{children}</Providers>
+          <Providers>
+            <Toaster />
+            {children}
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>
