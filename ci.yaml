@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CI Workflow — runs on every Pull Request targeting main
+# Place this file in the application repo at: .github/workflows/ci.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test & Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js          # adjust to your runtime (Node/Python/Go/etc.)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: q-leap-frontend:pr-${{ github.event.pull_request.number }}
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: q-leap-frontend:pr-${{ github.event.pull_request.number }}
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
