@@ -36,6 +36,7 @@
     "myAccount": "My Account",
     "disconnect": "Disconnect",
     "unknown": "UNKNOWN",
+    "governance": "Governance",
     "addChain": "Add {chainName}",
     "addingChain": "Adding...",
     "toggleMobileMenu": "Toggle mobile menu",

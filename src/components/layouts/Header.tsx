@@ -31,7 +31,12 @@ interface NavItem {
   href: string;
 }
 
-const navItems: NavItem[] = [];
+const navItems = (t: (key: 'governance') => string): NavItem[] => [
+  {
+    label: t('governance'),
+    href: '/governance',
+  },
+];
 
 export function Header() {
   const t = useTranslations('header');
@@ -45,6 +50,7 @@ export function Header() {
 
   const targetChain = env.ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
   const isQdayChain = isConnected && chainId === targetChain.id;
+  const desktopNavItems = navItems(t);
 
   const handleOpenConnectWallet = () => {
     setTargetInView('connectWallet');
@@ -65,9 +71,9 @@ export function Header() {
   return (
     <>
       <header className='sticky top-0 z-50 w-full border-border border-b bg-header-background backdrop-blur-md'>
-        <div className='mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8'>
-          {/* Logo */}
-          <div className='flex items-center gap-3'>
+        <div className='mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8'>
+          <div className='flex items-center gap-6'>
+            {/* Logo */}
             <Link
               href='/'
               onClick={handleLogoClick}
@@ -93,6 +99,19 @@ export function Header() {
               />
               <span className='hidden sm:inline'>{siteConfig.name}</span>
             </Link>
+
+            {/* Desktop navigation */}
+            <nav className='hidden items-center gap-1 md:flex'>
+              {desktopNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className='rounded-full px-3 py-1.5 font-medium text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground'
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
 
           {/* Right controls */}
@@ -196,7 +215,7 @@ export function Header() {
 
           {/* Navigation links */}
           <nav className='flex flex-col gap-1 px-4 pt-4'>
-            {navItems.map((item) => (
+            {desktopNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
