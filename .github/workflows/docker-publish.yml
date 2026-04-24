@@ -1,11 +1,11 @@
 name: Build & Push to Huawei SWR
 
 on:
+  # Triggered by semantic-release creating a version tag (e.g. v1.2.3)
   push:
-    branches:
-      - main
-      - develop
-      - 'release/**'
+    tags:
+      - 'v*.*.*'
+  # Also build (no push) on PRs for validation
   pull_request:
     branches:
       - main
@@ -23,44 +23,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Determine whether to push (only on protected branches, not PRs)
+      # Determine whether to push (only on tag events, not PRs)
       - name: Set push flag
         id: flags
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
             echo "should_push=true" >> $GITHUB_OUTPUT
           else
             echo "should_push=false" >> $GITHUB_OUTPUT
           fi
 
-      # Resolve image tags based on branch
-      # Branch convention:
-      #   main          → :latest + :sha  (production)
-      #   develop       → :develop        (staging, overwrites)
-      #   release/x.y.z → :x.y.z + :sha  (release candidate)
-      #   feat/* fix/* refactor/* chore/* → build only, no push
+      # Resolve image tags based on trigger
+      # Tag convention:
+      #   v*.*.*  → :<version> + :latest + :sha  (from semantic-release)
+      #   PR      → build only, no push
       - name: Resolve image tags
         id: tags
         run: |
           REPO_NAME="${{ github.event.repository.name }}"
           REGISTRY="swr.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/${{ vars.SWR_ORG }}/$REPO_NAME"
-          BRANCH="${{ github.ref_name }}"
           SHA="${{ github.sha }}"
           TAGS=""
           TESTNET="false"
 
-          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
-            TAGS="$REGISTRY:latest,$REGISTRY:$SHA"
-            TESTNET="false"
-          elif [[ "$BRANCH" == "develop" ]]; then
-            TAGS="$REGISTRY:develop"
-            TESTNET="true"
-          elif [[ "$BRANCH" == release/* ]]; then
-            VERSION="${BRANCH#release/}"
-            TAGS="$REGISTRY:$VERSION,$REGISTRY:$SHA"
-            TESTNET="false"
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${{ github.ref_name }}"
+            # Strip leading 'v' for the image tag
+            VERSION_NUM="${VERSION#v}"
+            TAGS="$REGISTRY:$VERSION_NUM,$REGISTRY:latest,$REGISTRY:$SHA"
           fi
-          # feat/*, fix/*, refactor/*, chore/* → TAGS stays empty → no push
 
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT

@@ -1,4 +1,4 @@
-ARG NODE_IMAGE=node:24.14.0-alpine3.23
+ARG NODE_IMAGE=node:20-alpine
 
 ###################### BUILD STAGE ########################
 FROM $NODE_IMAGE AS builder
@@ -7,11 +7,12 @@ FROM $NODE_IMAGE AS builder
 ARG NEXT_PUBLIC_ENABLE_TESTNET=false
 ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
 
-RUN npm install -g pnpm@9
+# Enable pnpm via corepack (ships with Node 16+, no extra install needed)
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-COPY package*.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
@@ -25,11 +26,9 @@ FROM $NODE_IMAGE AS runner
 RUN apk upgrade --no-cache \
   && apk add --no-cache dumb-init
 
-# Copy only the node binary — no npm/yarn/corepack
-COPY --from=builder /usr/local/bin/node /usr/local/bin/
-
 WORKDIR /app
 
+ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup -g 1001 -S app_user \

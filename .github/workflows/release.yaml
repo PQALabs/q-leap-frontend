@@ -1,0 +1,87 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Release Workflow — runs on every merge to main
+# Place this file in the application repo at: .github/workflows/release.yaml
+#
+# Required GitHub Actions secrets in the app repo:
+#   SWR_USERNAME  — Huawei Cloud account: <username>@<domain-id>
+#   SWR_PASSWORD  — Huawei Cloud Access Key Secret
+#   SLACK_WEBHOOK — Slack incoming webhook URL (optional)
+#
+# Required GitHub App / token permissions for semantic-release:
+#   Contents:      Read and write  (create tags + releases)
+#   Pull requests: Read-only       (read PR titles for changelog)
+#   Issues:        Read-only       (optional, for release notes)
+# ─────────────────────────────────────────────────────────────────────────────
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write       # semantic-release needs to create tags and GitHub releases
+  pull-requests: read   # read PR titles for changelog generation
+
+jobs:
+  release:
+    name: Semantic Version & Tag
+    runs-on: ubuntu-latest
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # semantic-release needs full history
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test:run
+
+      # ── Semantic Release ────────────────────────────────────────────────────
+      # Analyzes commits, bumps version, creates git tag (e.g. v1.2.3),
+      # and creates a GitHub Release. Docker image push is handled by
+      # docker-publish.yml which triggers on the tag created here.
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+
+  # ── Slack Notification ──────────────────────────────────────────────────────
+  # notify:
+  #   name: Notify Team
+  #   runs-on: ubuntu-latest
+  #   needs: release
+  #   if: needs.release.outputs.new_release_published == 'true'
+  #   steps:
+  #     - name: Send Slack notification
+  #       uses: slackapi/slack-github-action@v1
+  #       with:
+  #         payload: |
+  #           {
+  #             "text": "✅ *q-leap-frontend* built and pushed\n*Version:* ${{ needs.release.outputs.new_release_version }}\n*Commit:* ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}\nNew image is available for promotion to dev via Kargo."
+  #           }
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+  #         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

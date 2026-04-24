@@ -18,14 +18,22 @@ module.exports = {
       },
     ],
 
+    // Bump version in package.json (publishConfig.access=restricted keeps it private)
+    [
+      "@semantic-release/npm",
+      {
+        npmPublish: false,
+      },
+    ],
+
     // Create GitHub Release
     "@semantic-release/github",
 
-    // Commit CHANGELOG.md back to main
+    // Commit CHANGELOG.md + package.json back to main
     [
       "@semantic-release/git",
       {
-        assets: ["CHANGELOG.md"],
+        assets: ["CHANGELOG.md", "package.json"],
         message:
           "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
       },
