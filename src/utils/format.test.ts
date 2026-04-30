@@ -112,7 +112,8 @@ describe('formatTokenAmount', () => {
     });
 
     it('0.009999 — truncate, không lên 0.01', () => {
-      expect(formatTokenAmount(0.009999)).toBe('0.0099');
+      // dustDecimals = 5 → truncate(0.009999, 5) = "0.00999"
+      expect(formatTokenAmount(0.009999)).toBe('0.00999');
     });
   });
 
@@ -236,11 +237,11 @@ describe('formatTokenAmount', () => {
 
   describe('Invariant — Truncate, không bao giờ Round Up', () => {
     const cases: [number, string][] = [
-      [1.9999999, '1.99999'], // không làm "2"
-      [0.999999, '0.99999'], // không làm "1"
-      [0.000019999, '0.000019'], // không làm "0.00002"
-      [0.009999, '0.0099'], // không làm "0.01" (branch đổi!)
-      [99.999999, '99.999'], // không làm "100"
+      [1.9999999, '1.99999'],   // không làm "2"
+      [0.999999, '0.99999'],    // không làm "1"
+      [0.000019999, '0.0000199'], // không làm "0.00002" — dustDecimals=7, truncate tại 7
+      [0.009999, '0.00999'],    // không làm "0.01" — dustDecimals=5, truncate tại 5
+      [99.999999, '99.99999'],  // không làm "100"
       [999.9999999, '999.99999'], // không làm "1000"
     ];
 

@@ -7,10 +7,31 @@ export function formatApy(value: number): string {
 
 // ─── Internal truncation helper ─────────────────────────────────────────────
 
-/** Truncate (floor) `num` to `decimals` decimal places without rounding up. */
+/**
+ * Truncate (floor) `num` to `decimals` decimal places without rounding up.
+ *
+ * Uses string manipulation to avoid IEEE-754 floating point precision errors
+ * (e.g. 0.0012 * 100000 = 119.99999... instead of 120 with naive Math.trunc).
+ */
 function truncate(num: number, decimals: number): number {
-  const factor = 10 ** decimals;
-  return Math.trunc(num * factor) / factor;
+  if (decimals <= 0) return Math.trunc(num);
+
+  // Convert to fixed-point string with extra precision to avoid scientific notation,
+  // then slice at the desired decimal position — no floating point multiplication.
+  const sign = num < 0 ? '-' : '';
+  const abs = Math.abs(num);
+
+  // toFixed with enough digits to capture the full precision we need
+  const str = abs.toFixed(decimals + 4);
+  const dotIndex = str.indexOf('.');
+
+  if (dotIndex === -1) return Math.trunc(num);
+
+  const intPart = str.slice(0, dotIndex);
+  const fracPart = str.slice(dotIndex + 1, dotIndex + 1 + decimals);
+
+  const truncated = Number(`${sign}${intPart}.${fracPart}`);
+  return truncated;
 }
 
 // ─── R1: Token Amount Formatting ────────────────────────────────────────────
@@ -42,7 +63,9 @@ export function formatTokenAmount(value: number | string, maxDigits = 5): string
 
   // R1.2 — Dust / small amount: widen decimals up to 10 to reveal non-zero digits
   if (abs < NEAR_ZERO_THRESHOLD * 1000) {
-    // Find minimum decimals needed to show at least 3 significant digits
+    // Find minimum decimals needed to show at least 3 significant digits.
+    // -floor(log10(abs)) gives the position of the first significant digit.
+    // Adding 2 shows 2 more digits beyond that (3 sig figs total).
     const dustDecimals = Math.min(Math.max(-Math.floor(Math.log10(abs)) + 2, 3), 10);
     const truncated = truncate(num, dustDecimals);
     return truncated.toLocaleString(undefined, { maximumFractionDigits: dustDecimals });
