@@ -61,8 +61,9 @@ export function formatTokenAmount(value: number | string, maxDigits = 5): string
     return `< ${NEAR_ZERO_THRESHOLD.toFixed(maxDigits)}`;
   }
 
-  // R1.2 — Dust / small amount: widen decimals up to 10 to reveal non-zero digits
-  if (abs < NEAR_ZERO_THRESHOLD * 1000) {
+  // R1.2 — Dust / small amount: widen decimals up to 10 to reveal non-zero digits.
+  // Upper bound is always 0.01 regardless of maxDigits — values >= 0.01 go to standard.
+  if (abs < 0.01) {
     // Find minimum decimals needed to show at least 3 significant digits.
     // -floor(log10(abs)) gives the position of the first significant digit.
     // Adding 2 shows 2 more digits beyond that (3 sig figs total).

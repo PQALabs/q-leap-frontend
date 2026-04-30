@@ -78,7 +78,7 @@ export const DialogConnectWallet = ({ open, onOpenChangeAction }: Props) => {
     // Disconnect first to prevent "Connector already connected" error
     try {
       await disConnectEvm();
-    } catch (e) {
+    } catch (_e) {
       // Ignore disconnect errors
     }
 

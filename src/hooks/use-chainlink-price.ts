@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { parseAbi } from 'viem';
-import { useReadContract, useReadContracts } from 'wagmi';
+import { useReadContracts } from 'wagmi';
 import { useProtocolDataContext } from '@/providers/protocol-data-provider';
 
 /**
