@@ -20,7 +20,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10.26.2
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -38,4 +38,4 @@ jobs:
         run: pnpm run type-check
 
       - name: Run Biome format check
-        run: pnpm exec biome format
+        run: pnpm run format:check

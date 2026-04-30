@@ -1,16 +1,18 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Release Workflow — runs on every merge to main
-# Place this file in the application repo at: .github/workflows/release.yaml
 #
-# Required GitHub Actions secrets in the app repo:
-#   SWR_USERNAME  — Huawei Cloud account: <username>@<domain-id>
-#   SWR_PASSWORD  — Huawei Cloud Access Key Secret
-#   SLACK_WEBHOOK — Slack incoming webhook URL (optional)
+# Job 1 — release:  Analyzes commits, bumps semver, creates git tag + GitHub Release
+# Job 2 — docker:   Builds & pushes image to Huawei SWR (only if a new version was published)
 #
-# Required GitHub App / token permissions for semantic-release:
-#   Contents:      Read and write  (create tags + releases)
-#   Pull requests: Read-only       (read PR titles for changelog)
-#   Issues:        Read-only       (optional, for release notes)
+# Required GitHub Actions secrets:
+#   (none for release — uses GITHUB_TOKEN)
+#
+# Required GitHub Actions variables for docker push:
+#   HUAWEI_REGION       — e.g. ap-southeast-3
+#   SWR_ORG             — your SWR organization name
+#   HUAWEI_OIDC_AUDIENCE — OIDC audience configured in Huawei IAM
+#   HUAWEI_IDP_ID       — Identity provider ID in Huawei IAM
+#   HUAWEI_PROJECT_ID   — Huawei project ID
 # ─────────────────────────────────────────────────────────────────────────────
 name: Release
 
@@ -19,28 +21,30 @@ on:
     branches: [main]
 
 permissions:
-  contents: write       # semantic-release needs to create tags and GitHub releases
-  pull-requests: read   # read PR titles for changelog generation
+  contents: write       # semantic-release: create tags and GitHub releases
+  pull-requests: write  # semantic-release: post release comments on merged PRs
+  issues: write         # semantic-release: post release comments on related issues
+  id-token: write       # docker job: request GitHub OIDC token for Huawei auth
 
 jobs:
+  # ── Job 1: Semantic Versioning ───────────────────────────────────────────────
   release:
     name: Semantic Version & Tag
     runs-on: ubuntu-latest
     outputs:
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
-      new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0          # semantic-release needs full history
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10.26.2
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -54,10 +58,6 @@ jobs:
       - name: Run tests
         run: pnpm test:run
 
-      # ── Semantic Release ────────────────────────────────────────────────────
-      # Analyzes commits, bumps version, creates git tag (e.g. v1.2.3),
-      # and creates a GitHub Release. Docker image push is handled by
-      # docker-publish.yml which triggers on the tag created here.
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v4
@@ -67,12 +67,110 @@ jobs:
           extra_plugins: |
             @semantic-release/changelog
             @semantic-release/git
+            conventional-changelog-conventionalcommits
 
-  # ── Slack Notification ──────────────────────────────────────────────────────
+  # ── Job 2: Build & Push Docker Image ────────────────────────────────────────
+  docker:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    needs: release
+    # Only runs when semantic-release actually published a new version
+    if: needs.release.outputs.new_release_published == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve image tags
+        id: tags
+        run: |
+          VERSION="${{ needs.release.outputs.new_release_version }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          REGISTRY="swr.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/${{ vars.SWR_ORG }}/$REPO_NAME"
+          SHA="${{ github.sha }}"
+
+          TAGS="$REGISTRY:$VERSION,$REGISTRY:latest,$REGISTRY:$SHA"
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Get GitHub OIDC Token
+        id: oidc
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const audience = '${{ vars.HUAWEI_OIDC_AUDIENCE }}';
+            const idToken = await core.getIDToken(audience);
+            core.setOutput('id-token', idToken);
+
+      - name: Exchange for Huawei IAM Token
+        env:
+          ID_TOKEN: ${{ steps.oidc.outputs.id-token }}
+        run: |
+          curl -s -D headers.txt \
+            -X POST \
+            -H "X-Idp-Id: ${{ vars.HUAWEI_IDP_ID }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"auth\":{\"id_token\":{\"id\":\"$ID_TOKEN\"},\"scope\":{\"project\":{\"id\":\"${{ vars.HUAWEI_PROJECT_ID }}\"}}}}" \
+            https://iam.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/v3.0/OS-AUTH/id-token/tokens \
+            > body.txt
+
+          HUAWEI_TOKEN=$(grep -i "X-Subject-Token:" headers.txt | awk '{print $2}' | tr -d '\r')
+          [ -z "$HUAWEI_TOKEN" ] && { echo "Failed to obtain Huawei token"; exit 1; }
+
+          echo "::add-mask::$HUAWEI_TOKEN"
+          echo "HUAWEI_TOKEN=$HUAWEI_TOKEN" >> $GITHUB_ENV
+
+      - name: Generate Temporary SWR Login Command
+        env:
+          HUAWEI_TOKEN: ${{ env.HUAWEI_TOKEN }}
+        run: |
+          ENDPOINT="https://swr-api.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/v2/manage/utils/secret"
+
+          curl -s -D headers.txt -o response.json \
+            -X POST \
+            -H "X-Auth-Token: $HUAWEI_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"duration_seconds": 86400}' \
+            "$ENDPOINT"
+
+          LOGIN_CMD=$(grep -i "^X-Swr-Dockerlogin:" headers.txt | cut -d: -f2- | sed 's/^[ \t]*//;s/[ \t]*$//')
+          [ -z "$LOGIN_CMD" ] && { echo "Failed to get login command"; cat headers.txt; exit 1; }
+
+          echo "::add-mask::$LOGIN_CMD"
+          echo "SWR_LOGIN_CMD=$LOGIN_CMD" >> $GITHUB_ENV
+
+      - name: Docker Login to SWR
+        env:
+          SWR_LOGIN_CMD: ${{ env.SWR_LOGIN_CMD }}
+        run: |
+          USER=$(echo "$SWR_LOGIN_CMD" | grep -oP '(?<=-u )\S+')
+          PASS=$(echo "$SWR_LOGIN_CMD" | grep -oP '(?<=-p )\S+')
+          HOST="swr.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com"
+
+          [ -z "$USER" ] || [ -z "$PASS" ] || [ -z "$HOST" ] && { echo "Failed to parse login command"; exit 1; }
+
+          echo "$PASS" | docker login -u "$USER" --password-stdin "$HOST"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile
+          context: .
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+  # ── Slack Notification ───────────────────────────────────────────────────────
   # notify:
   #   name: Notify Team
   #   runs-on: ubuntu-latest
-  #   needs: release
+  #   needs: [release, docker]
   #   if: needs.release.outputs.new_release_published == 'true'
   #   steps:
   #     - name: Send Slack notification
