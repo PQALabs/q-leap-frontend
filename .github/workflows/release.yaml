@@ -18,7 +18,7 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: write       # semantic-release: create tags and GitHub releases
@@ -88,8 +88,19 @@ jobs:
           REPO_NAME="${{ github.event.repository.name }}"
           REGISTRY="swr.${{ vars.HUAWEI_REGION }}.myhuaweicloud.com/${{ vars.SWR_ORG }}/$REPO_NAME"
           SHA="${{ github.sha }}"
+          BRANCH="${{ github.ref_name }}"
 
-          TAGS="$REGISTRY:$VERSION,$REGISTRY:latest,$REGISTRY:$SHA"
+          # Always tag with the exact semver version and the commit SHA
+          TAGS="$REGISTRY:$VERSION,$REGISTRY:$SHA"
+
+          # Add mutable branch pointer:
+          #   develop → :develop  (picked up by Kargo for dev promotion)
+          #   main    → :latest
+          if [[ "$BRANCH" == "develop" ]]; then
+            TAGS="$TAGS,$REGISTRY:develop"
+          else
+            TAGS="$TAGS,$REGISTRY:latest"
+          fi
 
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT

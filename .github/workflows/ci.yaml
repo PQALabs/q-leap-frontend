@@ -1,12 +1,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# CI Workflow — runs on every Pull Request targeting main
+# CI Workflow — runs on every Pull Request targeting main or develop
 # Place this file in the application repo at: .github/workflows/ci.yaml
 # ─────────────────────────────────────────────────────────────────────────────
 name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   test:
