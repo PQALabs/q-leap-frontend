@@ -38,7 +38,21 @@ const nextConfig: NextConfig = {
     ],
   },
   output: 'standalone',
-  /* config options here */
+
+  // Proxy /api/v1/* → backend service inside the cluster.
+  // The Next.js server pod resolves "q-leap-backend" via cluster DNS.
+  // The browser only ever talks to the frontend domain — backend stays ClusterIP/private.
+  // NEXT_PUBLIC_API_URL is set to "/api/v1" in the helm ConfigMap.
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_INTERNAL_URL ?? 'http://q-leap-backend';
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${backendUrl}/api/v1/:path*`,
+      },
+    ];
+  },
+
   turbopack: {
     root: process.cwd(),
     rules: {
