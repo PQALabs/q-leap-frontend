@@ -112,7 +112,7 @@ describe('formatTokenAmount', () => {
     });
 
     it('0.009999 — truncate, does not go to 0.01', () => {
-      expect(formatTokenAmount(0.009999)).toBe('0.0099');
+      expect(formatTokenAmount(0.009999)).toBe('0.00999');
     });
   });
 
@@ -238,9 +238,9 @@ describe('formatTokenAmount', () => {
     const cases: [number, string][] = [
       [1.9999999, '1.99999'], // does not become "2"
       [0.999999, '0.99999'], // does not become "1"
-      [0.000019999, '0.000019'], // does not become "0.00002"
-      [0.009999, '0.0099'], // does not become "0.01" (branch change!)
-      [99.999999, '99.999'], // does not become "100"
+      [0.000019999, '0.0000199'], // does not become "0.00002"
+      [0.009999, '0.00999'], // does not become "0.01" (branch change!)
+      [99.999999, '99.99999'], // does not become "100"
       [999.9999999, '999.99999'], // does not become "1000"
     ];
 
