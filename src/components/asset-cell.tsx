@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDisplayName, getDisplaySymbol } from '@/config/token-display';
+import { getDisplaySymbol } from '@/config/token-display';
 import { CopyAddressButton } from './copy-address-button';
 import { TokenLogo } from './token-logo';
 

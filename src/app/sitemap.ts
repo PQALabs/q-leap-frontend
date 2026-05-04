@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     return staticPages;
-  } catch (err) {
+  } catch (_err) {
     return [];
   }
 }

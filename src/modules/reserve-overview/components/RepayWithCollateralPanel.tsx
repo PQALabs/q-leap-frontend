@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { EM_DASH } from '@/constants/common';
 import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import { useRepayWithCollateral } from '@/hooks/use-repay-with-collateral';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
