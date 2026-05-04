@@ -4,13 +4,16 @@ ARG NODE_IMAGE=node:20-alpine
 FROM $NODE_IMAGE AS builder
 
 # Re-declare ARGs after FROM (Docker scope requirement)
+# NEXT_PUBLIC_ENABLE_TESTNET: controlled by CI — true for develop branch, false for main.
+# Set via --build-arg in release.yaml based on the branch being built.
 ARG NEXT_PUBLIC_ENABLE_TESTNET=false
 ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
 
 # NEXT_PUBLIC_* variables are inlined into the browser JS bundle at BUILD TIME by Next.js.
-# Setting them in a Kubernetes ConfigMap at runtime has NO effect — the bundle is already compiled.
-# Default is "/api/v1" so the browser hits the same domain and Next.js rewrites it server-side
-# to the backend ClusterIP service — keeping the backend off the public internet.
+# This app fetches all blockchain data via RPC (wagmi/viem) — the axios client using
+# NEXT_PUBLIC_API_URL is only called from 'use client' components, never from Server Components
+# or SSR paths. There is no SSR hydration risk here.
+# The ConfigMap value is therefore irrelevant — it must be set as a build ARG.
 ARG NEXT_PUBLIC_API_URL=/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
