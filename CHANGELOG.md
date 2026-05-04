@@ -1,3 +1,9 @@
+## [1.0.0-develop.2](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.1...v1.0.0-develop.2) (2026-05-04)
+
+### Bug Fixes
+
+* pass NEXT_PUBLIC_ENABLE_TESTNET and NEXT_PUBLIC_API_URL as build args ([779b801](https://github.com/PQALabs/q-leap-frontend/commit/779b801473d5366db9074686a873a8074730d582))
+
 ## 1.0.0-develop.1 (2026-05-04)
 
 ### Features
