@@ -7,9 +7,9 @@ import { useIntersectionStore } from '@/stores/use-intersection-store';
 import { ProposalContent } from './components/ProposalContent';
 import { ProposalHeader } from './components/ProposalHeader';
 import { ProposalTimelineCard } from './components/ProposalTimelineCard';
+import { ProposalVotingSummary } from './components/ProposalVotingSummary';
 import { TopAddressesCard } from './components/TopAddressesCard';
 import { VotingInfoCard } from './components/VotingInfoCard';
-import { VotingResultsCard } from './components/VotingResultsCard';
 import { proposalDetail } from './proposal-detail.data';
 
 export default function ProposalDetail() {
@@ -30,12 +30,10 @@ export default function ProposalDetail() {
       <ProposalHeader status={proposalDetail.status} title={proposalDetail.title} />
 
       <div className='grid gap-8 xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start'>
-        <ProposalContent
-          author={proposalDetail.author}
-          sections={proposalDetail.sections}
-          references={proposalDetail.references}
-          copyright={proposalDetail.copyright}
-        />
+        <div className='flex flex-col gap-8'>
+          <ProposalVotingSummary summary={proposalDetail.votingSummary} />
+          <ProposalContent description={proposalDetail.description} />
+        </div>
 
         <aside className='flex flex-col gap-6'>
           <VotingInfoCard
@@ -43,7 +41,6 @@ export default function ProposalDetail() {
             voteData={proposalDetail.voteInfo}
             onConnectWallet={() => setTargetInView('connectWallet')}
           />
-          <VotingResultsCard yes={proposalDetail.results.yes} no={proposalDetail.results.no} />
           <TopAddressesCard addresses={proposalDetail.topAddresses} />
           <ProposalTimelineCard items={proposalDetail.timeline} />
         </aside>

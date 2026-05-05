@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useConnection } from 'wagmi';
-import { DelegatedPower } from './components/DelegatedPower';
 import { GovernanceTitle } from './components/GovernanceTitle';
 import { type Proposal, type ProposalFilter, ProposalsList } from './components/ProposalsList';
 import { YourInfo } from './components/YourInfo';
@@ -13,6 +12,7 @@ const proposals: Proposal[] = [
     status: 'passed',
     title: 'Aave V3 ETH Risk Parameters Update',
     author: 'Chaos Labs (implemented by Aave Labs)',
+    date: 'Aug 10, 2023',
     summary: 'Simple Summary This proposal recommends updating risk parameters for ETH on Aave V3.',
     yesLabel: '745K',
     noLabel: '0',
@@ -24,18 +24,20 @@ const proposals: Proposal[] = [
     status: 'executed',
     title: '[ARFC] Increase Supply and Borrow Caps for wstETH and cbETH on V3 Arbitrum',
     author: 'Llama (implemented by Aave Labs)',
+    date: 'Aug 12, 2023',
     summary:
       'Simple Summary This proposal aims to increase the supply and borrow caps for wstETH and cbETH on the Arbitrum V3 deployment.',
     yesLabel: '500K',
     noLabel: '500',
-    yesPercent: 99.9,
-    noPercent: 0.1,
+    yesPercent: 66.7,
+    noPercent: 33.3,
   },
   {
     id: 'gho-borrow-rate',
     status: 'executed',
     title: '[ARFC] Set GHO Borrow Rate to 3%',
     author: 'TokenLogic (implemented by Aave Labs)',
+    date: 'Aug 16, 2023',
     summary: 'Simple Summary This proposal intends to set the GHO borrow rate to 3% across all networks.',
     yesLabel: '620K',
     noLabel: '0',
@@ -79,7 +81,6 @@ export function Gorvenance() {
 
         <aside className='flex flex-col gap-6'>
           <YourInfo address={address} votingPower={0} propositionPower={0} />
-          <DelegatedPower />
         </aside>
       </div>
     </main>

@@ -1,6 +1,5 @@
-import { ArrowUpRight, Dot } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 
 const resourceLinks = [
   { label: 'Snapshots', href: 'https://snapshot.box/' },
@@ -23,14 +22,20 @@ export function GovernanceTitle() {
         </p>
       </div>
 
-      <div className='flex flex-wrap gap-3'>
-        {resourceLinks.map((link) => (
-          <Button key={link.label} variant='outline' size='sm' asChild className='bg-card uppercase tracking-wider'>
-            <Link href={link.href} target='_blank' rel='noreferrer'>
+      <div className='flex flex-wrap items-center gap-x-2 gap-y-4 text-muted-foreground sm:gap-x-2'>
+        {resourceLinks.map((link, index) => (
+          <div key={link.href} className='flex items-center gap-x-2'>
+            {index > 0 ? <span className='mx-2 size-1.5 rounded-full bg-current' aria-hidden='true' /> : null}
+            <Link
+              href={link.href}
+              target='_blank'
+              rel='noreferrer'
+              className='inline-flex items-center gap-1 font-semibold text-sm uppercase tracking-[0.18em] transition-colors hover:text-primary sm:text-sm'
+            >
               {link.label}
-              <ArrowUpRight size={14} />
+              <ExternalLink className='size-4 shrink-0 stroke-[1.8] sm:size-4' aria-hidden='true' />
             </Link>
-          </Button>
+          </div>
         ))}
       </div>
     </section>

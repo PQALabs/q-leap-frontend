@@ -1,5 +1,7 @@
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ProposalStatusBadge } from '@/modules/proposal-detail/components/ProposalStatusBadge';
+import { ProposalVotingBar } from '@/modules/proposal-detail/components/ProposalVotingBar';
 
 export type ProposalStatus = 'passed' | 'executed';
 export type ProposalFilter = 'all' | ProposalStatus;
@@ -10,6 +12,7 @@ export interface Proposal {
   title: string;
   author: string;
   summary: string;
+  date: string;
   yesLabel: string;
   noLabel: string;
   yesPercent: number;
@@ -30,26 +33,21 @@ const filterOptions: { label: string; value: ProposalFilter }[] = [
   { label: 'Executed', value: 'executed' },
 ];
 
-const statusClassNames: Record<ProposalStatus, string> = {
-  passed: 'border-success/40 bg-success/10 text-success',
-  executed: 'border-primary/20 bg-accent text-primary',
-};
-
 export function ProposalsList({ proposals, searchQuery, filter, onSearchChange, onFilterChange }: ProposalsListProps) {
   return (
     <section className='flex flex-col gap-6'>
-      <div className='flex flex-col gap-4 rounded-xs border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between'>
-        <h2 className='font-serif text-3xl text-foreground leading-none'>Proposals</h2>
+      <div className='flex flex-col gap-4 rounded-xs md:flex-row md:items-center md:justify-between'>
+        <h2 className='font-serif text-foreground text-xl leading-none'>Proposals</h2>
 
         <div className='flex flex-col gap-3 sm:flex-row md:w-auto'>
-          <div className='flex rounded-xs border border-border bg-background p-1'>
+          <div className='flex rounded-xs border border-border bg-card p-1'>
             {filterOptions.map((option) => (
               <button
                 key={option.value}
                 type='button'
                 onClick={() => onFilterChange(option.value)}
                 className={cn(
-                  'rounded-lg px-3 py-2 font-semibold text-[11px] uppercase tracking-[0.22em] transition-colors',
+                  'rounded-lg px-3 py-2 font-semibold text-[10px] uppercase tracking-[0.18em] transition-colors',
                   filter === option.value ? 'bg-accent text-primary' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -58,13 +56,13 @@ export function ProposalsList({ proposals, searchQuery, filter, onSearchChange, 
             ))}
           </div>
 
-          <label className='flex min-w-0 items-center gap-3 rounded-xs border border-border bg-background px-4 py-2.5 sm:min-w-80'>
-            <Search size={18} className='text-muted-foreground' />
+          <label className='flex min-w-0 items-center gap-3 rounded-xs border border-border bg-card px-4 py-2.5 sm:min-w-80'>
+            <Search size={16} className='text-muted-foreground' />
             <input
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder='Search proposals...'
-              className='w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground'
+              className='w-full text-sm outline-none placeholder:text-muted-foreground'
             />
           </label>
         </div>
@@ -74,32 +72,33 @@ export function ProposalsList({ proposals, searchQuery, filter, onSearchChange, 
         {proposals.map((proposal) => (
           <article
             key={proposal.id}
-            className='hover:-translate-y-0.5 grid gap-6 rounded-xs border border-border bg-card p-6 shadow-sm transition-transform duration-200 md:grid-cols-[minmax(0,1fr)_244px]'
+            className='hover:-translate-y-0.5 rounded-xs border border-border bg-card p-6 shadow-sm transition-transform duration-200 md:p-10'
           >
-            <div className='space-y-4'>
-              <span
-                className={cn(
-                  'inline-flex rounded-md border px-2.5 py-1 font-semibold text-[10px] uppercase tracking-[0.24em]',
-                  statusClassNames[proposal.status]
-                )}
-              >
-                {proposal.status}
-              </span>
+            <div className='space-y-7'>
+              <ProposalStatusBadge status={proposal.status} />
 
-              <div className='space-y-3'>
-                <h3 className='max-w-2xl font-serif text-3xl text-foreground leading-tight tracking-tight'>
+              <div className='space-y-5'>
+                <h3 className='font-serif text-foreground text-xl leading-snug tracking-tight md:text-2xl'>
                   {proposal.title}
                 </h3>
-                <p className='text-muted-foreground'>
-                  <span className='text-muted-foreground/80'>Author:</span> {proposal.author}
+                <p className='line-clamp-2 font-mono text-muted-foreground text-sm leading-6 md:line-clamp-1 md:text-base'>
+                  {proposal.summary}
                 </p>
-                <p className='max-w-2xl text-muted-foreground leading-7'>{proposal.summary}</p>
               </div>
-            </div>
 
-            <div className='space-y-5'>
-              <VoteRow label='Yae' value={proposal.yesLabel} percent={proposal.yesPercent} tone='yes' />
-              <VoteRow label='Nay' value={proposal.noLabel} percent={proposal.noPercent} tone='no' />
+              <ProposalVotingBar
+                yesLabel='For'
+                yesPercent={proposal.yesPercent}
+                noLabel='Against'
+                noPercent={proposal.noPercent}
+                className='space-y-4'
+                labelClassName='text-xs'
+                barClassName='h-8'
+              />
+
+              <p className='font-mono text-[11px] text-muted-foreground uppercase tracking-[0.14em] md:text-xs'>
+                Author: {proposal.author} <span aria-hidden='true'>•</span> {proposal.date}
+              </p>
             </div>
           </article>
         ))}
@@ -115,35 +114,5 @@ export function ProposalsList({ proposals, searchQuery, filter, onSearchChange, 
         )}
       </div>
     </section>
-  );
-}
-
-function VoteRow({
-  label,
-  value,
-  percent,
-  tone,
-}: {
-  label: string;
-  value: string;
-  percent: number;
-  tone: 'yes' | 'no';
-}) {
-  return (
-    <div className='space-y-2'>
-      <div className='flex items-baseline justify-between gap-3'>
-        <div className='flex items-baseline gap-2'>
-          <span className='font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.2em]'>{label}</span>
-          <span className='font-mono font-semibold text-foreground text-lg'>{value}</span>
-        </div>
-        <span className='font-semibold text-muted-foreground text-xs'>{percent.toFixed(2)}%</span>
-      </div>
-      <div className='h-1.5 overflow-hidden rounded-full bg-secondary'>
-        <div
-          className={cn('h-full rounded-full', tone === 'yes' ? 'bg-success' : 'bg-muted-foreground/30')}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
   );
 }
