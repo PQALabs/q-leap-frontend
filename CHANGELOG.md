@@ -1,3 +1,9 @@
+## [1.0.0-develop.3](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.2...v1.0.0-develop.3) (2026-05-05)
+
+### Features
+
+* integrate internationalization for toast messages and ui labels ([2bb3068](https://github.com/PQALabs/q-leap-frontend/commit/2bb30684d58540a009d5a824d69a5f89b8857f48))
+
 ## [1.0.0-develop.2](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.1...v1.0.0-develop.2) (2026-05-04)
 
 ### Bug Fixes
