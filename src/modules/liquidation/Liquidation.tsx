@@ -3,10 +3,13 @@
 import { ArrowUpDown } from 'lucide-react';
 import { useLiquidationPositions } from '@/api/liquidation/queries';
 import type { ILiquidationPosition } from '@/api/liquidation/types';
+import { env } from '@/config/env';
 import { LiquidationTable } from './components/LiquidationTable';
 
 export function Liquidation() {
   const { data, isLoading, isError, refetch } = useLiquidationPositions();
+  console.log('🚀 ~ Liquidation ~ data:', env.API_URL);
+  console.log('🚀 ~ Liquidation ~ process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
 
   const positions: ILiquidationPosition[] = data?.data ?? [];
 

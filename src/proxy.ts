@@ -6,6 +6,6 @@ import { routing } from './i18n/routing';
 export default createMiddleware(routing);
 
 export const config = {
-  // Match all page routes except Next.js internals and static files
-  matcher: ['/((?!_next|.*\\..*).*)'],
+  // Match all page routes except Next.js internals, static files, and API routes
+  matcher: ['/((?!_next|api|.*\\..*).*)'],
 };
