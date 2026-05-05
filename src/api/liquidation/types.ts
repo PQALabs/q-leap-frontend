@@ -1,14 +1,4 @@
-import type { TListResponse, TResponse } from '@/types';
-
-export type IDashboardStatsResponse = TResponse<IDashboardStatsData>;
-
-export interface IDashboardStatsData {
-  totalProjects: number;
-  activeProjects: number;
-  totalProposals: number;
-  upcomingProposals: number;
-  liveProposals: number;
-}
+import type { TListResponse } from '@/types';
 
 export interface IAssetInfo {
   symbol: string;
