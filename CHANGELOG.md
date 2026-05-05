@@ -1,3 +1,9 @@
+## [1.0.0-develop.6](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.5...v1.0.0-develop.6) (2026-05-05)
+
+### Bug Fixes
+
+* Add NEXT_PUBLIC_ENABLE_LIQUIDATION build arg to release workflow so the liquidation page is enabled on develop builds. ([9efc828](https://github.com/PQALabs/q-leap-frontend/commit/9efc82836f07690dff31f146bc3c919a9e941bcf))
+
 ## [1.0.0-develop.5](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.4...v1.0.0-develop.5) (2026-05-05)
 
 ### Bug Fixes
