@@ -9,6 +9,9 @@ FROM $NODE_IMAGE AS builder
 ARG NEXT_PUBLIC_ENABLE_TESTNET=false
 ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
 
+ARG NEXT_PUBLIC_ENABLE_LIQUIDATION=false
+ENV NEXT_PUBLIC_ENABLE_LIQUIDATION=$NEXT_PUBLIC_ENABLE_LIQUIDATION
+
 # NEXT_PUBLIC_* variables are inlined into the browser JS bundle at BUILD TIME by Next.js.
 # This app fetches all blockchain data via RPC (wagmi/viem) — the axios client using
 # NEXT_PUBLIC_API_URL is only called from 'use client' components, never from Server Components
