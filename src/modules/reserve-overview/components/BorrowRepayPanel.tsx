@@ -195,7 +195,6 @@ export function BorrowRepayPanel({ reserve, user, marketRefPriceInUsd }: BorrowR
     userAddress: address,
     amount: repayAmount,
     debtBalance: borrowedBalance.toString(),
-    isMax: isRepayMax,
     onSuccess: onTxSuccess,
   });
 

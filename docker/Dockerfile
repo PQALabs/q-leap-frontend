@@ -1,17 +1,38 @@
-ARG NODE_IMAGE=node:24.14.0-alpine3.23
+ARG NODE_IMAGE=node:20-alpine
 
 ###################### BUILD STAGE ########################
 FROM $NODE_IMAGE AS builder
 
-# Re-declare ARG after FROM (Docker scope requirement)
+# Re-declare ARGs after FROM (Docker scope requirement)
+# NEXT_PUBLIC_ENABLE_TESTNET: controlled by CI — true for develop branch, false for main.
+# Set via --build-arg in release.yaml based on the branch being built.
 ARG NEXT_PUBLIC_ENABLE_TESTNET=false
 ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
 
-RUN npm install -g pnpm@9
+ARG NEXT_PUBLIC_ENABLE_LIQUIDATION=false
+ENV NEXT_PUBLIC_ENABLE_LIQUIDATION=$NEXT_PUBLIC_ENABLE_LIQUIDATION
+
+# NEXT_PUBLIC_* variables are inlined into the browser JS bundle at BUILD TIME by Next.js.
+# This app fetches all blockchain data via RPC (wagmi/viem) — the axios client using
+# NEXT_PUBLIC_API_URL is only called from 'use client' components, never from Server Components
+# or SSR paths. There is no SSR hydration risk here.
+# The ConfigMap value is therefore irrelevant — it must be set as a build ARG.
+ARG NEXT_PUBLIC_API_URL=/api/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+# BACKEND_INTERNAL_URL is read by next.config.ts rewrites() at BUILD TIME.
+# next build evaluates rewrites() once and freezes the destination URL into
+# the standalone output — runtime env injection via ConfigMap is too late.
+# Default matches the Kubernetes Service name (q-leap-backend).
+ARG BACKEND_INTERNAL_URL=http://q-leap-backend
+ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
+
+# Enable pnpm via corepack (ships with Node 16+, no extra install needed)
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-COPY package*.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
@@ -25,11 +46,9 @@ FROM $NODE_IMAGE AS runner
 RUN apk upgrade --no-cache \
   && apk add --no-cache dumb-init
 
-# Copy only the node binary — no npm/yarn/corepack
-COPY --from=builder /usr/local/bin/node /usr/local/bin/
-
 WORKDIR /app
 
+ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup -g 1001 -S app_user \

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { parseEther } from 'viem';
@@ -17,8 +18,6 @@ interface UseRepayNativeOptions {
   amount: string;
   /** The user's current WQDAY variable debt (human-readable), used for buffer calc on repay-all */
   debtBalance: string;
-  /** Whether this is a "repay all" action */
-  isMax?: boolean;
   /** Callback after successful repay */
   onSuccess?: () => void;
 }
@@ -30,7 +29,8 @@ interface UseRepayNativeOptions {
  * For "repay all": sends debt × 1.001 (0.1% buffer for accrued interest).
  * The gateway automatically refunds any overpayment.
  */
-export function useRepayNative({ userAddress, amount, isMax, onSuccess }: UseRepayNativeOptions) {
+export function useRepayNative({ userAddress, amount, onSuccess }: UseRepayNativeOptions) {
+  const t = useTranslations('modules.market.Toasts');
   const [status, setStatus] = useState<RepayNativeTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -61,14 +61,14 @@ export function useRepayNative({ userAddress, amount, isMax, onSuccess }: UseRep
       handledTx.current = txHash;
       setStatus('success');
       toast.dismiss('repay-native');
-      toast.success('Repay confirmed', { description: `Successfully repaid ${amount} QDAY.` });
+      toast.success(t('repayConfirmed'), { description: t('repayConfirmedDesc', { amount, symbol: 'QDAY' }) });
       onSuccess?.();
     }
   }, [isConfirmed, txHash, onSuccess, amount]);
 
   useEffect(() => {
     if (isConfirming) {
-      toast.loading('Confirming repay on-chain...', { id: 'repay-native' });
+      toast.loading(t('confirmingRepay'), { id: 'repay-native' });
     }
   }, [isConfirming]);
 
@@ -76,8 +76,8 @@ export function useRepayNative({ userAddress, amount, isMax, onSuccess }: UseRep
     if (isReceiptError && txHash) {
       setStatus('error');
       toast.dismiss('repay-native');
-      toast.error('Repay transaction reverted', {
-        description: receiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(t('repayReverted'), {
+        description: receiptError?.message?.split('\n')[0] || t('txFailed'),
       });
     }
   }, [isReceiptError, txHash, receiptError]);
@@ -87,15 +87,11 @@ export function useRepayNative({ userAddress, amount, isMax, onSuccess }: UseRep
     if (!userAddress || !amount || Number(amount) <= 0 || !wethGatewayAddress) return;
     setStatus('repaying');
     resetWrite();
-    toast.loading('Waiting for repay signature...', { id: 'repay-native' });
+    toast.loading(t('waitingRepaySignature'), { id: 'repay-native' });
 
-    // For repay-all: the amount param tells the contract the debt to repay,
-    // and msg.value should be slightly higher to cover interest accrued during tx.
-    // Gateway refunds any excess.
+    // Note: for "max" repay, this will leave a tiny amount of dust debt due to interest accruing during tx confirmation.
     const repayAmountWei = parseEther(amount);
-    const msgValue = isMax
-      ? (repayAmountWei * BigInt(1001)) / BigInt(1000) // +0.1% buffer
-      : repayAmountWei;
+    const msgValue = repayAmountWei;
 
     repayEthWrite(
       {
@@ -112,7 +108,7 @@ export function useRepayNative({ userAddress, amount, isMax, onSuccess }: UseRep
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('repay-native');
-          toast.error('Repay failed', {
+          toast.error(t('repayFailed'), {
             description: getEvmMessage(error),
           });
         },

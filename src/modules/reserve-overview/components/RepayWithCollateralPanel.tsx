@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { EM_DASH } from '@/constants/common';
 import { useFormattedPoolData } from '@/hooks/use-formatted-pool-data';
 import { useRepayWithCollateral } from '@/hooks/use-repay-with-collateral';
 import { computeNewHealthFactor } from '@/lib/compute-health-factor';
@@ -497,9 +496,9 @@ export function RepayWithCollateralPanel({
               <div className='my-1 h-px bg-border/50' />
               <div className='flex flex-col gap-2'>
                 <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground text-xs'>Swap route / method</span>
+                  <span className='text-muted-foreground text-xs'>{t('swapRouteMethod')}</span>
                   <div className='flex items-center gap-1 text-xs'>
-                    <span>{useEthPath ? 'Multi-hop' : 'Direct Pool'}</span>
+                    <span>{useEthPath ? t('multiHop') : t('directPool')}</span>
                     <span className='text-muted-foreground'>•</span>
                     {needsFlashLoan ? (
                       <span className='flex items-center gap-1'>

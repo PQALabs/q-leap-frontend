@@ -17,6 +17,7 @@
  * We use wagmi's simulateContract to call it as a static simulation (callStatic equivalent).
  */
 
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { encodeAbiParameters, formatUnits, parseAbiParameters, parseUnits, zeroHash } from 'viem';
@@ -100,6 +101,7 @@ export function useRepayWithCollateral({
   hfBeforeCollateralEffect,
   onSuccess,
 }: UseRepayWithCollateralOptions) {
+  const t = useTranslations('modules.market.Toasts');
   const { currentMarketData } = useProtocolDataContext();
   const adapterAddress = currentMarketData.addresses.REPAY_WITH_COLLATERAL_ADAPTER as `0x${string}` | undefined;
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -252,7 +254,7 @@ export function useRepayWithCollateral({
 
       if (amountIn === BigInt(0)) {
         setCollateralNeededRaw(null);
-        setQuoteError('No Uniswap V3 pool found or insufficient liquidity');
+        setQuoteError(t('noPoolFound'));
         setStatus('idle');
         return;
       }
@@ -299,7 +301,7 @@ export function useRepayWithCollateral({
 
   useEffect(() => {
     if (isApproveConfirming) {
-      toast.loading('Confirming aToken approval on-chain...', { id: 'rwc-approve' });
+      toast.loading(t('confirmingATokenApproval'), { id: 'rwc-approve' });
     }
   }, [isApproveConfirming]);
 
@@ -309,7 +311,7 @@ export function useRepayWithCollateral({
       setStatus('idle');
       fetchAllowance();
       toast.dismiss('rwc-approve');
-      toast.success('aToken approved', { description: 'You can now repay with collateral.' });
+      toast.success(t('aTokenApproved'), { description: t('aTokenApprovedDesc') });
     }
   }, [isApproveConfirmed, approveTxHash, fetchAllowance]);
 
@@ -317,7 +319,7 @@ export function useRepayWithCollateral({
     if (isApproveError && approveTxHash) {
       setStatus('error');
       toast.dismiss('rwc-approve');
-      toast.error('Approval failed on-chain');
+      toast.error(t('approvalFailedOnChain'));
     }
   }, [isApproveError, approveTxHash]);
 
@@ -332,7 +334,7 @@ export function useRepayWithCollateral({
 
   useEffect(() => {
     if (isExecConfirming) {
-      toast.loading('Confirming repay with collateral...', { id: 'rwc-exec' });
+      toast.loading(t('confirmingRepayWithCollateral'), { id: 'rwc-exec' });
     }
   }, [isExecConfirming]);
 
@@ -352,8 +354,8 @@ export function useRepayWithCollateral({
     if (isExecConfirmed && execTxHash && handledExecTx.current !== execTxHash) {
       handledExecTx.current = execTxHash;
       toast.dismiss('rwc-exec');
-      toast.success('Repay with collateral confirmed!', {
-        description: `Repaid ${debtAmountHuman} using your deposited collateral.`,
+      toast.success(t('repayWithCollateralConfirmed'), {
+        description: t('repayWithCollateralConfirmedDesc', { amount: debtAmountHuman }),
       });
       // Refetch allowance BEFORE reset so the next repay cycle sees the actual on-chain value
       // (the adapter consumed most/all of the allowance during the swap)
@@ -368,8 +370,8 @@ export function useRepayWithCollateral({
     if (isExecError && execTxHash) {
       setStatus('error');
       toast.dismiss('rwc-exec');
-      toast.error('Repay transaction reverted', {
-        description: execError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(t('repayReverted'), {
+        description: execError?.message?.split('\n')[0] || t('txFailed'),
       });
     }
   }, [isExecError, execTxHash, execError]);
@@ -384,7 +386,7 @@ export function useRepayWithCollateral({
 
   useEffect(() => {
     if (isRevokeConfirming) {
-      toast.loading('Confirming revoke on-chain...', { id: 'rwc-revoke' });
+      toast.loading(t('confirmingRevoke'), { id: 'rwc-revoke' });
     }
   }, [isRevokeConfirming]);
 
@@ -394,7 +396,7 @@ export function useRepayWithCollateral({
       setStatus('idle');
       fetchAllowance();
       toast.dismiss('rwc-revoke');
-      toast.success('Allowance revoked', { description: 'aToken approval has been reset to 0.' });
+      toast.success(t('allowanceRevoked'), { description: t('allowanceRevokedDesc') });
     }
   }, [isRevokeConfirmed, revokeTxHash, fetchAllowance]);
 
@@ -402,7 +404,7 @@ export function useRepayWithCollateral({
     if (isRevokeError && revokeTxHash) {
       setStatus('error');
       toast.dismiss('rwc-revoke');
-      toast.error('Revoke failed on-chain');
+      toast.error(t('revokeFailedOnChain'));
     }
   }, [isRevokeError, revokeTxHash]);
 
@@ -425,7 +427,7 @@ export function useRepayWithCollateral({
     if (!walletClient || !collateralATokenAddress || !adapterAddress || !approvalAmount) return;
 
     setStatus('approving');
-    toast.loading('Waiting for aToken approval signature...', { id: 'rwc-approve' });
+    toast.loading(t('waitingATokenApprovalSignature'), { id: 'rwc-approve' });
 
     try {
       const hash = await writeApproveAsync({
@@ -437,7 +439,7 @@ export function useRepayWithCollateral({
     } catch (e: any) {
       setStatus('error');
       toast.dismiss('rwc-approve');
-      toast.error('Approval rejected', { description: getEvmMessage(e) });
+      toast.error(t('approvalRejected'), { description: getEvmMessage(e) });
     }
   }, [walletClient, collateralATokenAddress, adapterAddress, approvalAmount]);
 
@@ -450,7 +452,7 @@ export function useRepayWithCollateral({
     if (!walletClient || !collateralATokenAddress || !adapterAddress) return;
 
     setStatus('revoking');
-    toast.loading('Waiting for revoke signature...', { id: 'rwc-revoke' });
+    toast.loading(t('waitingRevokeSignature'), { id: 'rwc-revoke' });
 
     try {
       const hash = await writeApproveAsync({
@@ -462,7 +464,7 @@ export function useRepayWithCollateral({
     } catch (e: any) {
       setStatus('error');
       toast.dismiss('rwc-revoke');
-      toast.error('Revoke rejected', { description: getEvmMessage(e) });
+      toast.error(t('revokeRejected'), { description: getEvmMessage(e) });
     }
   }, [walletClient, collateralATokenAddress, adapterAddress]);
 
@@ -499,9 +501,8 @@ export function useRepayWithCollateral({
       const { data: liveBalance } = await fetchLiveBalance();
 
       if (liveBalance !== undefined && liveBalance < maxCollateralRaw) {
-        toast.error('Insufficient collateral balance', {
-          description:
-            'Your aToken balance is lower than needed. Please reduce the repay amount or wait for balance to update.',
+        toast.error(t('insufficientCollateralBalance'), {
+          description: t('insufficientCollateralBalanceDesc'),
         });
         return;
       }
@@ -510,7 +511,7 @@ export function useRepayWithCollateral({
     }
 
     setStatus('executing');
-    toast.loading('Waiting for transaction signature...', { id: 'rwc-exec' });
+    toast.loading(t('waitingTxSignature'), { id: 'rwc-exec' });
 
     try {
       let hash: `0x${string}`;
@@ -568,7 +569,7 @@ export function useRepayWithCollateral({
     } catch (e: any) {
       setStatus('error');
       toast.dismiss('rwc-exec');
-      toast.error('Transaction failed', { description: getEvmMessage(e) });
+      toast.error(t('txFailed'), { description: getEvmMessage(e) });
     }
   }, [
     walletClient,

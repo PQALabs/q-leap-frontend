@@ -84,7 +84,7 @@ function SummaryCard({ label, value, change, changeType, progress, tooltip }: Su
 // ---------------------------------------------------------------------------
 // ApyCard
 // ---------------------------------------------------------------------------
-function ApyCard({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) {
+function _ApyCard({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) {
   return (
     <div className='flex flex-1 flex-col gap-3 rounded-xs border border-border bg-card p-5 shadow-xs transition-shadow hover:shadow-sm'>
       <div className='flex items-center gap-1.5 font-semibold text-muted-foreground text-xs uppercase tracking-widest'>

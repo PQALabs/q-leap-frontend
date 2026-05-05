@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { formatUnits, maxUint256, parseUnits } from 'viem';
@@ -39,6 +40,7 @@ interface UseRepayOptions {
  * which only takes the exact outstanding debt (no excess is deducted).
  */
 export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, onSuccess }: UseRepayOptions) {
+  const t = useTranslations('modules.market.Toasts');
   const [status, setStatus] = useState<RepayTxStatus>('idle');
   const { currentMarketData } = useProtocolDataContext();
   const lendingPoolAddress = currentMarketData.addresses.LENDING_POOL as `0x${string}`;
@@ -105,13 +107,13 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
       refetchAllowance();
       setStatus('idle');
       toast.dismiss('repay-approve');
-      toast.success('Approval confirmed', { description: 'You can now repay.' });
+      toast.success(t('approvalConfirmed'), { description: t('approvalConfirmedRepayDesc') });
     }
   }, [isApproveConfirmed, approveTxHash, refetchAllowance]);
 
   useEffect(() => {
     if (isApproveConfirming) {
-      toast.loading('Confirming approval on-chain...', { id: 'repay-approve' });
+      toast.loading(t('confirmingApproval'), { id: 'repay-approve' });
     }
   }, [isApproveConfirming]);
 
@@ -119,8 +121,8 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
     if (isApproveReceiptError && approveTxHash) {
       setStatus('error');
       toast.dismiss('repay-approve');
-      toast.error('Approval reverted', {
-        description: approveReceiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(t('approvalReverted'), {
+        description: approveReceiptError?.message?.split('\n')[0] || t('txFailed'),
       });
     }
   }, [isApproveReceiptError, approveTxHash, approveReceiptError]);
@@ -131,14 +133,14 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
       handledRepayTx.current = repayTxHash;
       setStatus('success');
       toast.dismiss('repay-erc20');
-      toast.success('Repay confirmed', { description: `Successfully repaid ${amount} tokens.` });
+      toast.success(t('repayConfirmed'), { description: t('repayConfirmedDesc', { amount, symbol: 'tokens' }) });
       onSuccess?.();
     }
   }, [isRepayConfirmed, repayTxHash, onSuccess, amount]);
 
   useEffect(() => {
     if (isRepayConfirming) {
-      toast.loading('Confirming repay on-chain...', { id: 'repay-erc20' });
+      toast.loading(t('confirmingRepay'), { id: 'repay-erc20' });
     }
   }, [isRepayConfirming]);
 
@@ -146,8 +148,8 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
     if (isRepayReceiptError && repayTxHash) {
       setStatus('error');
       toast.dismiss('repay-erc20');
-      toast.error('Repay transaction reverted', {
-        description: repayReceiptError?.message?.split('\n')[0] || 'Transaction failed',
+      toast.error(t('repayReverted'), {
+        description: repayReceiptError?.message?.split('\n')[0] || t('txFailed'),
       });
     }
   }, [isRepayReceiptError, repayTxHash, repayReceiptError]);
@@ -157,7 +159,7 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
     if (!userAddress || !amount || Number(amount) <= 0) return;
     setStatus('approving');
     resetApprove();
-    toast.loading('Waiting for approval signature...', { id: 'repay-approve' });
+    toast.loading(t('waitingApprovalSignature'), { id: 'repay-approve' });
 
     const baseAmount = parseUnits(amount, decimals);
     const approveAmount = isMax ? (baseAmount * BigInt(101)) / BigInt(100) : baseAmount;
@@ -171,7 +173,7 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('repay-approve');
-          toast.error('Approval failed', {
+          toast.error(t('approvalFailed'), {
             description: getEvmMessage(error),
           });
         },
@@ -183,7 +185,7 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
     if (!userAddress || !amount || Number(amount) <= 0) return;
     setStatus('repaying');
     resetRepay();
-    toast.loading('Waiting for repay signature...', { id: 'repay-erc20' });
+    toast.loading(t('waitingRepaySignature'), { id: 'repay-erc20' });
 
     // For "repay all", use MAX_UINT256. The contract only takes the exact debt owed.
     const repayAmount = isMax ? maxUint256 : parseUnits(amount, decimals);
@@ -202,7 +204,7 @@ export function useRepay({ tokenAddress, decimals, userAddress, amount, isMax, o
         onError: (error: any) => {
           setStatus('error');
           toast.dismiss('repay-erc20');
-          toast.error('Repay failed', {
+          toast.error(t('repayFailed'), {
             description: getEvmMessage(error),
           });
         },

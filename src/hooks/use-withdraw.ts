@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { formatUnits, maxUint256, parseUnits } from 'viem';
+import { maxUint256, parseUnits } from 'viem';
 import { useWaitForTransactionReceipt } from 'wagmi';
 import { useWriteLendingPoolWithdraw } from '@/abi/generated';
 import { getEvmMessage } from '@/lib/get-evm-message';
