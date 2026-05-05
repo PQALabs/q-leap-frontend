@@ -1,3 +1,9 @@
+## [1.0.0-develop.5](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.4...v1.0.0-develop.5) (2026-05-05)
+
+### Bug Fixes
+
+* add NEXT_PUBLIC_ENABLE_LIQUIDATION build arg to dockerfile ([3463839](https://github.com/PQALabs/q-leap-frontend/commit/34638390fe05c7155cb0dd136985401783a31219))
+
 ## [1.0.0-develop.4](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.3...v1.0.0-develop.4) (2026-05-05)
 
 ### Features
