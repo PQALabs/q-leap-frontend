@@ -1,3 +1,11 @@
+## [1.0.0-develop.4](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.3...v1.0.0-develop.4) (2026-05-05)
+
+### Features
+
+* add liquidation dialog and hooks for liquidation process ([4f8bda0](https://github.com/PQALabs/q-leap-frontend/commit/4f8bda02c0c1d13d0cff7464468e8af03c029e94))
+* implement liquidation queue dashboard with position monitoring and management components ([bd8fad1](https://github.com/PQALabs/q-leap-frontend/commit/bd8fad141ef75afb9ec30315ddd43ffa54b4b6aa))
+* liquidation feature flag, balance validation in dialog ([94737a3](https://github.com/PQALabs/q-leap-frontend/commit/94737a348fab7cac04ff87ffdd07f039c223d203))
+
 ## [1.0.0-develop.3](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.2...v1.0.0-develop.3) (2026-05-05)
 
 ### Features
