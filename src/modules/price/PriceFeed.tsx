@@ -76,11 +76,11 @@ export function PriceFeed() {
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-3'>
               <div className='flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary text-sm'>
-                W/Q
+                {t('pairLabel')}
               </div>
               <div>
-                <p className='font-semibold text-foreground text-lg'>{description ?? 'WQDAY / QDAY'}</p>
-                <p className='text-muted-foreground text-xs'>Chainlink V3 Aggregator</p>
+                <p className='font-semibold text-foreground text-lg'>{description ?? t('pairName')}</p>
+                <p className='text-muted-foreground text-xs'>{t('aggregatorLabel')}</p>
               </div>
             </div>
             <Button variant='ghost' size='icon-sm' onClick={() => refetch()} title={t('refresh')}>

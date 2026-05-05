@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useWaitForTransactionReceipt } from 'wagmi';
@@ -20,6 +21,7 @@ interface UseCollateralToggleOptions {
  * No approval needed — single tx.
  */
 export function useCollateralToggle({ onSuccess }: UseCollateralToggleOptions = {}) {
+  const t = useTranslations('modules.market.Toasts');
   const [status, setStatus] = useState<CollateralToggleStatus>('idle');
   const [togglingAsset, setTogglingAsset] = useState<string | null>(null);
   const { currentMarketData } = useProtocolDataContext();
@@ -48,14 +50,14 @@ export function useCollateralToggle({ onSuccess }: UseCollateralToggleOptions = 
       setStatus('success');
       setTogglingAsset(null);
       toast.dismiss('collateral-toggle');
-      toast.success('Collateral status updated');
+      toast.success(t('collateralUpdated'));
       onSuccess?.();
     }
   }, [isConfirmed, txHash, onSuccess]);
 
   useEffect(() => {
     if (isConfirming) {
-      toast.loading('Confirming on-chain...', { id: 'collateral-toggle' });
+      toast.loading(t('confirmingOnChain'), { id: 'collateral-toggle' });
     }
   }, [isConfirming]);
 
@@ -64,8 +66,8 @@ export function useCollateralToggle({ onSuccess }: UseCollateralToggleOptions = 
       setStatus('error');
       setTogglingAsset(null);
       toast.dismiss('collateral-toggle');
-      toast.error('Transaction reverted', {
-        description: receiptError?.message?.split('\n')[0] || 'Failed to update collateral status',
+      toast.error(t('collateralTransactionReverted'), {
+        description: receiptError?.message?.split('\n')[0] || t('failedUpdateCollateral'),
       });
     }
   }, [isReceiptError, txHash, receiptError]);
@@ -75,7 +77,7 @@ export function useCollateralToggle({ onSuccess }: UseCollateralToggleOptions = 
     setStatus('pending');
     setTogglingAsset(assetAddress.toLowerCase());
     resetWrite();
-    toast.loading(useAsCollateral ? 'Enabling collateral...' : 'Disabling collateral...', {
+    toast.loading(useAsCollateral ? t('enablingCollateral') : t('disablingCollateral'), {
       id: 'collateral-toggle',
     });
 
@@ -89,7 +91,7 @@ export function useCollateralToggle({ onSuccess }: UseCollateralToggleOptions = 
           setStatus('error');
           setTogglingAsset(null);
           toast.dismiss('collateral-toggle');
-          toast.error('Failed to toggle collateral', {
+          toast.error(t('failedToggleCollateral'), {
             description: getEvmMessage(error),
           });
         },

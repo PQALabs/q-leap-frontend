@@ -245,7 +245,10 @@
         "projectedHfDanger": "Projected Health Factor is very low ({hf}). You are close to liquidation.",
         "approveSymbol": "Approve {symbol}",
         "revokeAllowance": "Reset to 0",
-        "revokeAllowanceTitle": "Revoke infinite allowance and reset to 0"
+        "revokeAllowanceTitle": "Revoke infinite allowance and reset to 0",
+        "swapRouteMethod": "Swap route / method",
+        "multiHop": "Multi-hop",
+        "directPool": "Direct Pool"
       },
       "Toasts": {
         "approvalConfirmed": "Approval confirmed",
@@ -284,7 +287,34 @@
         "delegationReverted": "Delegation transaction reverted",
         "waitingDelegationSignature": "Waiting for delegation signature...",
         "confirmingDelegation": "Confirming delegation on-chain...",
-        "txFailed": "Transaction failed"
+        "txFailed": "Transaction failed",
+        "approvalConfirmedRepayDesc": "Token spending approved. You can now repay.",
+        "collateralUpdated": "Collateral status updated",
+        "confirmingOnChain": "Confirming on-chain...",
+        "collateralTransactionReverted": "Transaction reverted",
+        "failedUpdateCollateral": "Failed to update collateral status",
+        "enablingCollateral": "Enabling collateral...",
+        "disablingCollateral": "Disabling collateral...",
+        "failedToggleCollateral": "Failed to toggle collateral",
+        "confirmingATokenApproval": "Confirming aToken approval on-chain...",
+        "aTokenApproved": "aToken approved",
+        "aTokenApprovedDesc": "You can now repay with collateral.",
+        "approvalFailedOnChain": "Approval failed on-chain",
+        "confirmingRepayWithCollateral": "Confirming repay with collateral...",
+        "repayWithCollateralConfirmed": "Repay with collateral confirmed!",
+        "repayWithCollateralConfirmedDesc": "Repaid {amount} using your deposited collateral.",
+        "confirmingRevoke": "Confirming revoke on-chain...",
+        "allowanceRevoked": "Allowance revoked",
+        "allowanceRevokedDesc": "aToken approval has been reset to 0.",
+        "revokeFailedOnChain": "Revoke failed on-chain",
+        "waitingATokenApprovalSignature": "Waiting for aToken approval signature...",
+        "approvalRejected": "Approval rejected",
+        "waitingRevokeSignature": "Waiting for revoke signature...",
+        "revokeRejected": "Revoke rejected",
+        "insufficientCollateralBalance": "Insufficient collateral balance",
+        "insufficientCollateralBalanceDesc": "Your aToken balance is lower than needed. Please reduce the repay amount or wait for balance to update.",
+        "waitingTxSignature": "Waiting for transaction signature...",
+        "noPoolFound": "No Uniswap V3 pool found or insufficient liquidity"
       },
       "SuccessDialog": {
         "allDone": "All done!",
@@ -355,7 +385,10 @@
       "pollingInterval": "Polling Interval",
       "contractAddress": "Contract",
       "viewOnExplorer": "View on Explorer",
-      "source": "Source"
+      "source": "Source",
+      "pairLabel": "W/Q",
+      "pairName": "WQDAY / QDAY",
+      "aggregatorLabel": "Chainlink V3 Aggregator"
     }
   },
   "footer": {
