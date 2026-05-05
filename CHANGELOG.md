@@ -1,3 +1,9 @@
+## [1.0.0-develop.7](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.6...v1.0.0-develop.7) (2026-05-05)
+
+### Bug Fixes
+
+* exclude api routes from next-intl middleware matcher ([37a2fbd](https://github.com/PQALabs/q-leap-frontend/commit/37a2fbde326cd4e733633a3ad731a422c11fae0c))
+
 ## [1.0.0-develop.6](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.5...v1.0.0-develop.6) (2026-05-05)
 
 ### Bug Fixes
