@@ -1,3 +1,9 @@
+## [1.0.0-develop.8](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.7...v1.0.0-develop.8) (2026-05-06)
+
+### Bug Fixes
+
+* validate cd pipeline ([b258ecd](https://github.com/PQALabs/q-leap-frontend/commit/b258ecdbf26b90c3fa653aa68bf15c0f95bcb009))
+
 ## [1.0.0-develop.7](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.6...v1.0.0-develop.7) (2026-05-05)
 
 ### Bug Fixes
