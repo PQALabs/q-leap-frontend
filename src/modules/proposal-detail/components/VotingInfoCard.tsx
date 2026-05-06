@@ -1,7 +1,11 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
+import { useMockVotingWeight } from '@/hooks/useMockVotingWeight';
 import { cn } from '@/lib/utils';
 import { getProposalVotingInfo, type ProposalVotingData } from '../proposal-voting';
 import { ProposalDetailSidebarCard } from './ProposalDetailSidebarCard';
+import { VotingWeightBreakdown } from './VotingWeightBreakdown';
 
 interface VotingInfoCardProps {
   address?: string;
@@ -12,15 +16,21 @@ interface VotingInfoCardProps {
 }
 
 export function VotingInfoCard({ address, onConnectWallet, voteData, onVoteYae, onVoteNay }: VotingInfoCardProps) {
+  // veToken voting weight (mock — swap to useVotingWeight() when contract is ready)
+  const weightInfo = useMockVotingWeight();
+
   const {
-    votingPowerAtStart,
     voteOnProposal,
     showAlreadyVotedMsg,
     showCannotVoteMsg,
     showCanVoteMsg,
     showDidNotParticipateMsg,
     voteOngoing,
-  } = getProposalVotingInfo(address, voteData);
+  } = getProposalVotingInfo(address, {
+    ...voteData,
+    // Override votingPowerAtStart with computed weight so all flags use the new model
+    votingPowerAtStart: Number(weightInfo.votingWeight),
+  });
 
   return (
     <ProposalDetailSidebarCard title='Your Voting Info'>
@@ -36,13 +46,8 @@ export function VotingInfoCard({ address, onConnectWallet, voteData, onVoteYae, 
         </>
       ) : (
         <div className='space-y-4'>
-          {voteOngoing && (
-            <div className='space-y-2'>
-              <p className='font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.2em]'>Voting Power</p>
-              <p className='font-mono text-3xl text-foreground'>{votingPowerAtStart.toFixed(2)}</p>
-              <p className='text-muted-foreground text-sm'>(AAVE + stkAAVE)</p>
-            </div>
-          )}
+          {/* Voting weight breakdown — shown while vote is ongoing */}
+          {voteOngoing && <VotingWeightBreakdown weightInfo={weightInfo} />}
 
           {showDidNotParticipateMsg && (
             <div className='rounded-xl border border-border bg-muted px-4 py-3 text-muted-foreground text-sm leading-7'>
@@ -60,13 +65,13 @@ export function VotingInfoCard({ address, onConnectWallet, voteData, onVoteYae, 
               )}
             >
               <p className='font-semibold text-base'>{`You voted ${voteOnProposal.support ? 'YAE' : 'NAY'}`}</p>
-              <p className='mt-1 text-sm opacity-90'>{`With a voting power of ${voteOnProposal.votingPower}`}</p>
+              <p className='mt-1 text-sm opacity-90'>{`With a voting weight of ${voteOnProposal.votingPower}`}</p>
             </div>
           )}
 
           {showCannotVoteMsg && (
             <div className='rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-foreground leading-7'>
-              Not enough voting power to participate in this proposal.
+              Not enough voting weight to participate in this proposal.
             </div>
           )}
 

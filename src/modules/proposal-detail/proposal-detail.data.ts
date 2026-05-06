@@ -85,12 +85,10 @@ Copyright and related rights waived via CC0.`,
     ],
   } satisfies ProposalVotingSummaryData,
   voteInfo: {
-    votingState: 'passed',
-    votingPowerAtStart: 2845.12,
-    votedInfo: {
-      support: true,
-      votingPower: '1250.50',
-    },
+    // Set to 'active' + null votedInfo to preview the VotingWeightBreakdown UI
+    votingState: 'active',
+    votingPowerAtStart: 0, // overridden by useMockVotingWeight inside VotingInfoCard
+    votedInfo: null,
   } satisfies ProposalVotingResultData,
   topAddresses: [
     { name: '0x12a4...8f9e', amount: '250,000' },
