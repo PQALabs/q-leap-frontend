@@ -27,8 +27,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ARG BACKEND_INTERNAL_URL=http://q-leap-backend
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 
-# Enable pnpm via corepack (ships with Node 16+, no extra install needed)
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Enable pnpm via corepack (ships with Node 16+, no extra install needed).
+# Pin pnpm because pnpm@latest may require a newer Node version than NODE_IMAGE.
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 WORKDIR /app
 
