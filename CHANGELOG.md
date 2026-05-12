@@ -1,3 +1,9 @@
+## [1.0.0-develop.9](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.8...v1.0.0-develop.9) (2026-05-12)
+
+### Bug Fixes
+
+* pin pnpm version in dockerfile to ensure compatibility with node_image ([c4a0d42](https://github.com/PQALabs/q-leap-frontend/commit/c4a0d426c56313272e4d26ab99a3dd331ef2ddff))
+
 ## [1.0.0-develop.8](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.7...v1.0.0-develop.8) (2026-05-06)
 
 ### Bug Fixes
