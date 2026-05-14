@@ -48,9 +48,7 @@ function Providers({ children }: ProvidersProps) {
           <QueryClientProvider client={queryClient}>
             {isMounted && configReady ? (
               <ProtocolDataProvider>
-                <StaticPoolDataProvider errorPage={<PoolDataError />}>
-                  {children}
-                </StaticPoolDataProvider>
+                <StaticPoolDataProvider errorPage={<PoolDataError />}>{children}</StaticPoolDataProvider>
               </ProtocolDataProvider>
             ) : null}
             <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />

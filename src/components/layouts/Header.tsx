@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, LayoutDashboard, LogOut, Menu, PlusCircle, Wallet } from 'lucide-react';
+import { Check, Copy, LayoutDashboard, LogOut, Menu, MessageSquare, PlusCircle, Wallet } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -94,6 +94,19 @@ export function Header() {
               <span className='hidden sm:inline'>{siteConfig.name}</span>
             </Link>
           </div>
+
+          {/* Desktop nav */}
+          {env.ENABLE_FORUM && (
+            <nav className='hidden items-center md:flex'>
+              <Link
+                href='/forum'
+                className='flex items-center gap-1.5 px-3 py-1.5 font-medium text-muted-foreground text-sm transition-colors hover:text-foreground'
+              >
+                <MessageSquare size={14} />
+                Forum
+              </Link>
+            </nav>
+          )}
 
           {/* Right controls */}
           <div className='flex items-center gap-2'>
@@ -206,6 +219,16 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+            {env.ENABLE_FORUM && (
+              <Link
+                href='/forum'
+                onClick={() => setMobileOpen(false)}
+                className='flex items-center gap-2 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground'
+              >
+                <MessageSquare size={14} />
+                Forum
+              </Link>
+            )}
             {isConnected && (
               <Link
                 href='/dashboard'
