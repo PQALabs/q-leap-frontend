@@ -4,4 +4,5 @@ export const env = {
   API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001',
   ENABLE_TESTNET: (process.env.NEXT_PUBLIC_ENABLE_TESTNET ?? 'false') === 'true',
   ENABLE_LIQUIDATION: (process.env.NEXT_PUBLIC_ENABLE_LIQUIDATION ?? 'false') === 'true',
+  ENABLE_FORUM: (process.env.NEXT_PUBLIC_ENABLE_FORUM ?? 'false') === 'true',
 };
