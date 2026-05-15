@@ -1,3 +1,14 @@
+## [1.0.0-develop.10](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.9...v1.0.0-develop.10) (2026-05-15)
+
+### Features
+
+* add runtime feature flags for liquidation and testnet ([d2e735b](https://github.com/PQALabs/q-leap-frontend/commit/d2e735b0a14f6c613a154077125b430b5272c472))
+* **config:** replace build-time NEXT_PUBLIC_ENABLE_* with runtime feature flags ([504f4b0](https://github.com/PQALabs/q-leap-frontend/commit/504f4b0b65313afc3fba8b0a7a7bf743325e423d))
+
+### Bug Fixes
+
+* clean up commented code in liquidationtable and adjust import order in providers ([442f434](https://github.com/PQALabs/q-leap-frontend/commit/442f434492660e11b41cc49a4fe859446366a84c))
+
 ## [1.0.0-develop.9](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.8...v1.0.0-develop.9) (2026-05-12)
 
 ### Bug Fixes
