@@ -1,3 +1,9 @@
+## [1.0.0-develop.11](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.10...v1.0.0-develop.11) (2026-05-15)
+
+### Bug Fixes
+
+* defer runtime config reads to lazy evaluation ([3a8d2e0](https://github.com/PQALabs/q-leap-frontend/commit/3a8d2e02f5d0dd817e230774320d41dad4345f07))
+
 ## [1.0.0-develop.10](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.9...v1.0.0-develop.10) (2026-05-15)
 
 ### Features
