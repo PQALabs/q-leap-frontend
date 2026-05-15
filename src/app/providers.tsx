@@ -6,11 +6,11 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { PoolDataError } from '@/components/pool-data-status';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { fetchRuntimeConfig } from '@/config/runtime-config';
 import { config } from '@/lib/wagmi-config';
 import { ProtocolDataProvider } from '@/providers/protocol-data-provider';
 import { StaticPoolDataProvider } from '@/providers/static-pool-data-provider';
 import { ThemeProvider } from '../providers/theme-provider';
-import { fetchRuntimeConfig } from '@/config/runtime-config';
 
 export interface ProvidersProps {
   children: ReactNode;
