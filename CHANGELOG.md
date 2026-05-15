@@ -1,3 +1,9 @@
+## [1.0.0-develop.14](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.13...v1.0.0-develop.14) (2026-05-15)
+
+### Bug Fixes
+
+* validate env ([bdcbae1](https://github.com/PQALabs/q-leap-frontend/commit/bdcbae17ae88097b021f2a5b36ce0c901624992e))
+
 ## [1.0.0-develop.13](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.12...v1.0.0-develop.13) (2026-05-15)
 
 ### Bug Fixes
