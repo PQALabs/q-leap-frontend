@@ -14,7 +14,8 @@ export type Pool = {
   address: string;
 };
 
-const ENABLE_TESTNET = getRuntimeConfig().ENABLE_TESTNET;
+// NOTE: Do NOT read getRuntimeConfig() at module level — it runs before fetchRuntimeConfig()
+// has resolved. Read it lazily inside functions instead.
 
 // // determines if forks should be shown
 // const FORK_ENABLED = localStorage.getItem('forkEnabled') === 'true';
@@ -75,10 +76,11 @@ export const marketsData = Object.keys(_marketsData).reduce(
 );
 
 export function getDefaultChainId() {
-  return marketsData[availableMarkets[0]].chainId;
+  return marketsData[getAvailableMarkets()[0]].chainId;
 }
 
 export function getSupportedChainIds(): number[] {
+  const { ENABLE_TESTNET } = getRuntimeConfig();
   return Array.from(
     Object.keys(marketsData).reduce((acc, value) => {
       const chainId = marketsData[value as keyof typeof CustomMarket].chainId;
@@ -91,10 +93,14 @@ export function getSupportedChainIds(): number[] {
 
 /**
  * selectable markets (markets in a available network + forks when enabled)
+ * NOTE: This is a function (not a constant) so it reads getRuntimeConfig() lazily,
+ * after fetchRuntimeConfig() has resolved in providers.tsx.
  */
-export const availableMarkets = Object.keys(marketsData).filter((key) =>
-  getSupportedChainIds().includes(marketsData[key as keyof typeof CustomMarket].chainId)
-) as CustomMarket[];
+export function getAvailableMarkets(): CustomMarket[] {
+  return Object.keys(marketsData).filter((key) =>
+    getSupportedChainIds().includes(marketsData[key as keyof typeof CustomMarket].chainId)
+  ) as CustomMarket[];
+}
 
 const linkBuilder =
   ({ baseUrl, addressPrefix = 'address', txPrefix = 'tx' }: ExplorerLinkBuilderConfig) =>

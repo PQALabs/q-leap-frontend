@@ -1,5 +1,5 @@
 import React, { type PropsWithChildren, useContext, useState } from 'react';
-import { availableMarkets, getNetworkConfig } from '@/helpers/config/markets-and-network-config';
+import { getAvailableMarkets, getNetworkConfig } from '@/helpers/config/markets-and-network-config';
 import type { MarketDataType, NetworkConfig } from '@/types/config/types';
 import { type CustomMarket, marketsData } from '@/ui-config/markets';
 
@@ -20,7 +20,7 @@ const PoolDataContext = React.createContext({} as ProtocolContextData);
  * @returns the last accessed market if it's still available, the first market if not.
  */
 const getInitialMarket = () => {
-  return availableMarkets[0];
+  return getAvailableMarkets()[0];
 };
 
 export function ProtocolDataProvider({ children }: PropsWithChildren<{}>) {
