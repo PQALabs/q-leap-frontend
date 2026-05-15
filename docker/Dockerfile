@@ -4,14 +4,10 @@ ARG NODE_IMAGE=node:24.14.0-alpine3.23
 ###################### BUILD STAGE ########################
 FROM $NODE_IMAGE AS builder
 
-ARG NEXT_PUBLIC_ENABLE_LIQUIDATION=false
-ENV NEXT_PUBLIC_ENABLE_LIQUIDATION=$NEXT_PUBLIC_ENABLE_LIQUIDATION
-
 # NEXT_PUBLIC_* variables are inlined into the browser JS bundle at BUILD TIME by Next.js.
-# This app fetches all blockchain data via RPC (wagmi/viem) — the axios client using
-# NEXT_PUBLIC_API_URL is only called from 'use client' components, never from Server Components
-# or SSR paths. There is no SSR hydration risk here.
-# The ConfigMap value is therefore irrelevant — it must be set as a build ARG.
+# Feature flags (ENABLE_TESTNET, ENABLE_FORUM, ENABLE_LIQUIDATION) are intentionally NOT
+# build args — they are plain env vars injected at runtime via Kubernetes ConfigMap,
+# allowing the same image to be deployed across environments without rebuilding.
 ARG NEXT_PUBLIC_API_URL=/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 

@@ -98,18 +98,12 @@ jobs:
           #   main    → :latest
           if [[ "$BRANCH" == "develop" ]]; then
             TAGS="$TAGS,$REGISTRY:develop"
-            ENABLE_TESTNET="true"
-            ENABLE_LIQUIDATION="true"
           else
             TAGS="$TAGS,$REGISTRY:latest"
-            ENABLE_TESTNET="false"
-            ENABLE_LIQUIDATION="false"
           fi
 
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "enable_testnet=$ENABLE_TESTNET" >> $GITHUB_OUTPUT
-          echo "enable_liquidation=$ENABLE_LIQUIDATION" >> $GITHUB_OUTPUT
 
       - name: Get GitHub OIDC Token
         id: oidc
@@ -180,8 +174,7 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
-            NEXT_PUBLIC_ENABLE_TESTNET=${{ steps.tags.outputs.enable_testnet }}
-            NEXT_PUBLIC_ENABLE_LIQUIDATION=${{ steps.tags.outputs.enable_liquidation }}
+            NODE_IMAGE=node:24.14.0-alpine3.23
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
