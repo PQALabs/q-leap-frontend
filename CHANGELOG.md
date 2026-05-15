@@ -1,3 +1,9 @@
+## [1.0.0-develop.13](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.12...v1.0.0-develop.13) (2026-05-15)
+
+### Bug Fixes
+
+* **config:** remove NEXT_PUBLIC_ prefix from runtime env vars ([d870af1](https://github.com/PQALabs/q-leap-frontend/commit/d870af1c2d59b9f4e097817225f9dca73f514761))
+
 ## [1.0.0-develop.12](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.11...v1.0.0-develop.12) (2026-05-15)
 
 ### Bug Fixes
