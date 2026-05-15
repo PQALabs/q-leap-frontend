@@ -6,10 +6,12 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { PoolDataError } from '@/components/pool-data-status';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { fetchRuntimeConfig } from '@/config/runtime-config';
 import { config } from '@/lib/wagmi-config';
 import { ProtocolDataProvider } from '@/providers/protocol-data-provider';
 import { StaticPoolDataProvider } from '@/providers/static-pool-data-provider';
 import { ThemeProvider } from '../providers/theme-provider';
+
 export interface ProvidersProps {
   children: ReactNode;
 }
@@ -30,9 +32,13 @@ function Providers({ children }: ProvidersProps) {
   );
 
   const [isMounted, setIsMounted] = useState(false);
+  const [configReady, setConfigReady] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    fetchRuntimeConfig().finally(() => {
+      setConfigReady(true);
+      setIsMounted(true);
+    });
   }, []);
 
   return (
@@ -42,7 +48,7 @@ function Providers({ children }: ProvidersProps) {
           <QueryClientProvider client={queryClient}>
             <ProtocolDataProvider>
               <StaticPoolDataProvider errorPage={<PoolDataError />}>
-                {isMounted ? children : <></>}
+                {isMounted && configReady ? children : <></>}
               </StaticPoolDataProvider>
             </ProtocolDataProvider>
             <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />

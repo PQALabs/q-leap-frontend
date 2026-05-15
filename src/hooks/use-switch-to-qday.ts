@@ -1,17 +1,19 @@
 import { useCallback } from 'react';
 import { useSwitchChain } from 'wagmi';
-import { env } from '@/config/env';
+import { getRuntimeConfig } from '@/config/runtime-config';
 import { qdayMainnet, qdayTestnet } from '@/constants/wagmi';
 
 /**
- * Hook for switching to the correct Qday chain based on environment
- * Uses Qday Testnet for testnet, Qday Mainnet for production
+ * Hook for switching to the correct Qday chain based on runtime config.
+ * ENABLE_TESTNET is now a runtime flag served from /api/config (injected via
+ * Kubernetes ConfigMap), so the same image works for both dev and prod.
  */
 export function useSwitchToQday() {
   const { mutateAsync, isPending, error, isSuccess } = useSwitchChain();
 
-  // Get the target chain based on environment
-  const targetChain = env.ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
+  // Get the target chain based on runtime config (fetched at app startup)
+  const { ENABLE_TESTNET } = getRuntimeConfig();
+  const targetChain = ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
   const targetChainId = targetChain.id;
 
   const switchToQday = useCallback(() => {

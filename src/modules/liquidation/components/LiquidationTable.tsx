@@ -13,7 +13,6 @@ function SkeletonRow() {
   return (
     <tr className='border-border border-b'>
       {Array.from({ length: 7 }).map((_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
         <td key={i} className={cn('px-4 py-4', i === 0 && 'pl-6', i === 6 && 'pr-6')}>
           <Skeleton className='h-5 w-full' />
         </td>
@@ -145,10 +144,7 @@ export function LiquidationTable({ positions, isLoading, isError, onRetry }: Liq
 
         <tbody>
           {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
-              <SkeletonRow key={i} />
-            ))
+            Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)
           ) : isError ? (
             <ErrorState onRetry={onRetry} />
           ) : sorted.length === 0 ? (

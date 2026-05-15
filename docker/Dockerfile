@@ -1,13 +1,8 @@
-ARG NODE_IMAGE=node:20-alpine
+# Re-declare ARG after FROM (Docker scope requirement)
+ARG NODE_IMAGE=node:24.14.0-alpine3.23
 
 ###################### BUILD STAGE ########################
 FROM $NODE_IMAGE AS builder
-
-# Re-declare ARGs after FROM (Docker scope requirement)
-# NEXT_PUBLIC_ENABLE_TESTNET: controlled by CI — true for develop branch, false for main.
-# Set via --build-arg in release.yaml based on the branch being built.
-ARG NEXT_PUBLIC_ENABLE_TESTNET=false
-ENV NEXT_PUBLIC_ENABLE_TESTNET=$NEXT_PUBLIC_ENABLE_TESTNET
 
 ARG NEXT_PUBLIC_ENABLE_LIQUIDATION=false
 ENV NEXT_PUBLIC_ENABLE_LIQUIDATION=$NEXT_PUBLIC_ENABLE_LIQUIDATION
