@@ -1,3 +1,9 @@
+## [1.0.0-develop.12](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.11...v1.0.0-develop.12) (2026-05-15)
+
+### Bug Fixes
+
+* **config:** update env var names to use NEXT_PUBLIC_ prefix ([0474fce](https://github.com/PQALabs/q-leap-frontend/commit/0474fce7206d2aa105750f059b246f860e89ef2e))
+
 ## [1.0.0-develop.11](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.10...v1.0.0-develop.11) (2026-05-15)
 
 ### Bug Fixes
