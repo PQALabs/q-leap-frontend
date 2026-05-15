@@ -1,4 +1,4 @@
-import { env } from '@/config/env';
+import { getRuntimeConfig } from '@/config/runtime-config';
 import type {
   BaseNetworkConfig,
   ChainId,
@@ -14,7 +14,7 @@ export type Pool = {
   address: string;
 };
 
-const ENABLE_TESTNET = env.ENABLE_TESTNET;
+const ENABLE_TESTNET = getRuntimeConfig().ENABLE_TESTNET;
 
 // // determines if forks should be shown
 // const FORK_ENABLED = localStorage.getItem('forkEnabled') === 'true';
