@@ -1,0 +1,1 @@
+export { ForumProposals } from './ForumProposals';
