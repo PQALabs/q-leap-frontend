@@ -1,3 +1,9 @@
+## [1.0.0-develop.15](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.14...v1.0.0-develop.15) (2026-05-16)
+
+### Features
+
+* forum proposal list & create new proposal ([1f735cd](https://github.com/PQALabs/q-leap-frontend/commit/1f735cddac37e2056671f72ecd48ed0b431e6366))
+
 ## [1.0.0-develop.14](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.13...v1.0.0-develop.14) (2026-05-15)
 
 ### Bug Fixes
