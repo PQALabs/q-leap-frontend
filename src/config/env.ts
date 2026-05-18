@@ -9,6 +9,10 @@ export const env = {
   LENDING_POOL_CONTRACT: process.env.NEXT_PUBLIC_LENDING_POOL_CONTRACT,
   LENDING_POOL_ADDRESS_PROVIDER: process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS_PROVIDER,
   ENABLE_TESTNET: (process.env.NEXT_PUBLIC_ENABLE_TESTNET ?? 'false') === 'true',
-  ENABLE_LIQUIDATION: (process.env.NEXT_PUBLIC_ENABLE_LIQUIDATION ?? 'false') === 'true',
-  ENABLE_FORUM: (process.env.NEXT_PUBLIC_ENABLE_FORUM ?? 'false') === 'true',
+  ENABLE_LIQUIDATION: true,
+  ENABLE_FORUM: true,
+  // ENABLE_LIQUIDATION: (process.env.NEXT_PUBLIC_ENABLE_LIQUIDATION ?? 'false') === 'true',
+  // ENABLE_FORUM: (process.env.NEXT_PUBLIC_ENABLE_FORUM ?? 'false') === 'true',
 };
+console.log('🚀 ~ env: ENABLE_FORUM', process.env.NEXT_PUBLIC_ENABLE_FORUM);
+console.log('🚀 ~ env: ENABLE_LIQUIDATION', process.env.NEXT_PUBLIC_ENABLE_LIQUIDATION);
