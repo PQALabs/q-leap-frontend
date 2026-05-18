@@ -1,3 +1,9 @@
+## [1.0.0-develop.17](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.16...v1.0.0-develop.17) (2026-05-18)
+
+### Bug Fixes
+
+* debug env ([a82fa9b](https://github.com/PQALabs/q-leap-frontend/commit/a82fa9b612e14d782c9167b2e2e7451c37392f88))
+
 ## [1.0.0-develop.16](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.15...v1.0.0-develop.16) (2026-05-18)
 
 ### Bug Fixes
