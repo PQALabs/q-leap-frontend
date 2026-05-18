@@ -1,3 +1,9 @@
+## [1.0.0-develop.16](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.15...v1.0.0-develop.16) (2026-05-18)
+
+### Bug Fixes
+
+* trigger deploy ([5f22d90](https://github.com/PQALabs/q-leap-frontend/commit/5f22d90a8d7be97cb370888414494adf04d788fc))
+
 ## [1.0.0-develop.15](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.14...v1.0.0-develop.15) (2026-05-16)
 
 ### Features
