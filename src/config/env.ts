@@ -12,3 +12,4 @@ export const env = {
   ENABLE_LIQUIDATION: (process.env.NEXT_PUBLIC_ENABLE_LIQUIDATION ?? 'false') === 'true',
   ENABLE_FORUM: (process.env.NEXT_PUBLIC_ENABLE_FORUM ?? 'false') === 'true',
 };
+console.log('🚀 ~ env:', env);
