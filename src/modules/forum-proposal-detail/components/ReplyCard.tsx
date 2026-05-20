@@ -162,13 +162,7 @@ function ReplyItem({ reply, depth, proposalId, connectedAddress, onReply, onUpda
 
         <div className='mt-3 flex items-center gap-1'>
           {canReply && (
-            <Button
-              variant='ghost'
-              size='sm'
-              className='h-7 px-2 text-xs'
-              disabled={isDeleted}
-              onClick={() => onReply(reply)}
-            >
+            <Button variant='ghost' size='sm' className='h-7 px-2 text-xs' onClick={() => onReply(reply)}>
               <MessageSquare className='size-3.5' />
               Reply
             </Button>
@@ -387,21 +381,18 @@ export function ReplyCard({
             <CommentMarkdownPreview source={comment.contentMarkdown} className='mt-6 text-base leading-7' />
           )}
 
-          <div className='mt-6 flex items-center gap-2 border-border border-t pt-4'>
-            <Button
-              variant='ghost'
-              size='sm'
-              disabled={isDeleted || isUpvoting(comment.id)}
-              onClick={() => onUpvote(comment.id)}
-            >
-              <ThumbsUp className='size-4' />
-              {comment.upvotes}
-            </Button>
-            <Button variant='ghost' size='sm' disabled={isDeleted} onClick={() => onReply(comment)}>
-              <MessageSquare className='size-4' />
-              Reply
-            </Button>
-          </div>
+          {!isDeleted && (
+            <div className='mt-6 flex items-center gap-2 border-border border-t pt-4'>
+              <Button variant='ghost' size='sm' disabled={isUpvoting(comment.id)} onClick={() => onUpvote(comment.id)}>
+                <ThumbsUp className='size-4' />
+                {comment.upvotes}
+              </Button>
+              <Button variant='ghost' size='sm' onClick={() => onReply(comment)}>
+                <MessageSquare className='size-4' />
+                Reply
+              </Button>
+            </div>
+          )}
 
           <CommentRepliesSection
             comment={comment}
