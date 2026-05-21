@@ -1,3 +1,4 @@
+import { useForumAuthStore } from '@/stores/use-forum-auth-store';
 import { request } from '../client';
 import type {
   ICommentMutationResponse,
@@ -14,6 +15,14 @@ import type {
   IUpdateCommentRequest,
   IUpvoteCommentResponse,
 } from './types';
+
+function getAuthHeaders(signature?: string): Record<string, string> {
+  const token = useForumAuthStore.getState().token;
+  return {
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(signature && { 'X-Signature': signature }),
+  };
+}
 
 export const getForumProposalsRequest = async (params: IForumProposalsParams = {}) => {
   const { data } = await request<IForumProposalsResponse>({
@@ -48,14 +57,12 @@ export const createForumProposalRequest = async ({
   signature,
 }: {
   payload: ICreateForumProposalRequest;
-  signature: string;
+  signature?: string;
 }) => {
   const { data } = await request<ICreateForumProposalResponse>({
     url: '/forum/proposals',
     method: 'POST',
-    headers: {
-      'X-Signature': signature,
-    },
+    headers: getAuthHeaders(signature),
     data: payload,
   });
 
@@ -84,12 +91,12 @@ export const createForumCommentRequest = async ({
 }: {
   proposalId: string;
   payload: ICreateCommentRequest;
-  signature: string;
+  signature?: string;
 }) => {
   const { data } = await request<ICommentMutationResponse>({
     url: `/forum/proposals/${proposalId}/comments`,
     method: 'POST',
-    headers: { 'X-Signature': signature },
+    headers: getAuthHeaders(signature),
     data: payload,
   });
 
@@ -105,12 +112,12 @@ export const createForumReplyRequest = async ({
   proposalId: string;
   commentId: string;
   payload: ICreateCommentRequest;
-  signature: string;
+  signature?: string;
 }) => {
   const { data } = await request<ICommentMutationResponse>({
     url: `/forum/proposals/${proposalId}/comments/${commentId}/replies`,
     method: 'POST',
-    headers: { 'X-Signature': signature },
+    headers: getAuthHeaders(signature),
     data: payload,
   });
 
@@ -143,12 +150,12 @@ export const updateForumCommentRequest = async ({
   proposalId: string;
   commentId: string;
   payload: IUpdateCommentRequest;
-  signature: string;
+  signature?: string;
 }): Promise<IForumComment> => {
   const { data } = await request<IForumComment>({
     url: `/forum/proposals/${proposalId}/comments/${commentId}`,
     method: 'PATCH',
-    headers: { 'X-Signature': signature },
+    headers: getAuthHeaders(signature),
     data: payload,
   });
 
@@ -163,13 +170,13 @@ export const deleteForumCommentRequest = async ({
 }: {
   proposalId: string;
   commentId: string;
-  payload: IDeleteCommentRequest;
-  signature: string;
+  payload?: IDeleteCommentRequest;
+  signature?: string;
 }) => {
   await request({
     url: `/forum/proposals/${proposalId}/comments/${commentId}`,
     method: 'DELETE',
-    headers: { 'X-Signature': signature },
+    headers: getAuthHeaders(signature),
     data: payload,
   });
 };
@@ -182,13 +189,13 @@ export const upvoteForumCommentRequest = async ({
 }: {
   proposalId: string;
   commentId: string;
-  payload: { signatureTimestamp: number };
-  signature: string;
+  payload?: { signatureTimestamp: number };
+  signature?: string;
 }) => {
   const { data } = await request<IUpvoteCommentResponse>({
     url: `/forum/proposals/${proposalId}/comments/${commentId}/upvote`,
     method: 'PUT',
-    headers: { 'X-Signature': signature },
+    headers: getAuthHeaders(signature),
     data: payload,
   });
 

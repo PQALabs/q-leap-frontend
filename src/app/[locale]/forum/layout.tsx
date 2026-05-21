@@ -1,6 +1,6 @@
 'use client';
 
-import { DialogConnectWallet } from '@/components/dialog-connect-wallet/DialogConnectWallet';
+import { DialogForumLogin } from '@/components/dialog-forum-login/DialogForumLogin';
 import { Header } from '@/components/layouts/Header';
 import { useIntersectionStore } from '@/stores/use-intersection-store';
 
@@ -17,9 +17,7 @@ export default function ForumLayout({ children }: { children: React.ReactNode })
     <div className='min-h-screen bg-background text-foreground'>
       <Header />
       {children}
-      {isOpenConnectWallet && (
-        <DialogConnectWallet open={isOpenConnectWallet} onOpenChangeAction={handleHideTargetView} />
-      )}
+      {isOpenConnectWallet && <DialogForumLogin open={isOpenConnectWallet} onOpenChangeAction={handleHideTargetView} />}
     </div>
   );
 }
