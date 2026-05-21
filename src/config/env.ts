@@ -5,4 +5,6 @@ export const env = {
   ENABLE_TESTNET: (process.env.NEXT_PUBLIC_ENABLE_TESTNET ?? 'false') === 'true',
   ENABLE_LIQUIDATION: (process.env.NEXT_PUBLIC_ENABLE_LIQUIDATION ?? 'false') === 'true',
   ENABLE_FORUM: (process.env.NEXT_PUBLIC_ENABLE_FORUM ?? 'false') === 'true',
+  AUTH_LOGIN_MESSAGE:
+    process.env.NEXT_PUBLIC_AUTH_LOGIN_MESSAGE ?? 'Sign in to QLEAP Address: {address} Nonce: {nonce}',
 };

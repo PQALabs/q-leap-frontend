@@ -1,9 +1,10 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConnection, useSignMessage } from 'wagmi';
+import { useSignMessage } from 'wagmi';
 import { createForumCommentRequest, createForumReplyRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
+import { useForumAuthStore } from '@/stores/use-forum-auth-store';
 import { buildCreateCommentSignatureMessage } from '../comment-signatures';
 
 type CreateCommentInput = {
@@ -13,29 +14,36 @@ type CreateCommentInput = {
 
 export function useCreateComment(proposalId: string) {
   const queryClient = useQueryClient();
-  const { isConnected } = useConnection();
   const { mutateAsync: signMessageAsync } = useSignMessage();
+
+  const token = useForumAuthStore((s) => s.token);
+  const requireSignature = useForumAuthStore((s) => s.user?.requireSignature ?? false);
 
   return useMutation({
     mutationFn: async ({ content, parentCommentId }: CreateCommentInput) => {
-      if (!isConnected) {
-        throw new Error('Connect your wallet to comment.');
+      if (!token) {
+        throw new Error('Please sign in to the forum to comment.');
       }
 
-      const signatureTimestamp = Date.now();
       const contentMarkdown = content.trim();
-      const message = buildCreateCommentSignatureMessage({
-        proposalId,
-        parentCommentId,
-        contentMarkdown,
-        signatureTimestamp,
-      });
-      const signature = await signMessageAsync({ message });
+      let signature: string | undefined;
+      let signatureTimestamp: number | undefined;
+
+      if (requireSignature) {
+        signatureTimestamp = Date.now();
+        const message = buildCreateCommentSignatureMessage({
+          proposalId,
+          parentCommentId,
+          contentMarkdown,
+          signatureTimestamp,
+        });
+        signature = await signMessageAsync({ message });
+      }
 
       const payload = {
         contentMarkdown,
         contentHtml: contentMarkdown,
-        signatureTimestamp,
+        ...(signatureTimestamp !== undefined && { signatureTimestamp }),
       };
 
       if (parentCommentId) {
