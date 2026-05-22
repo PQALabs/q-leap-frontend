@@ -1,13 +1,17 @@
 'use client';
 
 import { useIntersection } from '@mantine/hooks';
+import { Loader2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useConnection } from 'wagmi';
 import type { IForumComment } from '@/api/forum';
 import { useForumComments } from '@/api/forum';
+import { useAddressBanStatus } from '@/api/moderation';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AddCommentForm } from './components/AddCommentForm';
+import { DialogUserBanned } from './components/DialogUserBanned';
 import { ForumProposalDetailError } from './components/ForumProposalDetailError';
 import { ForumProposalDetailSkeleton } from './components/ForumProposalDetailSkeleton';
 import { ProposalArticleCard } from './components/ProposalArticleCard';
@@ -32,8 +36,14 @@ function getRootCommentId(replyTarget: IForumComment): string {
 export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
   const { proposal, isLoading, isError, refetch, isRefetching } = useForumProposalDetail(proposalId);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+  const [isBannedDialogOpen, setIsBannedDialogOpen] = useState(false);
   const [replyTarget, setReplyTarget] = useState<IForumComment | null>(null);
   const [expandedRepliesCommentId, setExpandedRepliesCommentId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{
+    commentId: string;
+    isReply: boolean;
+    byModerator: boolean;
+  } | null>(null);
   const commentsQuery = useForumComments({
     variables: { proposalId },
     enabled: Boolean(proposalId),
@@ -42,10 +52,20 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
   const comments = commentsQuery.data?.pages.flatMap((page) => page.data) ?? [];
 
   const { address } = useConnection();
+  const { data: banRecord } = useAddressBanStatus(address);
   const createComment = useCreateComment(proposalId);
   const upvoteComment = useUpvoteComment(proposalId);
   const updateComment = useUpdateComment(proposalId);
   const deleteComment = useDeleteComment(proposalId);
+
+  const handleOpenCommentDialog = (target: IForumComment | null) => {
+    if (banRecord) {
+      setIsBannedDialogOpen(true);
+      return;
+    }
+    setReplyTarget(target);
+    setIsCommentDialogOpen(true);
+  };
 
   const { ref: intersectionRef, entry } = useIntersection({ threshold: 0.1 });
 
@@ -80,9 +100,12 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
     await updateComment.mutateAsync({ commentId, content, isReply });
   };
 
-  const handleDelete = async (commentId: string, isReply: boolean) => {
+  const handleDeleteConfirm = async () => {
+    if (!pendingDelete) return;
     try {
-      await deleteComment.mutateAsync({ commentId, isReply });
+      await deleteComment.mutateAsync(pendingDelete);
+      toast.success('Comment deleted');
+      setPendingDelete(null);
     } catch (error) {
       toast.error(getForumCommentMutationErrorMessage(error, 'Failed to delete comment.'));
     }
@@ -99,12 +122,7 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
   return (
     <main className='min-h-screen bg-background px-4 pt-24 pb-16 md:px-10'>
       <div className='mx-auto flex max-w-[1200px] items-start gap-8'>
-        <ProposalDetailActions
-          onCommentClick={() => {
-            setReplyTarget(null);
-            setIsCommentDialogOpen(true);
-          }}
-        />
+        <ProposalDetailActions onCommentClick={() => handleOpenCommentDialog(null)} />
 
         <div className='flex min-w-0 flex-1 flex-col gap-8'>
           {/* <SnapshotSummaryCard proposal={proposal} /> */}
@@ -119,6 +137,12 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
             }}
             onSubmit={handleCommentSubmit}
           />
+          <DialogUserBanned
+            open={isBannedDialogOpen}
+            onOpenChange={setIsBannedDialogOpen}
+            expiresAt={banRecord?.expiresAt ?? null}
+            reason={banRecord?.reason}
+          />
 
           {comments.map((comment) => (
             <ReplyCard
@@ -128,13 +152,10 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
               connectedAddress={address}
               autoExpandReplies={expandedRepliesCommentId === comment.id}
               upvotingCommentId={upvoteComment.isPending ? upvoteComment.variables : null}
-              onReply={(comment) => {
-                setReplyTarget(comment);
-                setIsCommentDialogOpen(true);
-              }}
+              onReply={(comment) => handleOpenCommentDialog(comment)}
               onUpvote={handleUpvote}
               onUpdate={handleUpdate}
-              onDelete={handleDelete}
+              onDelete={(commentId, isReply, byModerator) => setPendingDelete({ commentId, isReply, byModerator })}
             />
           ))}
 
@@ -153,6 +174,45 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
           )}
         </div>
       </div>
+
+      <Dialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <DialogContent className='gap-0 rounded-none border-border bg-card p-0 sm:max-w-sm'>
+          <DialogHeader className='px-6 pt-6 pb-4 text-left'>
+            <DialogTitle className='font-medium text-foreground'>
+              {pendingDelete?.byModerator ? 'Remove comment?' : 'Delete comment?'}
+            </DialogTitle>
+          </DialogHeader>
+          <p className='px-6 pb-4 text-muted-foreground text-sm'>
+            {pendingDelete?.byModerator
+              ? 'You are removing this comment as a moderator. This action cannot be undone.'
+              : 'This action cannot be undone.'}
+          </p>
+          <DialogFooter className='gap-2 border-border border-t px-6 py-4 sm:justify-start'>
+            <Button
+              type='button'
+              variant='destructive'
+              size='xs'
+              className='h-7 rounded-none px-4'
+              disabled={deleteComment.isPending}
+              onClick={handleDeleteConfirm}
+              icon={deleteComment.isPending ? <Loader2 className='animate-spin' /> : <Trash2 />}
+            >
+              {deleteComment.isPending ? 'Deleting…' : 'Delete'}
+            </Button>
+            <DialogClose asChild>
+              <Button
+                type='button'
+                variant='ghost'
+                size='xs'
+                className='h-7 rounded-none px-2'
+                disabled={deleteComment.isPending}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
