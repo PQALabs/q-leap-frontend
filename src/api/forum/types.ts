@@ -62,6 +62,7 @@ export interface IForumComment {
   proposalId: string;
   parentCommentId: string | null;
   authorAddress: string;
+  authorRole?: 'user' | 'moderator' | 'admin';
   contentMarkdown: string;
   contentHtml: string;
   upvotes: number;
@@ -112,4 +113,21 @@ export interface IUpdateCommentRequest {
   contentMarkdown: string;
   contentHtml: string;
   signatureTimestamp?: number;
+}
+
+export interface IReportCommentBody {
+  reason: string;
+  signatureTimestamp?: number;
+}
+
+export interface IReportCommentResponse {
+  meta: { code: number; message: string };
+  data: {
+    id: number;
+    commentId: string;
+    reporterAddress: string;
+    reason: string;
+    status: 'pending' | 'reviewed';
+    reportedAt: string;
+  };
 }

@@ -3,6 +3,7 @@ import {
   FORUM_COMMENT_SIGNATURE_PREFIX,
   FORUM_DELETE_COMMENT_SIGNATURE_PREFIX,
   FORUM_EDIT_COMMENT_SIGNATURE_PREFIX,
+  FORUM_REPORT_COMMENT_SIGNATURE_PREFIX,
   FORUM_UPVOTE_SIGNATURE_PREFIX,
 } from './constants';
 
@@ -76,6 +77,26 @@ export function buildUpvoteCommentSignatureMessage({
     FORUM_UPVOTE_SIGNATURE_PREFIX,
     `proposalId:${proposalId}`,
     `commentId:${commentId}`,
+    `timestamp:${signatureTimestamp}`,
+  ].join('\n');
+}
+
+type ReportCommentSignatureParams = CommentSignatureParams & {
+  reason: string;
+};
+
+export function buildReportCommentSignatureMessage({
+  proposalId,
+  commentId,
+  reason,
+  signatureTimestamp,
+}: ReportCommentSignatureParams) {
+  const reasonHash = keccak256(stringToHex(reason));
+  return [
+    FORUM_REPORT_COMMENT_SIGNATURE_PREFIX,
+    `proposalId:${proposalId}`,
+    `commentId:${commentId}`,
+    `reasonHash:${reasonHash}`,
     `timestamp:${signatureTimestamp}`,
   ].join('\n');
 }

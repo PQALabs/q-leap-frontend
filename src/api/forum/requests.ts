@@ -12,6 +12,8 @@ import type {
   IForumProposalResponse,
   IForumProposalsParams,
   IForumProposalsResponse,
+  IReportCommentBody,
+  IReportCommentResponse,
   IUpdateCommentRequest,
   IUpvoteCommentResponse,
 } from './types';
@@ -179,6 +181,26 @@ export const deleteForumCommentRequest = async ({
     headers: getAuthHeaders(signature),
     data: payload,
   });
+};
+
+export const reportForumCommentRequest = async ({
+  proposalId,
+  commentId,
+  payload,
+  signature,
+}: {
+  proposalId: string;
+  commentId: string;
+  payload: IReportCommentBody;
+  signature?: string;
+}) => {
+  const { data } = await request<IReportCommentResponse>({
+    url: `/forum/proposals/${proposalId}/comments/${commentId}/report`,
+    method: 'POST',
+    headers: getAuthHeaders(signature),
+    data: payload,
+  });
+  return data.data;
 };
 
 export const upvoteForumCommentRequest = async ({
