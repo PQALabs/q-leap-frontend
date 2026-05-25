@@ -52,12 +52,14 @@ export interface IUnbanAddressBody {
   signatureTimestamp: number;
 }
 
+export type CommentReportStatus = 'pending' | 'reviewed' | 'rejected';
+
 export interface ICommentReportItem {
   id: number;
   commentId: string;
   reporterAddress: string;
   reason: string;
-  status: 'pending' | 'reviewed';
+  status: CommentReportStatus;
   reportedAt: string;
   comment: {
     id: string;
@@ -66,11 +68,18 @@ export interface ICommentReportItem {
     contentMarkdown: string;
     contentHtml: string;
     deletedAt: string | null;
+    authorBan: {
+      address: string;
+      bannedAt: string;
+      expiresAt: string | null;
+      reason: string | null;
+      bannedBy: string;
+    } | null;
   };
 }
 
 export interface ICommentReportListParams {
-  status?: 'pending' | 'reviewed';
+  status?: CommentReportStatus;
   commentId?: string;
   page?: number;
   limit?: number;

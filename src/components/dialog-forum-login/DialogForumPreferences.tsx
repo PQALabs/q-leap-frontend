@@ -25,11 +25,8 @@ export const DialogForumPreferences = ({ open, onOpenChangeAction }: Props) => {
   const [isSaving, setIsSaving] = useState(false);
 
   const hasChanged = requireSignature !== (user?.requireSignature ?? false);
-  console.log('🚀 ~ DialogForumPreferences ~ user?.requireSignature:', user?.requireSignature);
-  console.log('🚀 ~ DialogForumPreferences ~ requireSignature:', requireSignature);
 
   const handleSave = async () => {
-    console.log('🚀 ~ DialogForumPreferences ~ hasChanged:', hasChanged);
     if (!hasChanged) {
       onOpenChangeAction(false);
       return;
@@ -42,7 +39,6 @@ export const DialogForumPreferences = ({ open, onOpenChangeAction }: Props) => {
       const signature = await signMessageAsync({ message });
 
       const updated = await updateAuthPreferencesRequest({ requireSignature, signatureTimestamp }, signature);
-      console.log('🚀 ~ handleSave ~ updated:', updated);
       setUser(updated);
       toast.success('Preference saved');
       onOpenChangeAction(false);
