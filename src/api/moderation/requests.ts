@@ -103,6 +103,22 @@ export const getAddressBanStatusRequest = async (address: string): Promise<IBann
   return data.data ?? null;
 };
 
+export const resolveCommentReportRequest = async (reportId: number): Promise<void> => {
+  await request({
+    url: `/moderation/comment-reports/${reportId}/resolve`,
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+};
+
+export const rejectCommentReportRequest = async (reportId: number): Promise<void> => {
+  await request({
+    url: `/moderation/comment-reports/${reportId}/reject`,
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+};
+
 export const getCommentReportsRequest = async (
   params: ICommentReportListParams = {}
 ): Promise<ICommentReportListResponse> => {
