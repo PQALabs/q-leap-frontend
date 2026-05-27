@@ -7,11 +7,13 @@ import type {
   ICreateForumProposalResponse,
   IDeleteCommentRequest,
   IForumComment,
+  IForumCommentAnchorResponse,
   IForumCommentsParams,
   IForumCommentsResponse,
   IForumProposalResponse,
   IForumProposalsParams,
   IForumProposalsResponse,
+  IPinCommentRequest,
   IReportCommentBody,
   IReportCommentResponse,
   IUpdateCommentRequest,
@@ -24,6 +26,14 @@ function getAuthHeaders(signature?: string): Record<string, string> {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...(signature && { 'X-Signature': signature }),
   };
+}
+
+function unwrapCommentResponse(response: ICommentMutationResponse | IForumComment): IForumComment {
+  if ('data' in response) {
+    return response.data;
+  }
+
+  return response;
 }
 
 export const getForumProposalsRequest = async (params: IForumProposalsParams = {}) => {
@@ -143,6 +153,25 @@ export const getForumCommentRepliesRequest = async (
   return data;
 };
 
+export const getForumCommentAnchorRequest = async (
+  proposalId: string,
+  commentId: string,
+  params: IForumCommentsParams = {}
+) => {
+  const { data } = await request<IForumCommentAnchorResponse>({
+    url: `/forum/proposals/${proposalId}/comments/${commentId}/anchor`,
+    method: 'GET',
+    params: {
+      limit: 10,
+      sortBy: 'upvotes,createdAt',
+      order: 'DESC,DESC',
+      ...params,
+    },
+  });
+
+  return data.data;
+};
+
 export const updateForumCommentRequest = async ({
   proposalId,
   commentId,
@@ -154,14 +183,14 @@ export const updateForumCommentRequest = async ({
   payload: IUpdateCommentRequest;
   signature?: string;
 }): Promise<IForumComment> => {
-  const { data } = await request<IForumComment>({
+  const { data } = await request<ICommentMutationResponse>({
     url: `/forum/proposals/${proposalId}/comments/${commentId}`,
     method: 'PATCH',
     headers: getAuthHeaders(signature),
     data: payload,
   });
 
-  return data;
+  return data.data;
 };
 
 export const deleteForumCommentRequest = async ({
@@ -222,4 +251,46 @@ export const upvoteForumCommentRequest = async ({
   });
 
   return data;
+};
+
+export const pinForumCommentRequest = async ({
+  proposalId,
+  commentId,
+  payload,
+  signature,
+}: {
+  proposalId: string;
+  commentId: string;
+  payload: IPinCommentRequest;
+  signature: string;
+}): Promise<IForumComment> => {
+  const { data } = await request<ICommentMutationResponse | IForumComment>({
+    url: `/forum/proposals/${proposalId}/comments/${commentId}/pin`,
+    method: 'PUT',
+    headers: getAuthHeaders(signature),
+    data: payload,
+  });
+
+  return unwrapCommentResponse(data);
+};
+
+export const unpinForumCommentRequest = async ({
+  proposalId,
+  commentId,
+  payload,
+  signature,
+}: {
+  proposalId: string;
+  commentId: string;
+  payload: IPinCommentRequest;
+  signature: string;
+}): Promise<IForumComment> => {
+  const { data } = await request<ICommentMutationResponse | IForumComment>({
+    url: `/forum/proposals/${proposalId}/comments/${commentId}/pin`,
+    method: 'DELETE',
+    headers: getAuthHeaders(signature),
+    data: payload,
+  });
+
+  return unwrapCommentResponse(data);
 };

@@ -24,13 +24,14 @@ const commentEditorClassName = cn(
 type CommentMarkdownEditorProps = {
   value: string;
   isInvalid: boolean;
+  disabled?: boolean;
   onChange: (value: string) => void;
   onBlur: () => void;
 };
 
-export function CommentMarkdownEditor({ value, isInvalid, onChange, onBlur }: CommentMarkdownEditorProps) {
+export function CommentMarkdownEditor({ value, isInvalid, disabled, onChange, onBlur }: CommentMarkdownEditorProps) {
   return (
-    <div>
+    <div className={disabled ? 'pointer-events-none opacity-50' : undefined}>
       <style>
         {`
           .comment-md-editor,

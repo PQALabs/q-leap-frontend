@@ -3,7 +3,9 @@ import {
   FORUM_COMMENT_SIGNATURE_PREFIX,
   FORUM_DELETE_COMMENT_SIGNATURE_PREFIX,
   FORUM_EDIT_COMMENT_SIGNATURE_PREFIX,
+  FORUM_PIN_COMMENT_SIGNATURE_PREFIX,
   FORUM_REPORT_COMMENT_SIGNATURE_PREFIX,
+  FORUM_UNPIN_COMMENT_SIGNATURE_PREFIX,
   FORUM_UPVOTE_SIGNATURE_PREFIX,
 } from './constants';
 
@@ -75,6 +77,28 @@ export function buildUpvoteCommentSignatureMessage({
 }: CommentSignatureParams) {
   return [
     FORUM_UPVOTE_SIGNATURE_PREFIX,
+    `proposalId:${proposalId}`,
+    `commentId:${commentId}`,
+    `timestamp:${signatureTimestamp}`,
+  ].join('\n');
+}
+
+export function buildPinCommentSignatureMessage({ proposalId, commentId, signatureTimestamp }: CommentSignatureParams) {
+  return [
+    FORUM_PIN_COMMENT_SIGNATURE_PREFIX,
+    `proposalId:${proposalId}`,
+    `commentId:${commentId}`,
+    `timestamp:${signatureTimestamp}`,
+  ].join('\n');
+}
+
+export function buildUnpinCommentSignatureMessage({
+  proposalId,
+  commentId,
+  signatureTimestamp,
+}: CommentSignatureParams) {
+  return [
+    FORUM_UNPIN_COMMENT_SIGNATURE_PREFIX,
     `proposalId:${proposalId}`,
     `commentId:${commentId}`,
     `timestamp:${signatureTimestamp}`,

@@ -10,6 +10,6 @@ export type Proposal = {
   createdAt: string;
   title: string;
   description: string;
-  comments: string;
-  views: string;
+  totalComments: string;
+  uniqueCommenters: string;
 };

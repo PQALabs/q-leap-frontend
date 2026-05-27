@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useConnection, useDisconnect } from 'wagmi';
 import { DialogForumPreferences } from '@/components/dialog-forum-login/DialogForumPreferences';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,6 +50,8 @@ export function Header() {
 
   const targetChain = env.ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
   const isQdayChain = isConnected && chainId === targetChain.id;
+  const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '') || '/';
+  const isForumPage = pathnameWithoutLocale === '/forum' || pathnameWithoutLocale.startsWith('/forum/');
 
   const handleOpenConnectWallet = () => {
     setTargetInView('connectWallet');
@@ -192,6 +195,9 @@ export function Header() {
                 {t('connectWallet')}
               </Button>
             )}
+
+            {/* Notification bell — only on forum pages when forum user is logged in */}
+            {env.ENABLE_FORUM && isForumPage && forumUser && <NotificationBell />}
 
             {/* Theme toggle */}
             <ThemeToggle />

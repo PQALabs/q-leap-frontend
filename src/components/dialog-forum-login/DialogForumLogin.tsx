@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAccount, useConnect, useConnection, useConnectors, useDisconnect, useSignMessage } from 'wagmi';
 import { getAuthMeRequest, getAuthNonceRequest, loginRequest, updateAuthPreferencesRequest } from '@/api/auth';
@@ -34,8 +34,12 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
   const { address } = useAccount();
   const { mutateAsync: signMessageAsync } = useSignMessage();
 
+  const token = useForumAuthStore((s) => s.token);
+  const forumUser = useForumAuthStore((s) => s.user);
+  const hasHydrated = useForumAuthStore((s) => s.hasHydrated);
   const setAuth = useForumAuthStore((s) => s.setAuth);
   const setUser = useForumAuthStore((s) => s.setUser);
+  const signInInFlightRef = useRef(false);
 
   const [step, setStep] = useState<Step>(() => (isConnected ? 'sign' : 'connect'));
   const [isReady, setIsReady] = useState(false);
@@ -45,23 +49,9 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
     if (typeof window !== 'undefined') setIsReady(true);
   }, []);
 
-  // Reset step when dialog opens
-  useEffect(() => {
-    if (open) {
-      if (isConnected) {
-        handleSignIn();
-      } else {
-        setStep('connect');
-      }
-    }
-  }, [open]);
-
-  // Auto-trigger sign-in once wallet connects
-  useEffect(() => {
-    if (isConnected && step === 'connect') {
-      handleSignIn();
-    }
-  }, [isConnected, step]);
+  const canReuseStoredSession =
+    !!token &&
+    (!address || !forumUser?.walletAddress || forumUser.walletAddress.toLowerCase() === address.toLowerCase());
 
   const supportedConnectors: (WalletDisplay & { description: string })[] = useMemo(() => {
     const list: (WalletDisplay & { description: string })[] = [];
@@ -105,9 +95,18 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
     }
   };
 
-  const handleSignIn = async () => {
+  const handleSignIn = useCallback(async () => {
+    if (!hasHydrated || signInInFlightRef.current) return;
+
+    if (canReuseStoredSession) {
+      onOpenChangeAction();
+      onLoginSuccess?.();
+      return;
+    }
+
     if (!address) return;
 
+    signInInFlightRef.current = true;
     setStep('signing');
     try {
       const lowerAddress = address.toLowerCase();
@@ -117,10 +116,10 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
       const message = env.AUTH_LOGIN_MESSAGE.replace('{address}', lowerAddress).replace('{nonce}', String(nonce));
       const signature = await signMessageAsync({ message });
 
-      const { token } = await loginRequest({ address: lowerAddress, nonce, signature });
+      const { token: authToken } = await loginRequest({ address: lowerAddress, nonce, signature });
 
-      const { user } = await getAuthMeRequest(token);
-      setAuth(token, user);
+      const { user } = await getAuthMeRequest(authToken);
+      setAuth(authToken, user);
 
       const hasSetPreferences = !!localStorage.getItem(`forum_prefs_set_${lowerAddress}`);
       if (hasSetPreferences) {
@@ -135,8 +134,34 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
     } catch (error: any) {
       setStep('sign');
       toast.error(getEvmMessage(error) || 'Failed to sign in. Please try again.');
+    } finally {
+      signInInFlightRef.current = false;
     }
-  };
+  }, [address, canReuseStoredSession, hasHydrated, onLoginSuccess, onOpenChangeAction, setAuth, signMessageAsync]);
+
+  // Reset step when dialog opens
+  useEffect(() => {
+    if (!open || !hasHydrated) return;
+
+    if (canReuseStoredSession) {
+      onOpenChangeAction();
+      onLoginSuccess?.();
+      return;
+    }
+
+    if (isConnected) {
+      handleSignIn();
+    } else {
+      setStep('connect');
+    }
+  }, [canReuseStoredSession, handleSignIn, hasHydrated, isConnected, onLoginSuccess, onOpenChangeAction, open]);
+
+  // Auto-trigger sign-in once wallet connects
+  useEffect(() => {
+    if (open && hasHydrated && !canReuseStoredSession && isConnected && step === 'connect') {
+      handleSignIn();
+    }
+  }, [canReuseStoredSession, handleSignIn, hasHydrated, isConnected, open, step]);
 
   const handleSavePreferences = async () => {
     const storedUser = useForumAuthStore.getState().user;
