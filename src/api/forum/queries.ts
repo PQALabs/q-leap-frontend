@@ -1,12 +1,14 @@
 import { createInfiniteQuery, createQuery } from 'react-query-kit';
 import { queryKeys } from '@/constants/query-keys';
 import {
+  getForumCommentAnchorRequest,
   getForumCommentRepliesRequest,
   getForumCommentsRequest,
   getForumProposalRequest,
   getForumProposalsRequest,
 } from './requests';
 import type {
+  IForumCommentAnchor,
   IForumCommentsParams,
   IForumCommentsResponse,
   IForumProposal,
@@ -32,6 +34,15 @@ export const useForumProposals = createInfiniteQuery<IForumProposalsResponse, IF
 export const useForumProposal = createQuery<IForumProposal, string, Error>({
   queryKey: queryKeys.forum.proposal(),
   fetcher: getForumProposalRequest,
+});
+
+export const useForumCommentAnchor = createQuery<
+  IForumCommentAnchor,
+  IForumCommentsParams & { proposalId: string; commentId: string },
+  Error
+>({
+  queryKey: queryKeys.forum.commentAnchor(),
+  fetcher: ({ proposalId, commentId, ...params }) => getForumCommentAnchorRequest(proposalId, commentId, params),
 });
 
 export const useForumCommentReplies = createInfiniteQuery<

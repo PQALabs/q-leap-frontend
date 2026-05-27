@@ -22,8 +22,8 @@ export function toProposalCard(proposal: IForumProposal): Proposal {
     createdAt: proposal.createdAt,
     title: proposal.title,
     description: proposal.description ?? '',
-    comments: '0',
-    views: '0',
+    totalComments: proposal.totalComments?.toString() ?? '0',
+    uniqueCommenters: proposal.uniqueCommenters?.toString() ?? '0',
   };
 }
 

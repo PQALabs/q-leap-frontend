@@ -7,6 +7,7 @@ import { WagmiProvider } from 'wagmi';
 import { PoolDataError } from '@/components/pool-data-status';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { config } from '@/lib/wagmi-config';
+import { ForumAuthSync } from '@/providers/forum-auth-sync';
 import { ProtocolDataProvider } from '@/providers/protocol-data-provider';
 import { StaticPoolDataProvider } from '@/providers/static-pool-data-provider';
 import { ThemeProvider } from '../providers/theme-provider';
@@ -45,6 +46,7 @@ function Providers({ children }: ProvidersProps) {
                 {isMounted ? children : <></>}
               </StaticPoolDataProvider>
             </ProtocolDataProvider>
+            <ForumAuthSync />
             <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
           </QueryClientProvider>
         </TooltipProvider>

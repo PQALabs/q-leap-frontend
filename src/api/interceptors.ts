@@ -3,6 +3,12 @@ import { toast } from 'sonner';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
 
 export const requestInterceptor = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+  // Only inject if the request doesn't already carry an explicit Authorization header
+  // (e.g. login flow passes the fresh token before it's stored)
+  if (!config.headers.Authorization) {
+    const token = useForumAuthStore.getState().token;
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 };
 
