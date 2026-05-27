@@ -67,6 +67,9 @@ export interface IForumComment {
   contentHtml: string;
   upvotes: number;
   replyCount: number;
+  pinned: boolean;
+  pinnedAt: string | null;
+  pinnedByAddress: string | null;
   editedCount: number;
   signature?: string | null;
   signatureTimestamp?: number | string | null;
@@ -85,6 +88,22 @@ export interface IForumCommentsParams {
 }
 
 export type IForumCommentsResponse = TListResponse<IForumComment>;
+
+export interface IForumCommentAnchor {
+  targetCommentId: string;
+  rootCommentId: string;
+  ancestorCommentIds: string[];
+  rootPage: number;
+  replyPages: Record<string, number>;
+}
+
+export interface IForumCommentAnchorResponse {
+  meta: {
+    code: number;
+    message: string;
+  };
+  data: IForumCommentAnchor;
+}
 
 export interface ICreateCommentRequest {
   contentMarkdown: string;
@@ -107,6 +126,10 @@ export interface IUpvoteCommentResponse {
 
 export interface IDeleteCommentRequest {
   signatureTimestamp?: number;
+}
+
+export interface IPinCommentRequest {
+  signatureTimestamp: number;
 }
 
 export interface IUpdateCommentRequest {

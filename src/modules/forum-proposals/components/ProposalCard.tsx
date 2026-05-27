@@ -1,4 +1,4 @@
-import { Eye, MessageSquare } from 'lucide-react';
+import { Eye, MessageSquare, Users } from 'lucide-react';
 import Link from 'next/link';
 import type { Proposal } from '../types';
 import { formatCreatedAt } from '../utils';
@@ -30,11 +30,11 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
         <div className='flex items-center gap-5 text-muted-foreground text-sm leading-none'>
           <span className='flex items-center gap-2'>
             <MessageSquare size={14} strokeWidth={1.7} />
-            {proposal.comments}
+            {proposal.totalComments || 0}
           </span>
           <span className='flex items-center gap-2'>
-            <Eye size={15} strokeWidth={1.7} />
-            {proposal.views}
+            <Users size={15} strokeWidth={1.7} />
+            {proposal.uniqueCommenters || 0}
           </span>
         </div>
       </div>

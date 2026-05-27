@@ -8,12 +8,13 @@ export default function ModerationLayout({ children }: { children: React.ReactNo
   const [mounted, setMounted] = useState(false);
   const user = useForumAuthStore((s) => s.user);
   const token = useForumAuthStore((s) => s.token);
+  const hasHydrated = useForumAuthStore((s) => s.hasHydrated);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || !hasHydrated) return null;
 
   if (!token || !user || user.role === 'user') {
     notFound();

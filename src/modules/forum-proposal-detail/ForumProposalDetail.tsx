@@ -2,11 +2,12 @@
 
 import { useIntersection } from '@mantine/hooks';
 import { Loader2, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useConnection } from 'wagmi';
 import type { IForumComment } from '@/api/forum';
-import { useForumComments } from '@/api/forum';
+import { useForumCommentAnchor, useForumComments } from '@/api/forum';
 import { useAddressBanStatus } from '@/api/moderation';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -20,6 +21,7 @@ import { ReplyCard } from './components/ReplyCard';
 import { useCreateComment } from './hooks/use-create-comment';
 import { useDeleteComment } from './hooks/use-delete-comment';
 import { useForumProposalDetail } from './hooks/use-forum-proposal-detail';
+import { usePinComment } from './hooks/use-pin-comment';
 import { useUpdateComment } from './hooks/use-update-comment';
 import { useUpvoteComment } from './hooks/use-upvote-comment';
 import { getForumCommentMutationErrorMessage } from './utils';
@@ -28,33 +30,53 @@ type ForumProposalDetailProps = {
   proposalId: string;
 };
 
+const COMMENTS_ANCHOR_PARAMS = {
+  limit: 10,
+  sortBy: 'upvotes,createdAt' as const,
+  order: 'DESC,DESC' as const,
+};
+const COMMENTS_POLL_INTERVAL = 5_000;
+
 function getRootCommentId(replyTarget: IForumComment): string {
   // level-0 target → its own id; level-1 target → its parent is the root
   return replyTarget.parentCommentId ?? replyTarget.id;
 }
 
 export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
+  const searchParams = useSearchParams();
+  const commentIdParam = searchParams.get('commentId')?.trim() ?? '';
   const { proposal, isLoading, isError, refetch, isRefetching } = useForumProposalDetail(proposalId);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [isBannedDialogOpen, setIsBannedDialogOpen] = useState(false);
   const [replyTarget, setReplyTarget] = useState<IForumComment | null>(null);
   const [expandedRepliesCommentId, setExpandedRepliesCommentId] = useState<string | null>(null);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
     commentId: string;
     isReply: boolean;
     byModerator: boolean;
   } | null>(null);
+  const completedAnchorCommentIdRef = useRef<string | null>(null);
+  const anchorErrorCommentIdRef = useRef<string | null>(null);
   const commentsQuery = useForumComments({
-    variables: { proposalId },
+    variables: { proposalId, ...COMMENTS_ANCHOR_PARAMS },
     enabled: Boolean(proposalId),
+    refetchInterval: COMMENTS_POLL_INTERVAL,
+  });
+  const anchorQuery = useForumCommentAnchor({
+    variables: { proposalId, commentId: commentIdParam, ...COMMENTS_ANCHOR_PARAMS },
+    enabled: Boolean(proposalId && commentIdParam),
   });
 
   const comments = commentsQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const anchor = anchorQuery.data;
+  const loadedRootCommentPages = commentsQuery.data?.pages.length ?? 0;
 
   const { address } = useConnection();
   const { data: banRecord } = useAddressBanStatus(address);
   const createComment = useCreateComment(proposalId);
   const upvoteComment = useUpvoteComment(proposalId);
+  const pinComment = usePinComment(proposalId);
   const updateComment = useUpdateComment(proposalId);
   const deleteComment = useDeleteComment(proposalId);
 
@@ -73,7 +95,67 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
     if (entry?.isIntersecting && commentsQuery.hasNextPage && !commentsQuery.isFetchingNextPage) {
       commentsQuery.fetchNextPage();
     }
-  }, [entry?.isIntersecting, commentsQuery]);
+  }, [entry?.isIntersecting, commentsQuery.hasNextPage, commentsQuery.isFetchingNextPage]);
+
+  useEffect(() => {
+    completedAnchorCommentIdRef.current = null;
+    anchorErrorCommentIdRef.current = null;
+    setHighlightedCommentId(null);
+  }, [commentIdParam]);
+
+  useEffect(() => {
+    if (!commentIdParam || !anchorQuery.isError || anchorErrorCommentIdRef.current === commentIdParam) {
+      return;
+    }
+
+    anchorErrorCommentIdRef.current = commentIdParam;
+    toast.error('Comment not found');
+  }, [anchorQuery.isError, commentIdParam]);
+
+  useEffect(() => {
+    if (
+      !anchor ||
+      loadedRootCommentPages >= anchor.rootPage ||
+      !commentsQuery.hasNextPage ||
+      commentsQuery.isFetchingNextPage
+    ) {
+      return;
+    }
+
+    commentsQuery.fetchNextPage();
+  }, [anchor?.rootPage, commentsQuery.hasNextPage, commentsQuery.isFetchingNextPage, loadedRootCommentPages]);
+
+  useEffect(() => {
+    if (
+      !anchor ||
+      loadedRootCommentPages < anchor.rootPage ||
+      completedAnchorCommentIdRef.current === anchor.targetCommentId
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      if (completedAnchorCommentIdRef.current !== anchor.targetCommentId) {
+        completedAnchorCommentIdRef.current = anchor.targetCommentId;
+        toast.error('Comment not found');
+      }
+    }, 8000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [anchor, loadedRootCommentPages]);
+
+  const handleAnchorResolved = useCallback((targetCommentId: string) => {
+    if (completedAnchorCommentIdRef.current === targetCommentId) {
+      return;
+    }
+
+    completedAnchorCommentIdRef.current = targetCommentId;
+    setHighlightedCommentId(targetCommentId);
+
+    window.setTimeout(() => {
+      setHighlightedCommentId((current) => (current === targetCommentId ? null : current));
+    }, 2400);
+  }, []);
 
   const handleCommentSubmit = async (content: string) => {
     const commentIdToExpand = replyTarget ? getRootCommentId(replyTarget) : null;
@@ -89,6 +171,10 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
   };
 
   const handleUpvote = async (commentId: string) => {
+    if (banRecord) {
+      setIsBannedDialogOpen(true);
+      return;
+    }
     try {
       await upvoteComment.mutateAsync(commentId);
     } catch (error) {
@@ -98,6 +184,30 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
 
   const handleUpdate = async (commentId: string, content: string, isReply: boolean) => {
     await updateComment.mutateAsync({ commentId, content, isReply });
+  };
+
+  const handlePinToggle = async (comment: IForumComment) => {
+    if (comment.parentCommentId) {
+      toast.error('Only root comments can be pinned.');
+      return;
+    }
+
+    const toastId = toast.loading(comment.pinned ? 'Unpinning comment…' : 'Pinning comment…', {
+      description: 'Confirm the signature in your wallet.',
+    });
+
+    try {
+      await pinComment.mutateAsync({ commentId: comment.id, pinned: comment.pinned });
+      toast.success(comment.pinned ? 'Comment unpinned' : 'Comment pinned', { id: toastId });
+    } catch (error) {
+      toast.error(
+        getForumCommentMutationErrorMessage(
+          error,
+          comment.pinned ? 'Failed to unpin comment.' : 'Failed to pin comment.'
+        ),
+        { id: toastId }
+      );
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -151,11 +261,16 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
               proposalId={proposalId}
               connectedAddress={address}
               autoExpandReplies={expandedRepliesCommentId === comment.id}
+              anchor={anchor}
+              highlightedCommentId={highlightedCommentId}
               upvotingCommentId={upvoteComment.isPending ? upvoteComment.variables : null}
+              pinningCommentId={pinComment.isPending ? pinComment.variables?.commentId : null}
               onReply={(comment) => handleOpenCommentDialog(comment)}
               onUpvote={handleUpvote}
               onUpdate={handleUpdate}
               onDelete={(commentId, isReply, byModerator) => setPendingDelete({ commentId, isReply, byModerator })}
+              onPinToggle={handlePinToggle}
+              onAnchorResolved={handleAnchorResolved}
             />
           ))}
 
