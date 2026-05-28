@@ -1,7 +1,7 @@
 import { Eye, MessageSquare, Users } from 'lucide-react';
 import Link from 'next/link';
 import type { Proposal } from '../types';
-import { formatCreatedAt } from '../utils';
+import { formatCreatedAt } from '../utils/format';
 import { MarkdownTruncate } from './MarkdownTruncate';
 import { ProposalCategory } from './ProposalCategory';
 

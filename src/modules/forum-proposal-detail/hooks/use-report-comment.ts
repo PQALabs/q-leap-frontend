@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useSignMessage } from 'wagmi';
 import { reportForumCommentRequest } from '@/api/forum';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { buildReportCommentSignatureMessage } from '../comment-signatures';
+import { buildReportCommentSignatureMessage } from '../utils/signatures';
 
 type ReportCommentInput = {
   proposalId: string;

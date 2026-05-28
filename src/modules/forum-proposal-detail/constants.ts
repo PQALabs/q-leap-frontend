@@ -1,50 +1,7 @@
-import type { ProposalReply, SnapshotVote, ThreadStat } from './types';
+import type { SnapshotVote } from './types';
 
 export const DEFAULT_AUTHOR_ROLE = 'Q-Shield contributor';
-export const FORUM_COMMENT_SIGNATURE_PREFIX = 'QLEAP:CREATE_COMMENT';
-export const FORUM_UPVOTE_SIGNATURE_PREFIX = 'QLEAP:UPVOTE_COMMENT';
-export const FORUM_DELETE_COMMENT_SIGNATURE_PREFIX = 'QLEAP:DELETE_COMMENT';
-export const FORUM_EDIT_COMMENT_SIGNATURE_PREFIX = 'QLEAP:EDIT_COMMENT';
-export const FORUM_REPORT_COMMENT_SIGNATURE_PREFIX = 'QLEAP:REPORT_COMMENT';
-export const FORUM_PIN_COMMENT_SIGNATURE_PREFIX = 'QLEAP:PIN_COMMENT';
-export const FORUM_UNPIN_COMMENT_SIGNATURE_PREFIX = 'QLEAP:UNPIN_COMMENT';
 export const FORUM_COMMENTS_PAGE_SIZE = 10;
-
-export const SNAPSHOT_VOTES: SnapshotVote[] = [
-  {
-    label: 'For',
-    value: '617k',
-    percentage: 79,
-    tone: 'success',
-  },
-  {
-    label: 'Against',
-    value: '4.9k',
-    percentage: 1,
-    tone: 'danger',
-  },
-  {
-    label: 'Abstain',
-    value: '158k',
-    percentage: 20,
-    tone: 'muted',
-  },
-];
-
-export const THREAD_STATS: ThreadStat[] = [
-  {
-    label: 'views',
-    value: '17.3k',
-  },
-  {
-    label: 'comments',
-    value: '35',
-  },
-  {
-    label: 'contributors',
-    value: '60',
-  },
-];
 
 export const FALLBACK_DESCRIPTION = `## Summary
 
@@ -64,16 +21,23 @@ The proposal introduces a practical operating model for review, execution, and p
 
 Proceed with the proposal if the implementation owner confirms the final parameters and publishes the execution transaction for review before submission.`;
 
-export const FEATURED_REPLIES: ProposalReply[] = [
+export const SNAPSHOT_VOTES: SnapshotVote[] = [
   {
-    id: 'reply-1',
-    author: 'ApuMaliku',
-    role: 'Risk contributor',
-    date: 'Apr 19',
-    votes: 18,
-    content: [
-      'I support moving this forward, provided the final execution payload stays visible before the vote is queued.',
-      'The risk section is clear enough for the current scope. The follow-up should focus on monitoring and public ownership once the proposal is executed.',
-    ],
+    label: 'For',
+    value: '617k',
+    percentage: 79,
+    tone: 'success',
+  },
+  {
+    label: 'Against',
+    value: '4.9k',
+    percentage: 1,
+    tone: 'danger',
+  },
+  {
+    label: 'Abstain',
+    value: '158k',
+    percentage: 20,
+    tone: 'muted',
   },
 ];

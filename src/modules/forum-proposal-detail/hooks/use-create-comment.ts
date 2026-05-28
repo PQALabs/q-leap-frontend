@@ -5,7 +5,7 @@ import { useSignMessage } from 'wagmi';
 import { createForumCommentRequest, createForumReplyRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { buildCreateCommentSignatureMessage } from '../comment-signatures';
+import { buildCreateCommentSignatureMessage } from '../utils/signatures';
 
 type CreateCommentInput = {
   content: string;

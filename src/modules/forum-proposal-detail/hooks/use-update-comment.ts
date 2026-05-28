@@ -6,7 +6,7 @@ import type { IForumComment, IForumCommentsResponse } from '@/api/forum';
 import { updateForumCommentRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { buildEditCommentSignatureMessage } from '../comment-signatures';
+import { buildEditCommentSignatureMessage } from '../utils/signatures';
 
 type UpdateCommentInput = {
   commentId: string;

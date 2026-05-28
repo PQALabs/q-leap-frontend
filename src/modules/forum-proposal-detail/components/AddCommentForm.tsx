@@ -13,7 +13,7 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from '@
 import { Field, FieldError } from '@/components/ui/field';
 import { formatAddress } from '@/lib/utils';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { getForumCommentMutationErrorMessage } from '../utils';
+import { getForumCommentMutationErrorMessage } from '../utils/error';
 import { CommentMarkdownEditor } from './CommentMarkdownEditor';
 
 const commentSchema = z.object({

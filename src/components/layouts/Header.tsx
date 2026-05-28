@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { env } from '@/config/env';
 import { siteConfig } from '@/config/site';
+import { FORUM_ROUTES } from '@/constants/routes';
 import { qdayMainnet, qdayTestnet } from '@/constants/wagmi';
 import { useCopy } from '@/hooks/use-copy';
 import { useSwitchToQday } from '@/hooks/use-switch-to-qday';
@@ -115,6 +116,15 @@ export function Header() {
                 <MessageSquare size={14} />
                 Forum
               </Link>
+              {forumUser && (forumUser.role === 'admin' || forumUser.role === 'moderator') && (
+                <Link
+                  href={FORUM_ROUTES.MODERATION_REPORTS}
+                  className='flex items-center gap-1.5 px-3 py-1.5 font-medium text-muted-foreground text-sm transition-colors hover:text-foreground'
+                >
+                  <Shield size={14} />
+                  Admin
+                </Link>
+              )}
             </nav>
           )}
 
@@ -136,12 +146,14 @@ export function Header() {
             {isConnected ? (
               <>
                 {/* Dashboard link */}
-                <Button variant='ghost' asChild className='mr-4 hidden sm:flex'>
-                  <Link href='/dashboard'>
-                    <LayoutDashboard size={14} />
-                    {t('myDashboard')}
-                  </Link>
-                </Button>
+                {!isForumPage && (
+                  <Button variant='ghost' asChild className='mr-4 hidden sm:flex'>
+                    <Link href='/dashboard'>
+                      <LayoutDashboard size={14} />
+                      {t('myDashboard')}
+                    </Link>
+                  </Button>
+                )}
 
                 {/* Network badge */}
                 <div className='hidden items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5 font-medium text-xs sm:flex'>
@@ -248,7 +260,17 @@ export function Header() {
                 Forum
               </Link>
             )}
-            {isConnected && (
+            {env.ENABLE_FORUM && forumUser && (forumUser.role === 'admin' || forumUser.role === 'moderator') && (
+              <Link
+                href={FORUM_ROUTES.MODERATION_REPORTS}
+                onClick={() => setMobileOpen(false)}
+                className='flex items-center gap-2 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground'
+              >
+                <Shield size={14} />
+                Admin Portal
+              </Link>
+            )}
+            {isConnected && !isForumPage && (
               <Link
                 href='/dashboard'
                 onClick={() => setMobileOpen(false)}
