@@ -9,9 +9,11 @@ import { useState } from 'react';
 interface CopyAddressButtonProps {
   address: string;
   title: string;
+  className?: string;
+  iconClassName?: string;
 }
 
-export function CopyAddressButton({ address, title }: CopyAddressButtonProps) {
+export function CopyAddressButton({ address, title, className, iconClassName }: CopyAddressButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -26,10 +28,14 @@ export function CopyAddressButton({ address, title }: CopyAddressButtonProps) {
     <button
       type='button'
       onClick={handleCopy}
-      className='inline-flex cursor-pointer items-center text-muted-foreground/90 transition-colors hover:text-foreground'
+      className={`inline-flex cursor-pointer items-center text-muted-foreground/90 transition-colors hover:text-foreground ${className ?? ''}`}
       title={title}
     >
-      {copied ? <Check size={12} className='text-success' /> : <Copy size={12} />}
+      {copied ? (
+        <Check className={`size-3 text-success ${iconClassName ?? ''}`} />
+      ) : (
+        <Copy className={iconClassName ?? 'size-3'} />
+      )}
     </button>
   );
 }

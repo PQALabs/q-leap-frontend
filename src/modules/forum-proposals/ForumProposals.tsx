@@ -13,7 +13,7 @@ import {
   FORUM_PROPOSALS_PAGE_SIZE,
 } from '@/modules/forum-proposals/constants';
 import type { CategoryFilter } from '@/modules/forum-proposals/types';
-import { toProposalCard } from '@/modules/forum-proposals/utils';
+import { toProposalCard } from '@/modules/forum-proposals/utils/proposal';
 
 export function ForumProposals() {
   const [search, setSearch] = useState('');

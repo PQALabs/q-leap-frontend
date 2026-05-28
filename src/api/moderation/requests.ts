@@ -10,6 +10,7 @@ import type {
   ICommentReportListResponse,
   IGetBannedAddressesResponse,
   IGetModeratorsResponse,
+  IModerationListParams,
   IModerator,
   IRemoveModeratorBody,
   IUnbanAddressBody,
@@ -23,22 +24,26 @@ function getAuthHeaders(signature?: string): Record<string, string> {
   };
 }
 
-export const getModeratorsRequest = async (): Promise<IModerator[]> => {
+export const getModeratorsRequest = async (params: IModerationListParams = {}): Promise<IGetModeratorsResponse> => {
   const { data } = await request<IGetModeratorsResponse>({
     url: '/moderation/moderators',
     method: 'GET',
     headers: getAuthHeaders(),
+    params,
   });
-  return data.data;
+  return data;
 };
 
-export const getBannedAddressesRequest = async (): Promise<IBannedAddress[]> => {
+export const getBannedAddressesRequest = async (
+  params: IModerationListParams = {}
+): Promise<IGetBannedAddressesResponse> => {
   const { data } = await request<IGetBannedAddressesResponse>({
     url: '/moderation/addresses/banned',
     method: 'GET',
     headers: getAuthHeaders(),
+    params,
   });
-  return data.data;
+  return data;
 };
 
 export const addModeratorRequest = async ({

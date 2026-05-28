@@ -1,7 +1,7 @@
 'use client';
 
 import { useIntersection } from '@mantine/hooks';
-import { Loader2, Trash2 } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -10,8 +10,8 @@ import type { IForumComment } from '@/api/forum';
 import { useForumCommentAnchor, useForumComments } from '@/api/forum';
 import { useAddressBanStatus } from '@/api/moderation';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AddCommentForm } from './components/AddCommentForm';
+import { ConfirmDeleteCommentDialog, type PendingDeleteComment } from './components/ConfirmDeleteCommentDialog';
 import { DialogUserBanned } from './components/DialogUserBanned';
 import { ForumProposalDetailError } from './components/ForumProposalDetailError';
 import { ForumProposalDetailSkeleton } from './components/ForumProposalDetailSkeleton';
@@ -24,7 +24,7 @@ import { useForumProposalDetail } from './hooks/use-forum-proposal-detail';
 import { usePinComment } from './hooks/use-pin-comment';
 import { useUpdateComment } from './hooks/use-update-comment';
 import { useUpvoteComment } from './hooks/use-upvote-comment';
-import { getForumCommentMutationErrorMessage } from './utils';
+import { getForumCommentMutationErrorMessage } from './utils/error';
 
 type ForumProposalDetailProps = {
   proposalId: string;
@@ -51,11 +51,7 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
   const [replyTarget, setReplyTarget] = useState<IForumComment | null>(null);
   const [expandedRepliesCommentId, setExpandedRepliesCommentId] = useState<string | null>(null);
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<{
-    commentId: string;
-    isReply: boolean;
-    byModerator: boolean;
-  } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDeleteComment | null>(null);
   const completedAnchorCommentIdRef = useRef<string | null>(null);
   const anchorErrorCommentIdRef = useRef<string | null>(null);
   const commentsQuery = useForumComments({
@@ -234,7 +230,7 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
       <div className='mx-auto flex max-w-[1200px] items-start gap-8'>
         <ProposalDetailActions onCommentClick={() => handleOpenCommentDialog(null)} />
 
-        <div className='flex min-w-0 flex-1 flex-col gap-8'>
+        <div className='flex min-w-0 flex-1 flex-col gap-6'>
           {/* <SnapshotSummaryCard proposal={proposal} /> */}
           <ProposalArticleCard proposal={proposal} />
           <AddCommentForm
@@ -290,44 +286,21 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
         </div>
       </div>
 
-      <Dialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
-        <DialogContent className='gap-0 rounded-none border-border bg-card p-0 sm:max-w-sm'>
-          <DialogHeader className='px-6 pt-6 pb-4 text-left'>
-            <DialogTitle className='font-medium text-foreground'>
-              {pendingDelete?.byModerator ? 'Remove comment?' : 'Delete comment?'}
-            </DialogTitle>
-          </DialogHeader>
-          <p className='px-6 pb-4 text-muted-foreground text-sm'>
-            {pendingDelete?.byModerator
-              ? 'You are removing this comment as a moderator. This action cannot be undone.'
-              : 'This action cannot be undone.'}
-          </p>
-          <DialogFooter className='gap-2 border-border border-t px-6 py-4 sm:justify-start'>
-            <Button
-              type='button'
-              variant='destructive'
-              size='xs'
-              className='h-7 rounded-none px-4'
-              disabled={deleteComment.isPending}
-              onClick={handleDeleteConfirm}
-              icon={deleteComment.isPending ? <Loader2 className='animate-spin' /> : <Trash2 />}
-            >
-              {deleteComment.isPending ? 'Deleting…' : 'Delete'}
-            </Button>
-            <DialogClose asChild>
-              <Button
-                type='button'
-                variant='ghost'
-                size='xs'
-                className='h-7 rounded-none px-2'
-                disabled={deleteComment.isPending}
-              >
-                Cancel
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteCommentDialog
+        target={pendingDelete}
+        isPending={deleteComment.isPending}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={handleDeleteConfirm}
+      />
+
+      <button
+        type='button'
+        aria-label='Add Comment'
+        className='fixed right-6 bottom-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-opacity hover:opacity-90 lg:hidden'
+        onClick={() => handleOpenCommentDialog(null)}
+      >
+        <MessageSquare className='size-5' />
+      </button>
     </main>
   );
 }

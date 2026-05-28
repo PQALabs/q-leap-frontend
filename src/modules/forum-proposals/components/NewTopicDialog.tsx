@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getEvmMessage } from '@/lib/get-evm-message';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { useCreateProposal } from '../use-create-proposal';
+import { useCreateProposal } from '../hooks/use-create-proposal';
 import { ProposalMarkdownEditor } from './ProposalMarkdownEditor';
 
 const topicSchema = z.object({

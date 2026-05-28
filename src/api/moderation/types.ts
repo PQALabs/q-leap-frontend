@@ -14,8 +14,23 @@ export interface IBannedAddress {
   bannedBy: string;
 }
 
+export interface IModerationListParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface IModerationListMeta {
+  code: number;
+  message: string;
+  itemCount?: number;
+  totalItems?: number;
+  itemsPerPage?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
 export interface IGetModeratorsResponse {
-  meta: { code: number; message: string };
+  meta: IModerationListMeta;
   data: IModerator[];
 }
 
@@ -30,7 +45,7 @@ export interface IBanAddressResponse {
 }
 
 export interface IGetBannedAddressesResponse {
-  meta: { code: number; message: string };
+  meta: IModerationListMeta;
   data: IBannedAddress[];
 }
 
