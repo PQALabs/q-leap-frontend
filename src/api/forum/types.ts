@@ -13,8 +13,12 @@ export interface IForumProposal {
   snapshotId: string | null;
   onchainId: string | null;
   signature: string;
-  signatureTimestamp: number;
+  signatureTimestamp: number | string;
   createdAt: string;
+  updatedAt?: string | null;
+  deletedAt?: string | null;
+  totalComments?: number;
+  uniqueCommenters?: number;
 }
 
 export interface IForumProposalsParams {
@@ -27,6 +31,14 @@ export interface IForumProposalsParams {
 }
 
 export type IForumProposalsResponse = TListResponse<IForumProposal>;
+
+export interface IForumProposalResponse {
+  meta: {
+    code: number;
+    message: string;
+  };
+  data: IForumProposal | null;
+}
 
 export interface ICreateForumProposalRequest {
   title: string;
@@ -43,4 +55,61 @@ export interface ICreateForumProposalResponse {
     message: string;
   };
   data: IForumProposal;
+}
+
+export interface IForumComment {
+  id: string;
+  proposalId: string;
+  parentCommentId: string | null;
+  authorAddress: string;
+  contentMarkdown: string;
+  contentHtml: string;
+  upvotes: number;
+  replyCount: number;
+  editedCount: number;
+  signature?: string | null;
+  signatureTimestamp?: number | string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface IForumCommentsParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'createdAt' | 'upvotes' | 'createdAt,upvotes' | 'upvotes,createdAt';
+  order?: 'ASC' | 'DESC' | 'ASC,ASC' | 'ASC,DESC' | 'DESC,ASC' | 'DESC,DESC';
+  type?: 'top_level' | 'all';
+  authorAddress?: string;
+}
+
+export type IForumCommentsResponse = TListResponse<IForumComment>;
+
+export interface ICreateCommentRequest {
+  contentMarkdown: string;
+  contentHtml: string;
+  signatureTimestamp: number;
+}
+
+export interface ICommentMutationResponse {
+  meta: {
+    code: number;
+    message: string;
+  };
+  data: IForumComment;
+}
+
+export interface IUpvoteCommentResponse {
+  upvoted: boolean;
+  upvotes: number;
+}
+
+export interface IDeleteCommentRequest {
+  signatureTimestamp: number;
+}
+
+export interface IUpdateCommentRequest {
+  contentMarkdown: string;
+  contentHtml: string;
+  signatureTimestamp: number;
 }

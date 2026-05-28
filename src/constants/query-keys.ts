@@ -5,5 +5,8 @@ export const queryKeys = {
   },
   forum: {
     proposals: (...params: any[]) => ['forum-proposals', ...params],
+    proposal: (...params: any[]) => ['forum-proposal', ...params],
+    comments: (...params: any[]) => ['forum-comments', ...params],
+    commentReplies: (...params: any[]) => ['forum-comment-replies', ...params],
   },
 };
