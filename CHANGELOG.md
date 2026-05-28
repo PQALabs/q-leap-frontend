@@ -1,3 +1,14 @@
+## [1.0.0-develop.18](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.17...v1.0.0-develop.18) (2026-05-28)
+
+### Features
+
+* forum proposal list & create new proposal ([04cfe5a](https://github.com/PQALabs/q-leap-frontend/commit/04cfe5a9a5e45377a3a9dfb2c9395c705500ba4d))
+* proposal detail and comments ([bb67abb](https://github.com/PQALabs/q-leap-frontend/commit/bb67abb5a04c06b436e23f2b23e5cd53762ec7de))
+
+### Bug Fixes
+
+* allow to reply deleted comments ([59f119a](https://github.com/PQALabs/q-leap-frontend/commit/59f119aa28d5b330a8808f8ab5b0cddc1ea39cf4))
+
 ## [1.0.0-develop.17](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.16...v1.0.0-develop.17) (2026-05-18)
 
 ### Bug Fixes
