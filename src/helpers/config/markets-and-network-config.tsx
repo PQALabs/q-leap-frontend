@@ -1,3 +1,4 @@
+import { env } from '@/config/env';
 import { getRuntimeConfig } from '@/config/runtime-config';
 import type {
   BaseNetworkConfig,
@@ -80,7 +81,7 @@ export function getDefaultChainId() {
 }
 
 export function getSupportedChainIds(): number[] {
-  const { ENABLE_TESTNET } = getRuntimeConfig();
+  const ENABLE_TESTNET = getRuntimeConfig().ENABLE_TESTNET || env.ENABLE_TESTNET;
   return Array.from(
     Object.keys(marketsData).reduce((acc, value) => {
       const chainId = marketsData[value as keyof typeof CustomMarket].chainId;

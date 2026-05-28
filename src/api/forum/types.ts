@@ -46,7 +46,7 @@ export interface ICreateForumProposalRequest {
   proposalType?: ForumProposalType;
   snapshotId?: string;
   onchainId?: string;
-  signatureTimestamp: number;
+  signatureTimestamp?: number;
 }
 
 export interface ICreateForumProposalResponse {
@@ -88,7 +88,7 @@ export type IForumCommentsResponse = TListResponse<IForumComment>;
 export interface ICreateCommentRequest {
   contentMarkdown: string;
   contentHtml: string;
-  signatureTimestamp: number;
+  signatureTimestamp?: number;
 }
 
 export interface ICommentMutationResponse {
@@ -105,11 +105,11 @@ export interface IUpvoteCommentResponse {
 }
 
 export interface IDeleteCommentRequest {
-  signatureTimestamp: number;
+  signatureTimestamp?: number;
 }
 
 export interface IUpdateCommentRequest {
   contentMarkdown: string;
   contentHtml: string;
-  signatureTimestamp: number;
+  signatureTimestamp?: number;
 }

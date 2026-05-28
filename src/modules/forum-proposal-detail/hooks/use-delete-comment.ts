@@ -1,9 +1,10 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConnection, useSignMessage } from 'wagmi';
+import { useSignMessage } from 'wagmi';
 import { deleteForumCommentRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
+import { useForumAuthStore } from '@/stores/use-forum-auth-store';
 import { buildDeleteCommentSignatureMessage } from '../comment-signatures';
 
 type DeleteCommentInput = {
@@ -13,25 +14,28 @@ type DeleteCommentInput = {
 
 export function useDeleteComment(proposalId: string) {
   const queryClient = useQueryClient();
-  const { isConnected } = useConnection();
   const { mutateAsync: signMessageAsync } = useSignMessage();
+
+  const token = useForumAuthStore((s) => s.token);
+  const requireSignature = useForumAuthStore((s) => s.user?.requireSignature ?? false);
 
   return useMutation({
     mutationFn: async ({ commentId }: DeleteCommentInput) => {
-      if (!isConnected) {
-        throw new Error('Connect your wallet to delete a comment.');
+      if (!token) {
+        throw new Error('Please sign in to the forum to delete a comment.');
       }
 
-      const signatureTimestamp = Date.now();
-      const message = buildDeleteCommentSignatureMessage({ proposalId, commentId, signatureTimestamp });
-      const signature = await signMessageAsync({ message });
+      let signature: string | undefined;
+      let payload: { signatureTimestamp: number } | undefined;
 
-      return deleteForumCommentRequest({
-        proposalId,
-        commentId,
-        payload: { signatureTimestamp },
-        signature,
-      });
+      if (requireSignature) {
+        const signatureTimestamp = Date.now();
+        const message = buildDeleteCommentSignatureMessage({ proposalId, commentId, signatureTimestamp });
+        signature = await signMessageAsync({ message });
+        payload = { signatureTimestamp };
+      }
+
+      return deleteForumCommentRequest({ proposalId, commentId, payload, signature });
     },
     onSuccess: (_, { isReply }) => {
       const toInvalidate = [queryClient.invalidateQueries({ queryKey: queryKeys.forum.comments() })];

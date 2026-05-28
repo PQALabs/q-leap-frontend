@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, LayoutDashboard, LogOut, Menu, MessageSquare, PlusCircle, Wallet } from 'lucide-react';
+import { Check, Copy, LayoutDashboard, LogOut, Menu, MessageSquare, PlusCircle, Shield, Wallet } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useConnection, useDisconnect } from 'wagmi';
+import { DialogForumPreferences } from '@/components/dialog-forum-login/DialogForumPreferences';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +25,7 @@ import { qdayMainnet, qdayTestnet } from '@/constants/wagmi';
 import { useCopy } from '@/hooks/use-copy';
 import { useSwitchToQday } from '@/hooks/use-switch-to-qday';
 import { truncateAddress } from '@/lib/wallet';
+import { useForumAuthStore } from '@/stores/use-forum-auth-store';
 import { useIntersectionStore } from '@/stores/use-intersection-store';
 
 interface NavItem {
@@ -38,7 +40,9 @@ export function Header() {
   const pathname = usePathname();
   const setTargetInView = useIntersectionStore.use.setTargetInView();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const { copied, copy } = useCopy();
+  const forumUser = useForumAuthStore((s) => s.user);
   const { address, isConnected, chainId, chain } = useConnection();
   const { mutateAsync: disconnect } = useDisconnect();
   const { switchToQday, isPending: isAddingChain } = useSwitchToQday();
@@ -50,8 +54,11 @@ export function Header() {
     setTargetInView('connectWallet');
   };
 
+  const clearForumAuth = useForumAuthStore((s) => s.clearAuth);
+
   const handleDisconnect = async () => {
     await disconnect();
+    clearForumAuth();
     toast.success(t('disconnectSuccess'));
   };
 
@@ -163,6 +170,12 @@ export function Header() {
                       {copied ? <Check size={13} className='mr-1.5' /> : <Copy size={13} className='mr-1.5' />}
                       {copied ? t('copied') : t('copyAddress')}
                     </DropdownMenuItem>
+                    {env.ENABLE_FORUM && forumUser && (
+                      <DropdownMenuItem className='cursor-pointer' onClick={() => setPreferencesOpen(true)}>
+                        <Shield size={13} className='mr-1.5' />
+                        Forum preferences
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem variant='destructive' className='cursor-pointer' onClick={handleDisconnect}>
                       <LogOut size={13} className='mr-1.5' />
                       {t('disconnect')}
@@ -289,6 +302,7 @@ export function Header() {
                   type='button'
                   onClick={() => {
                     disconnect();
+                    clearForumAuth();
                     setMobileOpen(false);
                   }}
                   className='flex items-center gap-2 rounded-md px-3 py-2 font-medium text-destructive text-sm transition-colors hover:bg-destructive/10'
@@ -312,6 +326,8 @@ export function Header() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <DialogForumPreferences open={preferencesOpen} onOpenChangeAction={setPreferencesOpen} />
     </>
   );
 }
