@@ -6,7 +6,7 @@ import type { IForumComment, IForumCommentsResponse } from '@/api/forum';
 import { pinForumCommentRequest, unpinForumCommentRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { buildPinCommentSignatureMessage, buildUnpinCommentSignatureMessage } from '../comment-signatures';
+import { buildPinCommentSignatureMessage, buildUnpinCommentSignatureMessage } from '../utils/signatures';
 
 type PinCommentInput = {
   commentId: string;

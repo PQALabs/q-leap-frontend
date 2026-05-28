@@ -3,6 +3,7 @@ import type { TListResponse } from '@/types';
 export const FORUM_PROPOSAL_TYPES = ['Governance', 'Risk', 'Treasury', 'Development', 'Others'] as const;
 
 export type ForumProposalType = (typeof FORUM_PROPOSAL_TYPES)[number];
+export type ForumUserRole = 'user' | 'moderator' | 'admin';
 
 export interface IForumProposal {
   id: string;
@@ -62,7 +63,7 @@ export interface IForumComment {
   proposalId: string;
   parentCommentId: string | null;
   authorAddress: string;
-  authorRole?: 'user' | 'moderator' | 'admin';
+  authorRole?: ForumUserRole;
   contentMarkdown: string;
   contentHtml: string;
   upvotes: number;

@@ -5,7 +5,7 @@ import { useSignMessage } from 'wagmi';
 import { deleteForumCommentRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { buildDeleteCommentSignatureMessage } from '../comment-signatures';
+import { buildDeleteCommentSignatureMessage } from '../utils/signatures';
 
 type DeleteCommentInput = {
   commentId: string;

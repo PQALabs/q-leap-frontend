@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldError } from '@/components/ui/field';
-import { getForumCommentMutationErrorMessage } from '../utils';
+import { getForumCommentMutationErrorMessage } from '../utils/error';
 import { CommentMarkdownEditor } from './CommentMarkdownEditor';
 
 const editSchema = z.object({

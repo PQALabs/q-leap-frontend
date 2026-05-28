@@ -14,8 +14,8 @@ export const queryKeys = {
     commentAnchor: (...params: any[]) => ['forum-comment-anchor', ...params],
   },
   moderation: {
-    moderators: () => ['moderation', 'moderators'] as const,
-    bannedAddresses: () => ['moderation', 'banned-addresses'] as const,
+    moderators: (...params: any[]) => ['moderation', 'moderators', ...params],
+    bannedAddresses: (...params: any[]) => ['moderation', 'banned-addresses', ...params],
     addressBanStatus: (address: string) => ['moderation', 'ban-status', address] as const,
     commentReports: (...params: any[]) => ['moderation', 'comment-reports', ...params],
   },
