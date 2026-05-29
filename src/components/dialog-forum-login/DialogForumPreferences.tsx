@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useSignMessage } from 'wagmi';
 import { updateAuthPreferencesRequest } from '@/api/auth';
@@ -23,6 +23,12 @@ export const DialogForumPreferences = ({ open, onOpenChangeAction }: Props) => {
 
   const [requireSignature, setRequireSignature] = useState(user?.requireSignature ?? false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setRequireSignature(user?.requireSignature ?? false);
+    }
+  }, [open, user?.requireSignature]);
 
   const hasChanged = requireSignature !== (user?.requireSignature ?? false);
 

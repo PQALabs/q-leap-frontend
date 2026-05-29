@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAccount, useConnect, useConnection, useConnectors, useDisconnect, useSignMessage } from 'wagmi';
 import { getAuthMeRequest, getAuthNonceRequest, loginRequest, updateAuthPreferencesRequest } from '@/api/auth';
@@ -45,24 +45,6 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
     if (typeof window !== 'undefined') setIsReady(true);
   }, []);
 
-  // Reset step when dialog opens
-  useEffect(() => {
-    if (open) {
-      if (isConnected) {
-        handleSignIn();
-      } else {
-        setStep('connect');
-      }
-    }
-  }, [open]);
-
-  // Auto-trigger sign-in once wallet connects
-  useEffect(() => {
-    if (isConnected && step === 'connect') {
-      handleSignIn();
-    }
-  }, [isConnected, step]);
-
   const supportedConnectors: (WalletDisplay & { description: string })[] = useMemo(() => {
     const list: (WalletDisplay & { description: string })[] = [];
 
@@ -105,7 +87,7 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
     }
   };
 
-  const handleSignIn = async () => {
+  const handleSignIn = useCallback(async () => {
     if (!address) return;
 
     setStep('signing');
@@ -136,7 +118,25 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
       setStep('sign');
       toast.error(getEvmMessage(error) || 'Failed to sign in. Please try again.');
     }
-  };
+  }, [address, signMessageAsync, setAuth, onOpenChangeAction, onLoginSuccess]);
+
+  // Reset step when dialog opens
+  useEffect(() => {
+    if (open) {
+      if (isConnected && address) {
+        handleSignIn();
+      } else {
+        setStep('connect');
+      }
+    }
+  }, [open, isConnected, address, handleSignIn]);
+
+  // Auto-trigger sign-in once wallet connects
+  useEffect(() => {
+    if (isConnected && address && step === 'connect') {
+      handleSignIn();
+    }
+  }, [isConnected, address, step, handleSignIn]);
 
   const handleSavePreferences = async () => {
     const storedUser = useForumAuthStore.getState().user;
