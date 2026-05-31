@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useSwitchChain } from 'wagmi';
+import { env } from '@/config/env';
 import { getRuntimeConfig } from '@/config/runtime-config';
 import { qdayMainnet, qdayTestnet } from '@/constants/wagmi';
 
@@ -13,7 +14,7 @@ export function useSwitchToQday() {
 
   // Get the target chain based on runtime config (fetched at app startup)
   const { ENABLE_TESTNET } = getRuntimeConfig();
-  const targetChain = ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
+  const targetChain = ENABLE_TESTNET || env.ENABLE_TESTNET ? qdayTestnet : qdayMainnet;
   const targetChainId = targetChain.id;
 
   const switchToQday = useCallback(() => {
