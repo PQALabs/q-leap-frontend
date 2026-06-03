@@ -1,10 +1,11 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConnection, useSignMessage } from 'wagmi';
+import { useSignMessage } from 'wagmi';
 import type { IForumComment, IForumCommentsResponse } from '@/api/forum';
 import { updateForumCommentRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
+import { useForumAuthStore } from '@/stores/use-forum-auth-store';
 import { buildEditCommentSignatureMessage } from '../comment-signatures';
 
 type UpdateCommentInput = {
@@ -27,29 +28,40 @@ function patchCommentInPages(pages: IForumCommentsResponse[], updated: IForumCom
 
 export function useUpdateComment(proposalId: string) {
   const queryClient = useQueryClient();
-  const { isConnected } = useConnection();
   const { mutateAsync: signMessageAsync } = useSignMessage();
+
+  const token = useForumAuthStore((s) => s.token);
+  const requireSignature = useForumAuthStore((s) => s.user?.requireSignature ?? false);
 
   return useMutation({
     mutationFn: async ({ commentId, content }: UpdateCommentInput) => {
-      if (!isConnected) {
-        throw new Error('Connect your wallet to edit a comment.');
+      if (!token) {
+        throw new Error('Please sign in to the forum to edit a comment.');
       }
 
-      const signatureTimestamp = Date.now();
       const contentMarkdown = content.trim();
-      const message = buildEditCommentSignatureMessage({
-        proposalId,
-        commentId,
-        contentMarkdown,
-        signatureTimestamp,
-      });
-      const signature = await signMessageAsync({ message });
+      let signature: string | undefined;
+      let signatureTimestamp: number | undefined;
+
+      if (requireSignature) {
+        signatureTimestamp = Date.now();
+        const message = buildEditCommentSignatureMessage({
+          proposalId,
+          commentId,
+          contentMarkdown,
+          signatureTimestamp,
+        });
+        signature = await signMessageAsync({ message });
+      }
 
       return updateForumCommentRequest({
         proposalId,
         commentId,
-        payload: { contentMarkdown, contentHtml: contentMarkdown, signatureTimestamp },
+        payload: {
+          contentMarkdown,
+          contentHtml: contentMarkdown,
+          ...(signatureTimestamp !== undefined && { signatureTimestamp }),
+        },
         signature,
       });
     },
