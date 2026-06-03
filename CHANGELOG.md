@@ -1,3 +1,9 @@
+## [1.0.0-develop.20](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.19...v1.0.0-develop.20) (2026-06-03)
+
+### Bug Fixes
+
+* duplicate signin call ([31ef486](https://github.com/PQALabs/q-leap-frontend/commit/31ef486c9258e673901457744dcc8ce256b98def))
+
 ## [1.0.0-develop.19](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.18...v1.0.0-develop.19) (2026-06-03)
 
 ### Features
