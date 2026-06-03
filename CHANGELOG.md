@@ -1,3 +1,10 @@
+## [1.0.0-develop.19](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.18...v1.0.0-develop.19) (2026-06-03)
+
+### Features
+
+* authentication ([f140889](https://github.com/PQALabs/q-leap-frontend/commit/f140889bc39b1f8e1f36042360964bebd227859d))
+* resolve authen git comments ([acbd99f](https://github.com/PQALabs/q-leap-frontend/commit/acbd99fb8e8002f62898e83830ec38dfe9c22cef))
+
 ## [1.0.0-develop.18](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.17...v1.0.0-develop.18) (2026-05-28)
 
 ### Features
