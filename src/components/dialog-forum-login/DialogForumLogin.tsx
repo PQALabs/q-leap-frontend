@@ -120,7 +120,7 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
     }
   }, [address, signMessageAsync, setAuth, onOpenChangeAction, onLoginSuccess]);
 
-  // Reset step when dialog opens
+  // Reset step when dialog opens (only reacts to open changing, not wallet state)
   useEffect(() => {
     if (open) {
       if (isConnected && address) {
@@ -129,14 +129,15 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
         setStep('connect');
       }
     }
-  }, [open, isConnected, address, handleSignIn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
-  // Auto-trigger sign-in once wallet connects
+  // Auto-trigger sign-in once wallet connects while dialog is open
   useEffect(() => {
-    if (isConnected && address && step === 'connect') {
+    if (open && isConnected && address && step === 'connect') {
       handleSignIn();
     }
-  }, [isConnected, address, step, handleSignIn]);
+  }, [isConnected, address, open, step, handleSignIn]);
 
   const handleSavePreferences = async () => {
     const storedUser = useForumAuthStore.getState().user;
