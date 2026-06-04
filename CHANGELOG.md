@@ -1,3 +1,10 @@
+## [1.0.0-develop.24](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.23...v1.0.0-develop.24) (2026-06-04)
+
+### Bug Fixes
+
+* resolve conflict ([51efd3b](https://github.com/PQALabs/q-leap-frontend/commit/51efd3bb87923031da2f6f78ab2c6d49b49b76e3))
+* resolve git comments ([0af5f68](https://github.com/PQALabs/q-leap-frontend/commit/0af5f686c1494e15ffa50cffe30300c567a897dc))
+
 ## [1.0.0-develop.23](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.22...v1.0.0-develop.23) (2026-06-04)
 
 ### Features
