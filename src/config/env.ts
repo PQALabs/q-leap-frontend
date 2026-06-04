@@ -8,7 +8,8 @@ export const env = {
   API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001',
   LENDING_POOL_CONTRACT: process.env.NEXT_PUBLIC_LENDING_POOL_CONTRACT,
   LENDING_POOL_ADDRESS_PROVIDER: process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS_PROVIDER,
-  ENABLE_TESTNET: (process.env.NEXT_PUBLIC_ENABLE_TESTNET ?? 'false') === 'true',
+  ENABLE_TESTNET: true,
+  // ENABLE_TESTNET: (process.env.NEXT_PUBLIC_ENABLE_TESTNET ?? 'false') === 'true',
   ENABLE_LIQUIDATION: true,
   ENABLE_FORUM: true,
   AUTH_LOGIN_MESSAGE:
