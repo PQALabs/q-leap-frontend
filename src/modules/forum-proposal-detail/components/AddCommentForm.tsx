@@ -2,15 +2,18 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, X } from 'lucide-react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import type { IForumComment } from '@/api/forum';
+import { DialogForumLogin } from '@/components/dialog-forum-login/DialogForumLogin';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldError } from '@/components/ui/field';
 import { formatAddress } from '@/lib/utils';
-import { getForumCommentMutationErrorMessage } from '../utils';
+import { useForumAuthStore } from '@/stores/use-forum-auth-store';
+import { getForumCommentMutationErrorMessage } from '../utils/error';
 import { CommentMarkdownEditor } from './CommentMarkdownEditor';
 
 const commentSchema = z.object({
@@ -44,6 +47,9 @@ function getReplyQuotePreview(comment: IForumComment) {
 }
 
 export function AddCommentForm({ open, proposalTitle, replyTo, onOpenChange, onSubmit }: AddCommentFormProps) {
+  const isLoggedIn = useForumAuthStore((s) => s.hasHydrated && !!s.token);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+
   const form = useForm<CommentFormValues>({
     resolver: zodResolver(commentSchema),
     defaultValues,
@@ -69,88 +75,99 @@ export function AddCommentForm({ open, proposalTitle, replyTo, onOpenChange, onS
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        onOpenChange(nextOpen);
-        if (!nextOpen) {
-          form.reset(defaultValues);
-        }
-      }}
-    >
-      <DialogContent
-        showCloseButton={false}
-        className='gap-0 overflow-hidden rounded-sm border-border bg-card p-0 text-card-foreground shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] sm:max-w-[670px]'
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          onOpenChange(nextOpen);
+          if (!nextOpen) {
+            form.reset(defaultValues);
+          }
+        }}
       >
-        <DialogHeader className='flex-row items-center justify-between gap-4 border-border border-b px-4 py-3 text-left'>
-          <div className='flex min-w-0 items-center gap-3'>
+        <DialogContent
+          showCloseButton={false}
+          className='gap-0 overflow-hidden rounded-sm border-border bg-card p-0 text-card-foreground shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] sm:max-w-[670px]'
+        >
+          <DialogHeader className='flex-row items-center justify-between gap-4 border-border border-b px-4 py-3 text-left'>
+            <div className='flex min-w-0 items-center gap-3'>
+              <DialogClose asChild>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='icon-xs'
+                  aria-label='Back'
+                  className='size-[26px] rounded-sm bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                >
+                  <ArrowLeft className='size-4' />
+                </Button>
+              </DialogClose>
+              <DialogTitle className='truncate font-bold font-serif text-lg text-primary leading-7'>
+                {replyTo ? `Replying to ${formatAddress(replyTo.authorAddress)}` : proposalTitle}
+              </DialogTitle>
+            </div>
+
             <DialogClose asChild>
               <Button
                 type='button'
-                variant='outline'
-                size='icon-xs'
-                aria-label='Back'
-                className='size-[26px] rounded-sm bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                variant='ghost'
+                size='icon-sm'
+                aria-label='Close reply dialog'
+                className='text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               >
-                <ArrowLeft className='size-4' />
+                <X className='size-4' />
               </Button>
             </DialogClose>
-            <DialogTitle className='truncate font-bold font-serif text-lg text-primary leading-7'>
-              {replyTo ? `Replying to ${formatAddress(replyTo.authorAddress)}` : proposalTitle}
-            </DialogTitle>
-          </div>
+          </DialogHeader>
 
-          <DialogClose asChild>
-            <Button
-              type='button'
-              variant='ghost'
-              size='icon-sm'
-              aria-label='Close reply dialog'
-              className='text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            >
-              <X className='size-4' />
-            </Button>
-          </DialogClose>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit}>
-          {replyTo ? (
-            <div className='border-border border-b px-4 py-3'>
-              <div className='rounded-sm border border-border bg-muted px-3 py-2 text-sm'>
-                <div className='mb-1 font-medium text-foreground'>
-                  Replying to {formatAddress(replyTo.authorAddress)}
+          <form onSubmit={handleSubmit}>
+            {replyTo ? (
+              <div className='border-border border-b px-4 py-3'>
+                <div className='rounded-sm border border-border bg-muted px-3 py-2 text-sm'>
+                  <div className='mb-1 font-medium text-foreground'>
+                    Replying to {formatAddress(replyTo.authorAddress)}
+                  </div>
+                  <p className='text-muted-foreground leading-5'>{getReplyQuotePreview(replyTo)}</p>
                 </div>
-                <p className='text-muted-foreground leading-5'>{getReplyQuotePreview(replyTo)}</p>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          <Field data-invalid={!!form.formState.errors.content} className='gap-0'>
-            <Controller
-              control={form.control}
-              name='content'
-              render={({ field }) => (
-                <CommentMarkdownEditor
-                  value={field.value}
-                  isInvalid={!!form.formState.errors.content}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                />
+            <Field data-invalid={!!form.formState.errors.content} className='gap-0'>
+              <Controller
+                control={form.control}
+                name='content'
+                render={({ field }) => (
+                  <CommentMarkdownEditor
+                    value={field.value}
+                    isInvalid={!!form.formState.errors.content}
+                    disabled={!isLoggedIn}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
+              />
+              <FieldError errors={[form.formState.errors.content]} className='px-4 pt-1 text-xs' />
+            </Field>
+
+            <div className='flex items-center gap-4 px-4 pt-6 pb-5'>
+              {isLoggedIn ? (
+                <Button size={'sm'} type='submit' disabled={isSubmitting}>
+                  {isSubmitting ? 'Submitting...' : replyTo ? 'Reply' : 'Comment'}
+                </Button>
+              ) : (
+                <Button size={'sm'} type='button' onClick={() => setLoginDialogOpen(true)}>
+                  Sign in to {replyTo ? 'reply' : 'comment'}
+                </Button>
               )}
-            />
-            <FieldError errors={[form.formState.errors.content]} className='px-4 pt-1 text-xs' />
-          </Field>
+              <Button size={'sm'} type='button' variant='ghost' onClick={handleDiscard} disabled={isSubmitting}>
+                Discard
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-          <div className='flex items-center gap-4 px-4 pt-6 pb-5'>
-            <Button size={'sm'} type='submit' disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : replyTo ? 'Reply' : 'Comment'}
-            </Button>
-            <Button size={'sm'} type='button' variant='ghost' onClick={handleDiscard} disabled={isSubmitting}>
-              Discard
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <DialogForumLogin open={loginDialogOpen} onOpenChangeAction={() => setLoginDialogOpen(false)} />
+    </>
   );
 }

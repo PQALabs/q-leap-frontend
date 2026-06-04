@@ -7,7 +7,7 @@ const MDEditor = dynamic<MDEditorProps>(() => import('@uiw/react-md-editor'), {
 });
 
 const markdownEditorClassName = cn(
-  'rounded-none border border-input bg-muted text-xs shadow-none',
+  'proposal-md-editor rounded-none border border-input bg-muted text-xs shadow-none',
   '[&.w-md-editor]:bg-muted! [&.w-md-editor]:text-foreground!',
   '[&_.w-md-editor-toolbar]:border-input! [&_.w-md-editor-toolbar]:bg-muted!',
   '[&_.w-md-editor-toolbar_button]:text-muted-foreground! [&_.w-md-editor-toolbar_button:hover]:bg-accent!',
@@ -23,13 +23,46 @@ type ProposalMarkdownEditorProps = {
   value: string;
   colorMode: 'light' | 'dark';
   isInvalid: boolean;
+  disabled?: boolean;
   onChange: (value: string) => void;
   onBlur: () => void;
 };
 
-export function ProposalMarkdownEditor({ value, colorMode, isInvalid, onChange, onBlur }: ProposalMarkdownEditorProps) {
+export function ProposalMarkdownEditor({
+  value,
+  colorMode,
+  isInvalid,
+  disabled,
+  onChange,
+  onBlur,
+}: ProposalMarkdownEditorProps) {
   return (
-    <div data-color-mode={colorMode}>
+    <div data-color-mode={colorMode} className={disabled ? 'pointer-events-none opacity-50' : undefined}>
+      <style>
+        {`
+          .proposal-md-editor,
+          .proposal-md-editor * {
+            --color-fg-default: var(--foreground);
+            --color-canvas-default: var(--muted);
+            --color-border-default: var(--input);
+            --color-canvas-subtle: var(--muted);
+            --color-fg-muted: var(--muted-foreground);
+          }
+
+          .proposal-md-editor .w-md-editor-text-input {
+            color: var(--foreground) !important;
+            -webkit-text-fill-color: var(--foreground) !important;
+            caret-color: var(--foreground) !important;
+            opacity: 1 !important;
+          }
+
+          .proposal-md-editor .w-md-editor-text-input::placeholder {
+            color: var(--muted-foreground) !important;
+            -webkit-text-fill-color: var(--muted-foreground) !important;
+            opacity: 1 !important;
+          }
+        `}
+      </style>
       <MDEditor
         value={value}
         onChange={(value) => onChange(value ?? '')}

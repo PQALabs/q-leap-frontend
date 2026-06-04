@@ -5,7 +5,7 @@ import { useSignMessage } from 'wagmi';
 import { upvoteForumCommentRequest } from '@/api/forum';
 import { queryKeys } from '@/constants/query-keys';
 import { useForumAuthStore } from '@/stores/use-forum-auth-store';
-import { buildUpvoteCommentSignatureMessage } from '../comment-signatures';
+import { buildUpvoteCommentSignatureMessage } from '../utils/signatures';
 
 export function useUpvoteComment(proposalId: string) {
   const queryClient = useQueryClient();

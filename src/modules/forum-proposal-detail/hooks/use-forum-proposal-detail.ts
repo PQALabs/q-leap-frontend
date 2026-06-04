@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useForumProposal } from '@/api/forum';
-import { toProposalDetail } from '../utils';
+import { toProposalDetail } from '../utils/proposal';
 
 export function useForumProposalDetail(proposalId: string) {
   const query = useForumProposal({

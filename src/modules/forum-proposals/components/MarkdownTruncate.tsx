@@ -1,4 +1,4 @@
-import { truncateMarkdownText } from '../utils';
+import { truncateMarkdownText } from '../utils/format';
 
 type MarkdownTruncateProps = {
   source: string;

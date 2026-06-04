@@ -3,6 +3,7 @@ import type { TListResponse } from '@/types';
 export const FORUM_PROPOSAL_TYPES = ['Governance', 'Risk', 'Treasury', 'Development', 'Others'] as const;
 
 export type ForumProposalType = (typeof FORUM_PROPOSAL_TYPES)[number];
+export type ForumUserRole = 'user' | 'moderator' | 'admin';
 
 export interface IForumProposal {
   id: string;
@@ -62,11 +63,14 @@ export interface IForumComment {
   proposalId: string;
   parentCommentId: string | null;
   authorAddress: string;
-  authorRole?: 'user' | 'moderator' | 'admin';
+  authorRole?: ForumUserRole;
   contentMarkdown: string;
   contentHtml: string;
   upvotes: number;
   replyCount: number;
+  pinned: boolean;
+  pinnedAt: string | null;
+  pinnedByAddress: string | null;
   editedCount: number;
   signature?: string | null;
   signatureTimestamp?: number | string | null;
@@ -85,6 +89,22 @@ export interface IForumCommentsParams {
 }
 
 export type IForumCommentsResponse = TListResponse<IForumComment>;
+
+export interface IForumCommentAnchor {
+  targetCommentId: string;
+  rootCommentId: string;
+  ancestorCommentIds: string[];
+  rootPage: number;
+  replyPages: Record<string, number>;
+}
+
+export interface IForumCommentAnchorResponse {
+  meta: {
+    code: number;
+    message: string;
+  };
+  data: IForumCommentAnchor;
+}
 
 export interface ICreateCommentRequest {
   contentMarkdown: string;
@@ -107,6 +127,10 @@ export interface IUpvoteCommentResponse {
 
 export interface IDeleteCommentRequest {
   signatureTimestamp?: number;
+}
+
+export interface IPinCommentRequest {
+  signatureTimestamp: number;
 }
 
 export interface IUpdateCommentRequest {
