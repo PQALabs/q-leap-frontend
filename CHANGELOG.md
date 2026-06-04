@@ -1,3 +1,11 @@
+## [1.0.0-develop.22](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.21...v1.0.0-develop.22) (2026-06-04)
+
+### Features
+
+* notification, enhancement and polish ([189b537](https://github.com/PQALabs/q-leap-frontend/commit/189b5374a2d42b0cbd56da612c8631624e342aeb))
+* refactor and enhance ui ([8a29614](https://github.com/PQALabs/q-leap-frontend/commit/8a29614d53c95e550dc5c52810071a950de70ea0))
+* resolve git comments ([86635e3](https://github.com/PQALabs/q-leap-frontend/commit/86635e36f44b1d3461a398f6d198d84addc8c5c0))
+
 ## [1.0.0-develop.21](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.20...v1.0.0-develop.21) (2026-06-04)
 
 ### Features
