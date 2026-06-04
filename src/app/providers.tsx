@@ -47,11 +47,11 @@ function Providers({ children }: ProvidersProps) {
       <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
         <TooltipProvider>
           <QueryClientProvider client={queryClient}>
-            {isMounted && configReady ? (
-              <ProtocolDataProvider>
-                <StaticPoolDataProvider errorPage={<PoolDataError />}>{children}</StaticPoolDataProvider>
-              </ProtocolDataProvider>
-            ) : null}
+            <ProtocolDataProvider>
+              <StaticPoolDataProvider errorPage={<PoolDataError />}>
+                {isMounted ? children : <></>}
+              </StaticPoolDataProvider>
+            </ProtocolDataProvider>
             <ForumAuthSync />
             <ReactQueryDevtools buttonPosition='bottom-left' initialIsOpen={false} />
           </QueryClientProvider>
