@@ -1,7 +1,19 @@
 'use client';
 
 import MarkdownPreview from '@uiw/react-markdown-preview';
-import { ChevronDown, ChevronUp, MessageSquare, MoreHorizontal, Pencil, ThumbsUp, Trash2 } from 'lucide-react';
+import {
+  Ban,
+  ChevronDown,
+  ChevronUp,
+  Flag,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  Shield,
+  ShieldCheck,
+  ThumbsUp,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { IForumComment } from '@/api/forum';
 import { useForumCommentReplies } from '@/api/forum';
@@ -16,12 +28,43 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatAddress } from '@/lib/utils';
+import { DialogBanAddress } from '@/modules/moderation/components/DialogBanAddress';
+import { useForumAuthStore } from '@/stores/use-forum-auth-store';
 import { formatProposalDate, formatProposalDateFull } from '../utils';
+import { DialogReportComment } from './DialogReportComment';
 import { EditCommentForm } from './EditCommentForm';
 import { UserAvatar } from './UserAvatar';
 
 function DeletedCommentPlaceholder({ className }: { className?: string }) {
   return <p className={`text-muted-foreground/60 italic ${className ?? ''}`}>Comment deleted</p>;
+}
+
+function AuthorRoleBadge({ role }: { role?: 'user' | 'moderator' | 'admin' }) {
+  if (role === 'admin') {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ShieldCheck className='inline-block size-3.5 shrink-0 text-primary' aria-label='Admin' />
+          </TooltipTrigger>
+          <TooltipContent>Admin</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  if (role === 'moderator') {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Shield className='inline-block size-3.5 shrink-0 text-muted-foreground' aria-label='Moderator' />
+          </TooltipTrigger>
+          <TooltipContent>Moderator</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  return null;
 }
 
 const commentMarkdownPreviewClassName =
@@ -50,13 +93,45 @@ function isWithinEditWindow(createdAt: string | Date): boolean {
 
 type CommentActionsMenuProps = {
   isOwner: boolean;
+  isMod: boolean;
   canEdit: boolean;
+  isLoggedIn: boolean;
+  viewerRole?: 'user' | 'moderator' | 'admin';
+  authorRole?: 'user' | 'moderator' | 'admin';
+  authorAddress: string;
+  connectedAddress?: string;
   onEdit: () => void;
-  onDelete: () => void;
+  onDelete: (byModerator: boolean) => void;
+  onBan: (address: string) => void;
+  onReport: () => void;
 };
 
-function CommentActionsMenu({ isOwner, canEdit, onEdit, onDelete }: CommentActionsMenuProps) {
-  if (!isOwner) return null;
+function canViewerBan(
+  viewerRole: 'user' | 'moderator' | 'admin' | undefined,
+  authorRole: 'user' | 'moderator' | 'admin' | undefined
+): boolean {
+  if (viewerRole === 'admin') return authorRole !== 'admin';
+  if (viewerRole === 'moderator') return authorRole === 'user' || authorRole === undefined;
+  return false;
+}
+
+function CommentActionsMenu({
+  isOwner,
+  isMod,
+  canEdit,
+  isLoggedIn,
+  viewerRole,
+  authorRole,
+  authorAddress,
+  onEdit,
+  onDelete,
+  onBan,
+  onReport,
+}: CommentActionsMenuProps) {
+  const canBan = isMod && !isOwner && canViewerBan(viewerRole, authorRole);
+  const canReport = isLoggedIn && !isOwner;
+
+  if (!isOwner && !isMod && !canReport) return null;
 
   return (
     <DropdownMenu>
@@ -67,7 +142,7 @@ function CommentActionsMenu({ isOwner, canEdit, onEdit, onDelete }: CommentActio
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>
-        {canEdit && (
+        {isOwner && canEdit && (
           <>
             <DropdownMenuItem onClick={onEdit}>
               <Pencil className='size-4' />
@@ -76,10 +151,30 @@ function CommentActionsMenu({ isOwner, canEdit, onEdit, onDelete }: CommentActio
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuItem className='text-destructive focus:text-destructive' onClick={onDelete}>
-          <Trash2 className='size-4' />
-          Delete
-        </DropdownMenuItem>
+        {(isOwner || isMod) && (
+          <DropdownMenuItem className='text-destructive focus:text-destructive' onClick={() => onDelete(!isOwner)}>
+            <Trash2 className='size-4' />
+            Delete
+          </DropdownMenuItem>
+        )}
+        {canBan && (
+          <>
+            {isOwner && <DropdownMenuSeparator />}
+            <DropdownMenuItem className='text-destructive focus:text-destructive' onClick={() => onBan(authorAddress)}>
+              <Ban className='size-4' />
+              Ban Address
+            </DropdownMenuItem>
+          </>
+        )}
+        {canReport && (
+          <>
+            {(isOwner || isMod) && <DropdownMenuSeparator />}
+            <DropdownMenuItem onClick={onReport}>
+              <Flag className='size-4' />
+              Report
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -94,12 +189,18 @@ type ReplyItemProps = {
   connectedAddress?: string;
   onReply: (comment: IForumComment) => void;
   onUpdate: (commentId: string, content: string, isReply: boolean) => Promise<void>;
-  onDelete: (commentId: string, isReply: boolean) => void;
+  onDelete: (commentId: string, isReply: boolean, byModerator: boolean) => void;
 };
 
 function ReplyItem({ reply, depth, proposalId, connectedAddress, onReply, onUpdate, onDelete }: ReplyItemProps) {
   const [expanded, setExpanded] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [banTarget, setBanTarget] = useState<string | null>(null);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+
+  const isMod = useForumAuthStore((s) => s.user?.role === 'admin' || s.user?.role === 'moderator');
+  const viewerRole = useForumAuthStore((s) => s.user?.role);
+  const isLoggedIn = useForumAuthStore((s) => !!s.token);
 
   const repliesQuery = useForumCommentReplies({
     variables: { proposalId, commentId: reply.id },
@@ -120,7 +221,10 @@ function ReplyItem({ reply, depth, proposalId, connectedAddress, onReply, onUpda
       <div className='min-w-0 flex-1'>
         <div className='flex items-start justify-between gap-2'>
           <div className='flex flex-col flex-wrap gap-1 font-medium text-sm'>
-            <span className='text-foreground'>{formatAddress(reply.authorAddress)}</span>
+            <span className='flex items-center gap-1.5 text-foreground'>
+              {formatAddress(reply.authorAddress)}
+              <AuthorRoleBadge role={reply.authorRole} />
+            </span>
             <div className='flex flex-wrap items-center gap-2'>
               <TooltipProvider>
                 <Tooltip>
@@ -147,9 +251,17 @@ function ReplyItem({ reply, depth, proposalId, connectedAddress, onReply, onUpda
           {!isDeleted && (
             <CommentActionsMenu
               isOwner={isOwner}
+              isMod={isMod}
               canEdit={canEdit}
+              isLoggedIn={isLoggedIn}
+              viewerRole={viewerRole}
+              authorRole={reply.authorRole}
+              authorAddress={reply.authorAddress}
+              connectedAddress={connectedAddress}
               onEdit={() => setIsEditOpen(true)}
-              onDelete={() => onDelete(reply.id, true)}
+              onDelete={(byModerator) => onDelete(reply.id, true, byModerator)}
+              onBan={setBanTarget}
+              onReport={() => setIsReportOpen(true)}
             />
           )}
         </div>
@@ -208,6 +320,13 @@ function ReplyItem({ reply, depth, proposalId, connectedAddress, onReply, onUpda
         onOpenChange={setIsEditOpen}
         onSubmit={(content) => onUpdate(reply.id, content, true)}
       />
+      <DialogBanAddress open={!!banTarget} targetAddress={banTarget} onClose={() => setBanTarget(null)} />
+      <DialogReportComment
+        open={isReportOpen}
+        proposalId={proposalId}
+        commentId={reply.id}
+        onOpenChange={setIsReportOpen}
+      />
     </div>
   );
 }
@@ -221,7 +340,7 @@ type CommentRepliesSectionProps = {
   autoExpand?: boolean;
   onReply: (comment: IForumComment) => void;
   onUpdate: (commentId: string, content: string, isReply: boolean) => Promise<void>;
-  onDelete: (commentId: string, isReply: boolean) => void;
+  onDelete: (commentId: string, isReply: boolean, byModerator: boolean) => void;
 };
 
 function CommentRepliesSection({
@@ -308,7 +427,7 @@ type ReplyCardProps = {
   onReply: (comment: IForumComment) => void;
   onUpvote: (commentId: string) => void;
   onUpdate: (commentId: string, content: string, isReply: boolean) => Promise<void>;
-  onDelete: (commentId: string, isReply: boolean) => void;
+  onDelete: (commentId: string, isReply: boolean, byModerator: boolean) => void;
 };
 
 export function ReplyCard({
@@ -323,6 +442,13 @@ export function ReplyCard({
   onDelete,
 }: ReplyCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [banTarget, setBanTarget] = useState<string | null>(null);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+
+  const isMod = useForumAuthStore((s) => s.user?.role === 'admin' || s.user?.role === 'moderator');
+  const viewerRole = useForumAuthStore((s) => s.user?.role);
+  const isLoggedIn = useForumAuthStore((s) => !!s.token);
+
   const isDeleted = !!comment.deletedAt;
   const isUpvoting = (id: string) => upvotingCommentId === id;
   const isOwner = !!connectedAddress && connectedAddress.toLowerCase() === comment.authorAddress.toLowerCase();
@@ -336,7 +462,10 @@ export function ReplyCard({
             <UserAvatar address={comment.authorAddress} />
             <div className='flex min-w-0 flex-1 items-start justify-between gap-2'>
               <div className='flex flex-col gap-1 text-sm'>
-                <span className='font-medium text-foreground'>{formatAddress(comment.authorAddress)}</span>
+                <span className='flex items-center gap-1.5 font-medium text-foreground'>
+                  {formatAddress(comment.authorAddress)}
+                  <AuthorRoleBadge role={comment.authorRole} />
+                </span>
                 <div className='flex flex-wrap items-center gap-2'>
                   <TooltipProvider>
                     <Tooltip>
@@ -367,9 +496,17 @@ export function ReplyCard({
               {!isDeleted && (
                 <CommentActionsMenu
                   isOwner={isOwner}
+                  isMod={isMod}
                   canEdit={canEdit}
+                  isLoggedIn={isLoggedIn}
+                  viewerRole={viewerRole}
+                  authorRole={comment.authorRole}
+                  authorAddress={comment.authorAddress}
+                  connectedAddress={connectedAddress}
                   onEdit={() => setIsEditOpen(true)}
-                  onDelete={() => onDelete(comment.id, false)}
+                  onDelete={(byModerator) => onDelete(comment.id, false, byModerator)}
+                  onBan={setBanTarget}
+                  onReport={() => setIsReportOpen(true)}
                 />
               )}
             </div>
@@ -411,6 +548,13 @@ export function ReplyCard({
         initialContent={comment.contentMarkdown}
         onOpenChange={setIsEditOpen}
         onSubmit={(content) => onUpdate(comment.id, content, false)}
+      />
+      <DialogBanAddress open={!!banTarget} targetAddress={banTarget} onClose={() => setBanTarget(null)} />
+      <DialogReportComment
+        open={isReportOpen}
+        proposalId={proposalId}
+        commentId={comment.id}
+        onOpenChange={setIsReportOpen}
       />
     </>
   );

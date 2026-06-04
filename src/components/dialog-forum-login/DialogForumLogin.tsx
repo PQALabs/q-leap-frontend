@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { toast } from 'sonner';
 import { useAccount, useConnect, useConnection, useConnectors, useDisconnect, useSignMessage } from 'wagmi';
 import { getAuthMeRequest, getAuthNonceRequest, loginRequest, updateAuthPreferencesRequest } from '@/api/auth';
