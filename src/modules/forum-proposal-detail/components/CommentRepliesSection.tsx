@@ -63,7 +63,8 @@ export function CommentRepliesSection({
       !replyPageToLoad ||
       loadedReplyPages >= replyPageToLoad ||
       !repliesQuery.hasNextPage ||
-      repliesQuery.isFetchingNextPage
+      repliesQuery.isFetchingNextPage ||
+      repliesQuery.isError
     ) {
       return;
     }
@@ -75,6 +76,7 @@ export function CommentRepliesSection({
     replyPageToLoad,
     repliesQuery.hasNextPage,
     repliesQuery.isFetchingNextPage,
+    repliesQuery.isError,
     repliesQuery.fetchNextPage,
   ]);
 

@@ -113,13 +113,20 @@ export function ForumProposalDetail({ proposalId }: ForumProposalDetailProps) {
       !anchor ||
       loadedRootCommentPages >= anchor.rootPage ||
       !commentsQuery.hasNextPage ||
-      commentsQuery.isFetchingNextPage
+      commentsQuery.isFetchingNextPage ||
+      commentsQuery.isError
     ) {
       return;
     }
 
     commentsQuery.fetchNextPage();
-  }, [anchor?.rootPage, commentsQuery.hasNextPage, commentsQuery.isFetchingNextPage, loadedRootCommentPages]);
+  }, [
+    anchor?.rootPage,
+    commentsQuery.hasNextPage,
+    commentsQuery.isFetchingNextPage,
+    commentsQuery.isError,
+    loadedRootCommentPages,
+  ]);
 
   useEffect(() => {
     if (
