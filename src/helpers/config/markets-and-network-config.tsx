@@ -86,7 +86,7 @@ export function getSupportedChainIds(): number[] {
     Object.keys(marketsData).reduce((acc, value) => {
       const chainId = marketsData[value as keyof typeof CustomMarket].chainId;
       const isTestnet = networkConfigs[chainId]?.isTestnet ?? false;
-      if (ENABLE_TESTNET ? isTestnet : !isTestnet) acc.add(chainId);
+      if (ENABLE_TESTNET || env.ENABLE_TESTNET ? isTestnet : !isTestnet) acc.add(chainId);
       return acc;
     }, new Set<number>())
   );

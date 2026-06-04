@@ -2,6 +2,9 @@ export const queryKeys = {
   auth: {
     me: () => ['auth', 'me'] as const,
   },
+  user: {
+    profile: (token?: string) => (token ? (['user', 'profile', token] as const) : (['user', 'profile'] as const)),
+  },
   liquidation: {
     positions: (...params: any[]) => ['liquidation-positions', ...params],
     position: (...params: any[]) => ['liquidation-position', ...params],
