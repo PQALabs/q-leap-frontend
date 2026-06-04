@@ -1,3 +1,12 @@
+## [1.0.0-develop.21](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.20...v1.0.0-develop.21) (2026-06-04)
+
+### Features
+
+* authentication ([2487b6a](https://github.com/PQALabs/q-leap-frontend/commit/2487b6a22ea4e510cc758dc54e0c943322ae8920))
+* moderation tools ([7836fb3](https://github.com/PQALabs/q-leap-frontend/commit/7836fb33a4d1b9ced88670448ef3870ca8c0da76))
+* **wip:** moderation tools ([7f323ba](https://github.com/PQALabs/q-leap-frontend/commit/7f323bae36b3989f07e02d47dbc1e6ae685524af))
+* **wip:** moderation tools ([f12c17e](https://github.com/PQALabs/q-leap-frontend/commit/f12c17ed840ff0bf7372c5af24bcc7528fade498))
+
 ## [1.0.0-develop.20](https://github.com/PQALabs/q-leap-frontend/compare/v1.0.0-develop.19...v1.0.0-develop.20) (2026-06-03)
 
 ### Bug Fixes
