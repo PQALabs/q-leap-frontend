@@ -1,6 +1,17 @@
 'use client';
 
-import { Check, Copy, LayoutDashboard, LogOut, Menu, MessageSquare, PlusCircle, Shield, Wallet } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageSquare,
+  PlusCircle,
+  Shield,
+  User,
+  Wallet,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -185,7 +196,15 @@ export function Header() {
                       {copied ? <Check size={13} className='mr-1.5' /> : <Copy size={13} className='mr-1.5' />}
                       {copied ? t('copied') : t('copyAddress')}
                     </DropdownMenuItem>
-                    {env.ENABLE_FORUM && forumUser && (
+                    {isForumPage && (
+                      <DropdownMenuItem className='cursor-pointer' asChild>
+                        <Link href='/profile'>
+                          <User size={13} className='mr-1.5' />
+                          My profile
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {env.ENABLE_FORUM && isForumPage && forumUser && (
                       <DropdownMenuItem className='cursor-pointer' onClick={() => setPreferencesOpen(true)}>
                         <Shield size={13} className='mr-1.5' />
                         Forum preferences
@@ -324,6 +343,18 @@ export function Header() {
                 )}
 
                 <Separator />
+
+                {/* Profile */}
+                {isForumPage && (
+                  <Link
+                    href='/profile'
+                    onClick={() => setMobileOpen(false)}
+                    className='flex items-center gap-2 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground'
+                  >
+                    <User size={14} />
+                    My profile
+                  </Link>
+                )}
 
                 {/* Disconnect */}
                 <button

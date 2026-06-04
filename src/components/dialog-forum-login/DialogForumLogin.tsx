@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
 import { toast } from 'sonner';
-import { useAccount, useConnect, useConnection, useConnectors, useDisconnect, useSignMessage } from 'wagmi';
+import { useConnect, useConnection, useConnectors, useDisconnect, useSignMessage } from 'wagmi';
 import { getAuthMeRequest, getAuthNonceRequest, loginRequest, updateAuthPreferencesRequest } from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,8 +30,7 @@ export const DialogForumLogin = ({ open, onOpenChangeAction, onLoginSuccess }: P
   const { mutateAsync: connectAsync, isPending: isConnecting } = useConnect();
   const connectors = useConnectors();
   const { mutateAsync: disconnectAsync } = useDisconnect();
-  const { isConnected } = useConnection();
-  const { address } = useAccount();
+  const { address, isConnected } = useConnection();
   const { mutateAsync: signMessageAsync } = useSignMessage();
 
   const token = useForumAuthStore((s) => s.token);
