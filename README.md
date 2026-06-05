@@ -6,6 +6,18 @@ Next.js frontend for the Q-Leap DeFi lending platform. Deployed on Kubernetes vi
 
 ---
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System component diagram, auth spec, data models, user flows, codebase map |
+| [docs/NETWORKS_AND_ABIS.md](docs/NETWORKS_AND_ABIS.md) | Smart contract addresses, ABIs, chain configs, interaction patterns |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker, CI/CD pipeline, environment variables, deployment procedures |
+| [docs/SECURITY_AUDITS/](docs/SECURITY_AUDITS/) | Security audit history and known accepted risks |
+| [CHANGELOG_FUTURE.md](CHANGELOG_FUTURE.md) | Current state, feature backlog, architecture decision log |
+
+---
+
 ## Table of Contents
 
 - [Project Structure](#project-structure)

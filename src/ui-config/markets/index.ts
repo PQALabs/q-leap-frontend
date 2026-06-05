@@ -7,6 +7,8 @@ export enum CustomMarket {
 }
 
 export const marketsData: { [key in keyof typeof CustomMarket]: MarketDataType } = {
+  // TODO: Fill in verified Mainnet contract addresses before enabling this market.
+  // See docs/NETWORKS_AND_ABIS.md — "How to configure Mainnet addresses".
   [CustomMarket.qday]: {
     chainId: qdayMainnet.id,
     logo: '',
@@ -19,9 +21,9 @@ export const marketsData: { [key in keyof typeof CustomMarket]: MarketDataType }
       incentives: true,
     },
     addresses: {
-      LENDING_POOL_ADDRESS_PROVIDER: '0x88757f2f99175387ab4c6a4b3067c77a695b0349'.toLowerCase(),
-      LENDING_POOL: '0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe',
-      WETH_GATEWAY: '0xA61ca04DF33B72b235a8A28CfB535bb7A5271B70',
+      LENDING_POOL_ADDRESS_PROVIDER: '',
+      LENDING_POOL: '',
+      WETH_GATEWAY: '',
     },
   },
   [CustomMarket.qdayTestnet]: {
